@@ -35,6 +35,9 @@
   "command.merryevents.start.error.category_player": "Failed: Category '%s' is already active for %s!",
   "command.merryevents.start.error.no_player": "Specify a target player when executing unique events from console",
   "command.merryevents.stop.success": "Stopped event: %s",
+  "command.merryevents.stop.success.player": "Stopped event %s for %s",
+  "command.merryevents.stop.error.not_active": "Event '%s' is not currently active!",
+  "command.merryevents.stop.error.not_active_player": "Event '%s' is not active for %s!",
 
   "command.merryevents.status.header": "=== MerryEvents Engine Status ===",
   "command.merryevents.status.global_header": "Active Global Events:",

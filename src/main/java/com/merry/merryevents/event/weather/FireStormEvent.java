@@ -20,10 +20,13 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Global meteorological incendiary event belonging to EventCategory.WEATHER.
- * Rains non-explosive small fireballs igniting flammable surface terrain above exposed players.
+ * Rains non-explosive small fireballs with randomized interval and dispersion
+ * radius.
  */
 public final class FireStormEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("fire_storm");
+    private static final String INTERVAL_KEY = "cadence_ticks";
+    private static final String RADIUS_KEY = "dispersion_radius";
 
     @Override
     public Identifier getId() {
@@ -42,14 +45,26 @@ public final class FireStormEvent implements ChaosEvent {
 
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        MerryEvents.LOGGER.info("[FireStormEvent] Incendiary storm ignited across all dimensions.");
+        Random random = server.getOverworld().getRandom();
+        int cadenceTicks = 12 + random.nextInt(18);
+        double dispersionRadius = 10.0 + (random.nextDouble() * 14.0);
+
+        context.set(INTERVAL_KEY, cadenceTicks);
+        context.set(RADIUS_KEY, dispersionRadius);
+
+        MerryEvents.LOGGER.info("[FireStormEvent] Incendiary storm ignited: interval={}t, radius={}",
+                cadenceTicks, String.format("%.1f", dispersionRadius));
     }
 
     @Override
-    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context, int remainingTicks) {
-        if (remainingTicks % 20 != 0) {
+    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int remainingTicks) {
+        int cadence = context.getInt(INTERVAL_KEY, 20);
+        if (remainingTicks % cadence != 0) {
             return;
         }
+
+        double radius = context.getDouble(RADIUS_KEY, 16.0);
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             if (player.isCreative() || player.isSpectator()) {
@@ -64,8 +79,8 @@ public final class FireStormEvent implements ChaosEvent {
             }
 
             Random random = player.getRandom();
-            double offsetX = (random.nextDouble() - 0.5) * 16.0;
-            double offsetZ = (random.nextDouble() - 0.5) * 16.0;
+            double offsetX = (random.nextDouble() - 0.5) * radius * 2.0;
+            double offsetZ = (random.nextDouble() - 0.5) * radius * 2.0;
 
             double targetX = player.getX() + offsetX;
             double targetZ = player.getZ() + offsetZ;

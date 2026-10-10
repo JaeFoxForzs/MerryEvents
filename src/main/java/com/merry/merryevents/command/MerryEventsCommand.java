@@ -10,6 +10,7 @@ import com.mojang.brigadier.arguments.IntegerArgumentType;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -21,6 +22,8 @@ import net.minecraft.util.Identifier;
 import java.util.ArrayList;
 import java.util.List;
 import java.util.Map;
+
+import org.jetbrains.annotations.Nullable;
 
 public final class MerryEventsCommand {
     private static final int DEFAULT_DURATION_SECONDS = 30;
@@ -54,22 +57,32 @@ public final class MerryEventsCommand {
                                                 })))))
                 .then(CommandManager.literal("stop")
                         .then(CommandManager.argument("eventId", IdentifierArgumentType.identifier())
-                                .suggests((ctx, builder) -> CommandSource.suggestIdentifiers(
-                                        EventManager.getInstance().getActiveGlobalEventIds(), builder))
+                                .suggests((ctx, builder) -> {
+                                    java.util.Set<Identifier> active = new java.util.HashSet<>(
+                                            EventManager.getInstance().getActiveGlobalEventIds());
+                                    if (ctx.getSource().isExecutedByPlayer()) {
+                                        ServerPlayerEntity player = ctx.getSource().getPlayer();
+                                        if (player != null) {
+                                            var pMap = EventManager.getInstance().getActivePlayerEvents()
+                                                    .get(player.getUuid());
+                                            if (pMap != null) {
+                                                active.addAll(pMap.keySet());
+                                            }
+                                        }
+                                    }
+                                    return CommandSource.suggestIdentifiers(active, builder);
+                                })
                                 .executes(ctx -> {
                                     Identifier eventId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
                                     ServerCommandSource source = ctx.getSource();
-
-                                    EventManager.getInstance().stopGlobalEvent(source.getServer(), eventId);
-                                    if (source.isExecutedByPlayer()) {
-                                        EventManager.getInstance().stopPlayerEvent(source.getServer(),
-                                                source.getPlayerOrThrow(), eventId);
-                                    }
-                                    source.sendMessage(
-                                            Text.translatable("command.merryevents.stop.success", eventId.toString())
-                                                    .formatted(Formatting.YELLOW));
-                                    return 1;
-                                })))
+                                    return executeStop(source, eventId, null);
+                                })
+                                .then(CommandManager.argument("target", EntityArgumentType.player())
+                                        .executes(ctx -> {
+                                            Identifier eventId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
+                                            ServerPlayerEntity target = EntityArgumentType.getPlayer(ctx, "target");
+                                            return executeStop(ctx.getSource(), eventId, target);
+                                        }))))
                 .then(CommandManager.literal("status")
                         .executes(ctx -> executeStatus(ctx.getSource())))
                 .then(CommandManager.literal("director")
@@ -138,6 +151,44 @@ public final class MerryEventsCommand {
                                     .formatted(Formatting.GREEN));
                             return 1;
                         })));
+    }
+
+    private static int executeStop(ServerCommandSource source, Identifier eventId,
+            @Nullable ServerPlayerEntity explicitTarget) {
+        MinecraftServer server = source.getServer();
+        EventManager manager = EventManager.getInstance();
+
+        if (explicitTarget != null) {
+            boolean stopped = manager.stopPlayerEvent(server, explicitTarget, eventId);
+            if (stopped) {
+                source.sendMessage(Text.translatable("command.merryevents.stop.success.player", eventId.toString(),
+                        explicitTarget.getName().getString()).formatted(Formatting.YELLOW));
+                return 1;
+            } else {
+                source.sendError(Text.translatable("command.merryevents.stop.error.not_active_player",
+                        eventId.toString(), explicitTarget.getName().getString()));
+                return 0;
+            }
+        }
+
+        boolean stoppedGlobal = manager.stopGlobalEvent(server, eventId);
+        boolean stoppedPlayer = false;
+
+        if (source.isExecutedByPlayer()) {
+            ServerPlayerEntity player = source.getPlayer();
+            if (player != null) {
+                stoppedPlayer = manager.stopPlayerEvent(server, player, eventId);
+            }
+        }
+
+        if (stoppedGlobal || stoppedPlayer) {
+            source.sendMessage(Text.translatable("command.merryevents.stop.success", eventId.toString())
+                    .formatted(Formatting.YELLOW));
+            return 1;
+        } else {
+            source.sendError(Text.translatable("command.merryevents.stop.error.not_active", eventId.toString()));
+            return 0;
+        }
     }
 
     private static int executeStatus(ServerCommandSource source) {

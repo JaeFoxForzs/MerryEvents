@@ -19,10 +19,13 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Global aerial hazard event belonging to EventCategory.WEATHER.
- * Precipitates falling anvils above sky-exposed players at rapid intervals.
+ * Precipitates falling anvils above sky-exposed players with randomized cadence
+ * and dispersion.
  */
 public final class AnvilRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("anvil_rain");
+    private static final String INTERVAL_KEY = "cadence_ticks";
+    private static final String RADIUS_KEY = "dispersion_radius";
 
     @Override
     public Identifier getId() {
@@ -41,14 +44,26 @@ public final class AnvilRainEvent implements ChaosEvent {
 
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        MerryEvents.LOGGER.info("[AnvilRainEvent] Atmospheric density destabilized: anvil shower initiated.");
+        Random random = server.getOverworld().getRandom();
+        int cadenceTicks = 10 + random.nextInt(15);
+        double dispersionRadius = 8.0 + (random.nextDouble() * 16.0);
+
+        context.set(INTERVAL_KEY, cadenceTicks);
+        context.set(RADIUS_KEY, dispersionRadius);
+
+        MerryEvents.LOGGER.info("[AnvilRainEvent] Anvil shower initiated: interval={}t, radius={}",
+                cadenceTicks, String.format("%.1f", dispersionRadius));
     }
 
     @Override
-    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context, int remainingTicks) {
-        if (remainingTicks % 15 != 0) {
+    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int remainingTicks) {
+        int cadence = context.getInt(INTERVAL_KEY, 15);
+        if (remainingTicks % cadence != 0) {
             return;
         }
+
+        double radius = context.getDouble(RADIUS_KEY, 16.0);
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             if (player.isCreative() || player.isSpectator()) {
@@ -63,19 +78,21 @@ public final class AnvilRainEvent implements ChaosEvent {
             }
 
             Random random = player.getRandom();
-            double offsetX = (random.nextDouble() - 0.5) * 16.0;
-            double offsetZ = (random.nextDouble() - 0.5) * 16.0;
+            double offsetX = (random.nextDouble() - 0.5) * radius * 2.0;
+            double offsetZ = (random.nextDouble() - 0.5) * radius * 2.0;
 
             int targetX = (int) (player.getX() + offsetX);
             int targetZ = (int) (player.getZ() + offsetZ);
             int spawnY = Math.min(world.getTopY() - 2, player.getBlockY() + 24 + random.nextInt(8));
 
             BlockPos spawnPos = new BlockPos(targetX, spawnY, targetZ);
-            if (!world.isChunkLoaded(ChunkSectionPos.getSectionCoord(spawnPos.getX()), ChunkSectionPos.getSectionCoord(spawnPos.getZ()))) {
+            if (!world.isChunkLoaded(ChunkSectionPos.getSectionCoord(spawnPos.getX()),
+                    ChunkSectionPos.getSectionCoord(spawnPos.getZ()))) {
                 continue;
             }
 
-            FallingBlockEntity anvil = FallingBlockEntity.spawnFromBlock(world, spawnPos, Blocks.ANVIL.getDefaultState());
+            FallingBlockEntity anvil = FallingBlockEntity.spawnFromBlock(world, spawnPos,
+                    Blocks.ANVIL.getDefaultState());
             anvil.setHurtEntities(3.0F, 40);
             context.trackEntity(anvil.getUuid());
 

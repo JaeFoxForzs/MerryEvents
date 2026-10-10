@@ -13,6 +13,7 @@ import com.merry.merryevents.event.status.*;
 import com.merry.merryevents.event.visual.*;
 import com.merry.merryevents.event.weather.*;
 import com.merry.merryevents.event.world.*;
+import com.merry.merryevents.event.camera.*;
 import com.merry.merryevents.network.*;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
@@ -60,6 +61,7 @@ public final class EventManager {
         register(new RustRainEvent());
         register(new FoodRainEvent());
         register(new FireStormEvent());
+        register(new StiffNeckEvent());
     }
 
     public static EventManager getInstance() {
@@ -256,7 +258,7 @@ public final class EventManager {
         return true;
     }
 
-    public void stopGlobalEvent(MinecraftServer server, Identifier eventId) {
+    public boolean stopGlobalEvent(MinecraftServer server, Identifier eventId) {
         ActiveEventInstance instance = activeGlobalEvents.remove(eventId);
         if (instance != null) {
             instance.event.onStopServer(server, null, instance.context);
@@ -274,10 +276,12 @@ public final class EventManager {
             }
 
             MerryEvents.LOGGER.info("[EventManager] Global event '{}' terminated", eventId);
+            return true;
         }
+        return false;
     }
 
-    public void stopPlayerEvent(MinecraftServer server, ServerPlayerEntity player, Identifier eventId) {
+    public boolean stopPlayerEvent(MinecraftServer server, ServerPlayerEntity player, Identifier eventId) {
         UUID uuid = player.getUuid();
         Map<Identifier, ActiveEventInstance> events = activePlayerEvents.get(uuid);
         if (events != null) {
@@ -301,8 +305,10 @@ public final class EventManager {
 
                 MerryEvents.LOGGER.info("[EventManager] Player event '{}' terminated for {}", eventId,
                         player.getName().getString());
+                return true;
             }
         }
+        return false;
     }
 
     public void onServerStopping(MinecraftServer server) {

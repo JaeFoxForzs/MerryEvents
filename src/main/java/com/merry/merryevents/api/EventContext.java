@@ -33,6 +33,16 @@ public final class EventContext {
         trackedEntities.clear();
     }
 
+    public int getInt(String key, int defaultValue) {
+        Object val = state.get(key);
+        return val instanceof Number n ? n.intValue() : defaultValue;
+    }
+
+    public double getDouble(String key, double defaultValue) {
+        Object val = state.get(key);
+        return val instanceof Number n ? n.doubleValue() : defaultValue;
+    }
+
     @SuppressWarnings("unchecked")
     public <T> T getOrDefault(String key, T defaultValue) {
         return (T) state.getOrDefault(key, defaultValue);

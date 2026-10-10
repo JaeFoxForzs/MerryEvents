@@ -21,11 +21,12 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Global aerial provision event belonging to EventCategory.WEATHER.
- * Precipitates consumable rations above sky-exposed players at steady
- * intervals.
+ * Precipitates rations with randomized frequency and area spread.
  */
 public final class FoodRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("food_rain");
+    private static final String INTERVAL_KEY = "cadence_ticks";
+    private static final String RADIUS_KEY = "dispersion_radius";
 
     private static final Item[] EDIBLE_DROPS = new Item[] {
             Items.APPLE,
@@ -51,15 +52,26 @@ public final class FoodRainEvent implements ChaosEvent {
 
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        MerryEvents.LOGGER.info("[FoodRainEvent] Stratospheric provision cascade initiated.");
+        Random random = server.getOverworld().getRandom();
+        int cadenceTicks = 15 + random.nextInt(20);
+        double dispersionRadius = 6.0 + (random.nextDouble() * 10.0);
+
+        context.set(INTERVAL_KEY, cadenceTicks);
+        context.set(RADIUS_KEY, dispersionRadius);
+
+        MerryEvents.LOGGER.info("[FoodRainEvent] Stratospheric provision cascade initiated: interval={}t, radius={}",
+                cadenceTicks, String.format("%.1f", dispersionRadius));
     }
 
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
-        if (remainingTicks % 20 != 0) {
+        int cadence = context.getInt(INTERVAL_KEY, 20);
+        if (remainingTicks % cadence != 0) {
             return;
         }
+
+        double radius = context.getDouble(RADIUS_KEY, 12.0);
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             if (player.isSpectator()) {
@@ -74,8 +86,8 @@ public final class FoodRainEvent implements ChaosEvent {
             }
 
             Random random = player.getRandom();
-            double offsetX = (random.nextDouble() - 0.5) * 12.0;
-            double offsetZ = (random.nextDouble() - 0.5) * 12.0;
+            double offsetX = (random.nextDouble() - 0.5) * radius * 2.0;
+            double offsetZ = (random.nextDouble() - 0.5) * radius * 2.0;
 
             double targetX = player.getX() + offsetX;
             double targetZ = player.getZ() + offsetZ;

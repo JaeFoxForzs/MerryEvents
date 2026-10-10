@@ -34,6 +34,9 @@
   "command.merryevents.start.error.category_player": "Ошибка: Категория '%s' уже занята для %s!",
   "command.merryevents.start.error.no_player": "Укажите целевого игрока при запуске персонального события из консоли",
   "command.merryevents.stop.success": "Остановлено событие: %s",
+  "command.merryevents.stop.success.player": "Остановлено событие %s для %s",
+  "command.merryevents.stop.error.not_active": "Событие '%s' сейчас не активно!",
+  "command.merryevents.stop.error.not_active_player": "Событие '%s' не активно для %s!",
 
   "command.merryevents.status.header": "=== Статус движка MerryEvents ===",
   "command.merryevents.status.global_header": "Активные глобальные события:",
