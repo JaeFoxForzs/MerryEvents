@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerEntity;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class AcidRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("acid_rain");
-    private static final String PREVIOUS_WEATHER_KEY = "was_raining";
 
     @Override
     public Identifier getId() {
@@ -40,15 +40,7 @@ public final class AcidRainEvent implements ChaosEvent {
 
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        ServerWorld overworld = server.getOverworld();
-        context.set(PREVIOUS_WEATHER_KEY, overworld.isRaining());
-
-        for (ServerWorld world : server.getWorlds()) {
-            if (world.getDimension().hasSkyLight()) {
-                world.setWeather(0, 6000, true, false);
-            }
-        }
-
+        WeatherUtil.startRain(server, 6000);
         MerryEvents.LOGGER.info(
                 "[AcidRainEvent] Atmospheric corruption initiated: acid rain active across all surface dimensions.");
     }
@@ -75,7 +67,7 @@ public final class AcidRainEvent implements ChaosEvent {
                 }
 
                 BlockPos pos = living.getBlockPos();
-                if (world.hasRain(pos)) {
+                if (WeatherUtil.isExposedToRain(world, pos, living)) {
                     living.damage(world.getDamageSources().magic(), 1.0F);
                 }
             }
@@ -84,18 +76,7 @@ public final class AcidRainEvent implements ChaosEvent {
 
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        boolean wasRaining = context.getOrDefault(PREVIOUS_WEATHER_KEY, false);
-
-        for (ServerWorld world : server.getWorlds()) {
-            if (world.getDimension().hasSkyLight()) {
-                if (wasRaining) {
-                    world.setWeather(0, 6000, true, false);
-                } else {
-                    world.setWeather(6000, 0, false, false);
-                }
-            }
-        }
-
-        MerryEvents.LOGGER.info("[AcidRainEvent] Atmospheric conditions normalized: weather state restored.");
+        WeatherUtil.stopRain(server);
+        MerryEvents.LOGGER.info("[AcidRainEvent] Atmospheric conditions normalized: weather cleared.");
     }
 }

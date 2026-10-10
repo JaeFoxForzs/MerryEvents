@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.MinecraftServer;
@@ -74,7 +75,7 @@ public final class AnvilRainEvent implements ChaosEvent {
             ServerWorld world = player.getServerWorld();
             BlockPos playerPos = player.getBlockPos();
 
-            if (!world.isSkyVisible(playerPos) && !world.isSkyVisible(playerPos.up())) {
+            if (!WeatherUtil.isExposedToSky(world, playerPos)) {
                 continue;
             }
 

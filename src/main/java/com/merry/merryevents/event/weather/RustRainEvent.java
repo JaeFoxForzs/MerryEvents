@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -30,7 +31,6 @@ import java.util.function.Consumer;
  */
 public final class RustRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("rust_rain");
-    private static final String PREVIOUS_WEATHER_KEY = "was_raining";
 
     private static final EquipmentSlot[] EQUIPMENT_SLOTS = EquipmentSlot.values();
     private static final Consumer<Item> NO_OP_BREAK_CALLBACK = item -> {
@@ -53,15 +53,7 @@ public final class RustRainEvent implements ChaosEvent {
 
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        ServerWorld overworld = server.getOverworld();
-        context.set(PREVIOUS_WEATHER_KEY, overworld.isRaining());
-
-        for (ServerWorld world : server.getWorlds()) {
-            if (world.getDimension().hasSkyLight()) {
-                world.setWeather(0, 6000, true, false);
-            }
-        }
-
+        WeatherUtil.startRain(server, 6000);
         MerryEvents.LOGGER.info(
                 "[RustRainEvent] Atmospheric corrosion initiated: corrosive downpour forced across surface dimensions.");
     }
@@ -84,7 +76,7 @@ public final class RustRainEvent implements ChaosEvent {
                 }
 
                 BlockPos pos = living.getBlockPos();
-                if (!world.hasRain(pos)) {
+                if (!WeatherUtil.isExposedToRain(world, pos, living)) {
                     continue;
                 }
 
@@ -183,18 +175,7 @@ public final class RustRainEvent implements ChaosEvent {
 
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        boolean wasRaining = context.getOrDefault(PREVIOUS_WEATHER_KEY, false);
-
-        for (ServerWorld world : server.getWorlds()) {
-            if (world.getDimension().hasSkyLight()) {
-                if (wasRaining) {
-                    world.setWeather(0, 6000, true, false);
-                } else {
-                    world.setWeather(6000, 0, false, false);
-                }
-            }
-        }
-
-        MerryEvents.LOGGER.info("[RustRainEvent] Atmospheric conditions normalized: weather state restored.");
+        WeatherUtil.stopRain(server);
+        MerryEvents.LOGGER.info("[RustRainEvent] Atmospheric conditions normalized: weather cleared.");
     }
 }

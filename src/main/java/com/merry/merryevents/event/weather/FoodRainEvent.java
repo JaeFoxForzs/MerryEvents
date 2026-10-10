@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
@@ -82,7 +83,7 @@ public final class FoodRainEvent implements ChaosEvent {
             ServerWorld world = player.getServerWorld();
             BlockPos playerPos = player.getBlockPos();
 
-            if (!world.isSkyVisible(playerPos) && !world.isSkyVisible(playerPos.up())) {
+            if (!WeatherUtil.isExposedToSky(world, playerPos)) {
                 continue;
             }
 
