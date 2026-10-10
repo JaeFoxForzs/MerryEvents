@@ -34,10 +34,10 @@ public abstract class AnvilBlockMixin {
     private void merryevents$shatterAnvilAndBreakBelow(World world, BlockPos pos, BlockState fallingBlockState,
             BlockState currentStateInPos, FallingBlockEntity fallingBlockEntity, CallbackInfo ci) {
         if (!world.isClient() && EventManager.getInstance().isGlobalEventActive(AnvilRainEvent.ID)) {
-            BlockPos belowPos = pos.down();
-            BlockState belowState = world.getBlockState(belowPos);
-            if (!belowState.isAir() && belowState.getHardness(world, belowPos) >= 0.0F) {
-                world.breakBlock(belowPos, true);
+            BlockPos targetPos = pos.down();
+            BlockState targetState = world.getBlockState(targetPos);
+            if (!targetState.isAir() && targetState.getHardness(world, targetPos) >= 0.0F) {
+                world.breakBlock(targetPos, true);
             }
 
             world.removeBlock(pos, false);
@@ -46,11 +46,13 @@ public abstract class AnvilBlockMixin {
     }
 
     /**
-     * Breaks the block beneath when the falling anvil is destroyed on landing upon
-     * non-solid blocks.
+     * Destroys the surface block directly impacted by the shattered falling anvil
+     * during AnvilRainEvent.
+     * Evaluates collision shapes to accurately target solid supporting surfaces
+     * across bounding transitions.
      *
      * @param world              Active world instance
-     * @param pos                Position of landing destruction
+     * @param pos                Landing destruction coordinate
      * @param fallingBlockEntity Falling entity instance
      * @param ci                 Callback info
      */
@@ -58,10 +60,15 @@ public abstract class AnvilBlockMixin {
     private void merryevents$breakBelowOnDestroy(World world, BlockPos pos, FallingBlockEntity fallingBlockEntity,
             CallbackInfo ci) {
         if (!world.isClient() && EventManager.getInstance().isGlobalEventActive(AnvilRainEvent.ID)) {
-            BlockPos belowPos = pos.down();
-            BlockState belowState = world.getBlockState(belowPos);
-            if (!belowState.isAir() && belowState.getHardness(world, belowPos) >= 0.0F) {
-                world.breakBlock(belowPos, true);
+            BlockPos targetPos = pos;
+            BlockState targetState = world.getBlockState(targetPos);
+            if (targetState.isAir() || targetState.getCollisionShape(world, targetPos).isEmpty()) {
+                targetPos = pos.down();
+                targetState = world.getBlockState(targetPos);
+            }
+
+            if (!targetState.isAir() && targetState.getHardness(world, targetPos) >= 0.0F) {
+                world.breakBlock(targetPos, true);
             }
         }
     }

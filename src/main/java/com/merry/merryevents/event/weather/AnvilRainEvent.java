@@ -15,6 +15,7 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -66,14 +67,14 @@ public final class AnvilRainEvent implements ChaosEvent {
         double radius = context.getDouble(RADIUS_KEY, 16.0);
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.isCreative() || player.isSpectator()) {
+            if (player.isSpectator()) {
                 continue;
             }
 
             ServerWorld world = player.getServerWorld();
             BlockPos playerPos = player.getBlockPos();
 
-            if (!world.isSkyVisible(playerPos)) {
+            if (!world.isSkyVisible(playerPos) && !world.isSkyVisible(playerPos.up())) {
                 continue;
             }
 
@@ -83,17 +84,23 @@ public final class AnvilRainEvent implements ChaosEvent {
 
             int targetX = (int) (player.getX() + offsetX);
             int targetZ = (int) (player.getZ() + offsetZ);
-            int spawnY = Math.min(world.getTopY() - 2, player.getBlockY() + 24 + random.nextInt(8));
 
-            BlockPos spawnPos = new BlockPos(targetX, spawnY, targetZ);
-            if (!world.isChunkLoaded(ChunkSectionPos.getSectionCoord(spawnPos.getX()),
-                    ChunkSectionPos.getSectionCoord(spawnPos.getZ()))) {
+            int chunkX = ChunkSectionPos.getSectionCoord(targetX);
+            int chunkZ = ChunkSectionPos.getSectionCoord(targetZ);
+            if (!world.isChunkLoaded(chunkX, chunkZ)) {
                 continue;
             }
+
+            int surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, targetX, targetZ);
+            int spawnY = Math.min(world.getTopY() - 2,
+                    Math.max(player.getBlockY() + 20, surfaceY + 16) + random.nextInt(8));
+            BlockPos spawnPos = new BlockPos(targetX, spawnY, targetZ);
 
             FallingBlockEntity anvil = FallingBlockEntity.spawnFromBlock(world, spawnPos,
                     Blocks.ANVIL.getDefaultState());
             anvil.setHurtEntities(3.0F, 40);
+            anvil.dropItem = false;
+            anvil.setDestroyedOnLanding();
             context.trackEntity(anvil.getUuid());
 
             world.playSound(null, spawnPos, SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.WEATHER, 1.2F, 0.4F);

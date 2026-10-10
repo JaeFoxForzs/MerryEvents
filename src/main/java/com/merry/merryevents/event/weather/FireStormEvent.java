@@ -16,6 +16,7 @@ import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
 
 /**
@@ -67,14 +68,14 @@ public final class FireStormEvent implements ChaosEvent {
         double radius = context.getDouble(RADIUS_KEY, 16.0);
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.isCreative() || player.isSpectator()) {
+            if (player.isSpectator()) {
                 continue;
             }
 
             ServerWorld world = player.getServerWorld();
             BlockPos playerPos = player.getBlockPos();
 
-            if (!world.isSkyVisible(playerPos)) {
+            if (!world.isSkyVisible(playerPos) && !world.isSkyVisible(playerPos.up())) {
                 continue;
             }
 
@@ -84,7 +85,6 @@ public final class FireStormEvent implements ChaosEvent {
 
             double targetX = player.getX() + offsetX;
             double targetZ = player.getZ() + offsetZ;
-            double targetY = Math.min(world.getTopY() - 2, player.getY() + 20.0 + random.nextInt(6));
 
             int chunkX = ChunkSectionPos.getSectionCoord((int) targetX);
             int chunkZ = ChunkSectionPos.getSectionCoord((int) targetZ);
@@ -92,10 +92,14 @@ public final class FireStormEvent implements ChaosEvent {
                 continue;
             }
 
+            int surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, (int) targetX, (int) targetZ);
+            double targetY = Math.min(world.getTopY() - 2,
+                    Math.max(player.getY() + 18.0, surfaceY + 14.0) + random.nextInt(6));
+
             SmallFireballEntity fireball = EntityType.SMALL_FIREBALL.create(world);
             if (fireball != null) {
                 fireball.refreshPositionAndAngles(targetX, targetY, targetZ, 0.0F, 90.0F);
-                fireball.setVelocity(new Vec3d(0.0, -1.1, 0.0));
+                fireball.setVelocity(new Vec3d(0.0, -1.2, 0.0));
                 world.spawnEntity(fireball);
                 context.trackEntity(fireball.getUuid());
 
