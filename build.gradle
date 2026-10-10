@@ -72,6 +72,8 @@ dependencies {
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
 }
 
+apply from: 'gradle/localization.gradle'
+
 processResources {
 	def version = project.version
 	inputs.property "version", version

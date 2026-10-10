@@ -1,5 +1,6 @@
 package com.merry.merryevents.command;
 
+import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.config.ConfigManager;
@@ -7,9 +8,12 @@ import com.merry.merryevents.engine.ChaosDirector;
 import com.merry.merryevents.engine.EventManager;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
+import com.mojang.brigadier.suggestion.Suggestions;
+import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
+import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -17,60 +21,77 @@ import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
+import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.HashSet;
 import java.util.List;
+import java.util.Locale;
 import java.util.Map;
+import java.util.Set;
+import java.util.concurrent.CompletableFuture;
 
 public final class MerryEventsCommand {
     private static final int DEFAULT_DURATION_SECONDS = 30;
+
+    private MerryEventsCommand() {
+    }
 
     public static void register(CommandDispatcher<ServerCommandSource> dispatcher) {
         dispatcher.register(CommandManager.literal("merry")
                 .requires(source -> source.hasPermissionLevel(2))
                 .then(CommandManager.literal("start")
                         .then(CommandManager.argument("eventId", IdentifierArgumentType.identifier())
-                                .suggests((ctx, builder) -> CommandSource.suggestIdentifiers(
-                                        EventManager.getInstance().getRegisteredEventIds(), builder))
+                                .suggests((ctx, builder) -> suggestEvents(builder,
+                                        EventManager.getInstance().getRegisteredEventIds()))
                                 .executes(ctx -> {
-                                    Identifier eventId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
-                                    // -1 сигнализирует о необходимости использовать динамический расчет ивента
-                                    return executeStart(ctx.getSource(), eventId, -1, null);
+                                    Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
+                                    return executeStart(ctx.getSource(), resolveEventId(rawId), -1, null);
                                 })
                                 .then(CommandManager.argument("durationSeconds", IntegerArgumentType.integer(1, 3600))
                                         .executes(ctx -> {
-                                            Identifier eventId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
+                                            Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
                                             int seconds = IntegerArgumentType.getInteger(ctx, "durationSeconds");
-                                            return executeStart(ctx.getSource(), eventId, seconds, null);
+                                            return executeStart(ctx.getSource(), resolveEventId(rawId), seconds, null);
                                         })
                                         .then(CommandManager.argument("target", EntityArgumentType.player())
                                                 .executes(ctx -> {
-                                                    Identifier eventId = IdentifierArgumentType.getIdentifier(ctx,
+                                                    Identifier rawId = IdentifierArgumentType.getIdentifier(ctx,
                                                             "eventId");
                                                     int seconds = IntegerArgumentType.getInteger(ctx,
                                                             "durationSeconds");
                                                     ServerPlayerEntity player = EntityArgumentType.getPlayer(ctx,
                                                             "target");
-                                                    return executeStart(ctx.getSource(), eventId, seconds, player);
+                                                    return executeStart(ctx.getSource(), resolveEventId(rawId), seconds,
+                                                            player);
                                                 })))))
                 .then(CommandManager.literal("stop")
                         .then(CommandManager.argument("eventId", IdentifierArgumentType.identifier())
-                                .suggests((ctx, builder) -> CommandSource.suggestIdentifiers(
-                                        EventManager.getInstance().getActiveGlobalEventIds(), builder))
-                                .executes(ctx -> {
-                                    Identifier eventId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
-                                    ServerCommandSource source = ctx.getSource();
-
-                                    EventManager.getInstance().stopGlobalEvent(source.getServer(), eventId);
-                                    if (source.isExecutedByPlayer()) {
-                                        EventManager.getInstance().stopPlayerEvent(source.getServer(),
-                                                source.getPlayerOrThrow(), eventId);
+                                .suggests((ctx, builder) -> {
+                                    Set<Identifier> active = new HashSet<>(
+                                            EventManager.getInstance().getActiveGlobalEventIds());
+                                    if (ctx.getSource().isExecutedByPlayer()) {
+                                        ServerPlayerEntity player = ctx.getSource().getPlayer();
+                                        if (player != null) {
+                                            var playerMap = EventManager.getInstance().getActivePlayerEvents()
+                                                    .get(player.getUuid());
+                                            if (playerMap != null) {
+                                                active.addAll(playerMap.keySet());
+                                            }
+                                        }
                                     }
-                                    source.sendMessage(
-                                            Text.translatable("command.merryevents.stop.success", eventId.toString())
-                                                    .formatted(Formatting.YELLOW));
-                                    return 1;
-                                })))
+                                    return suggestEvents(builder, active);
+                                })
+                                .executes(ctx -> {
+                                    Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
+                                    return executeStop(ctx.getSource(), resolveEventId(rawId), null);
+                                })
+                                .then(CommandManager.argument("target", EntityArgumentType.player())
+                                        .executes(ctx -> {
+                                            Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
+                                            ServerPlayerEntity target = EntityArgumentType.getPlayer(ctx, "target");
+                                            return executeStop(ctx.getSource(), resolveEventId(rawId), target);
+                                        }))))
                 .then(CommandManager.literal("status")
                         .executes(ctx -> executeStatus(ctx.getSource())))
                 .then(CommandManager.literal("director")
@@ -139,6 +160,79 @@ public final class MerryEventsCommand {
                                     .formatted(Formatting.GREEN));
                             return 1;
                         })));
+    }
+
+    private static CompletableFuture<Suggestions> suggestEvents(SuggestionsBuilder builder,
+            Iterable<Identifier> eventIds) {
+        String remaining = builder.getRemaining().toLowerCase(Locale.ROOT);
+        boolean explicitNamespace = remaining.contains(":") || remaining.startsWith(MerryEvents.MOD_ID);
+
+        List<String> candidates = new ArrayList<>();
+        for (Identifier id : eventIds) {
+            if (explicitNamespace) {
+                candidates.add(id.toString());
+            } else {
+                candidates.add(id.getPath());
+            }
+        }
+        return CommandSource.suggestMatching(candidates, builder);
+    }
+
+    private static Identifier resolveEventId(Identifier rawId) {
+        if (Identifier.DEFAULT_NAMESPACE.equals(rawId.getNamespace())) {
+            Identifier namespacedId = MerryEvents.id(rawId.getPath());
+            if (EventManager.getInstance().getEvent(namespacedId) != null
+                    || EventManager.getInstance().getEvent(rawId) == null) {
+                return namespacedId;
+            }
+        }
+        return rawId;
+    }
+
+    private static int executeStop(ServerCommandSource source, Identifier eventId,
+            @Nullable ServerPlayerEntity explicitTarget) {
+        MinecraftServer server = source.getServer();
+        EventManager manager = EventManager.getInstance();
+        ChaosEvent event = manager.getEvent(eventId);
+
+        if (event == null) {
+            source.sendError(Text.translatable("command.merryevents.start.error.unknown", eventId.toString()));
+            return 0;
+        }
+
+        Text eventDisplayName = event.getDisplayName();
+
+        if (explicitTarget != null) {
+            boolean stopped = manager.stopPlayerEvent(server, explicitTarget, eventId);
+            if (stopped) {
+                source.sendMessage(Text.translatable("command.merryevents.stop.success.player", eventDisplayName,
+                        explicitTarget.getName().getString()).formatted(Formatting.YELLOW));
+                return 1;
+            } else {
+                source.sendError(Text.translatable("command.merryevents.stop.error.not_active_player",
+                        eventDisplayName, explicitTarget.getName().getString()));
+                return 0;
+            }
+        }
+
+        boolean stoppedGlobal = manager.stopGlobalEvent(server, eventId);
+        boolean stoppedPlayer = false;
+
+        if (source.isExecutedByPlayer()) {
+            ServerPlayerEntity player = source.getPlayer();
+            if (player != null) {
+                stoppedPlayer = manager.stopPlayerEvent(server, player, eventId);
+            }
+        }
+
+        if (stoppedGlobal || stoppedPlayer) {
+            source.sendMessage(Text.translatable("command.merryevents.stop.success", eventDisplayName)
+                    .formatted(Formatting.YELLOW));
+            return 1;
+        } else {
+            source.sendError(Text.translatable("command.merryevents.stop.error.not_active", eventDisplayName));
+            return 0;
+        }
     }
 
     private static int executeStatus(ServerCommandSource source) {
@@ -216,15 +310,13 @@ public final class MerryEventsCommand {
     }
 
     private static int executeStart(ServerCommandSource source, Identifier eventId, int seconds,
-                                    ServerPlayerEntity explicitTarget) {
+            ServerPlayerEntity explicitTarget) {
         ChaosEvent event = EventManager.getInstance().getEvent(eventId);
         if (event == null) {
             source.sendError(Text.translatable("command.merryevents.start.error.unknown", eventId.toString()));
             return 0;
         }
 
-        // Если секунды не были указаны явно пользователем (значение <= 0):
-        // Проверяем, есть ли у ивента собственный динамический расчет тиков
         int durationTicks;
         if (seconds <= 0) {
             int customTicks = event.getCustomDurationTicks(source.getServer());
@@ -239,8 +331,8 @@ public final class MerryEventsCommand {
             boolean started = EventManager.getInstance().startGlobalEvent(source.getServer(), eventId, durationTicks);
             if (started) {
                 source.sendMessage(
-                        Text.translatable("command.merryevents.start.success.global", event.getDisplayName(), finalDurationSeconds)
-                                .formatted(Formatting.GREEN));
+                        Text.translatable("command.merryevents.start.success.global", event.getDisplayName(),
+                                finalDurationSeconds).formatted(Formatting.GREEN));
                 return 1;
             } else {
                 source.sendError(Text.translatable("command.merryevents.start.error.category_global",

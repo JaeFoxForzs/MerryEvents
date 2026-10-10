@@ -6,7 +6,6 @@ import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.network.OrbitalStrikeSpawnPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
-import net.minecraft.particle.DustParticleEffect;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -19,8 +18,6 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
-import org.joml.Vector3f;
-
 import java.util.ArrayList;
 import java.util.List;
 

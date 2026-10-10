@@ -1,0 +1,244 @@
+import java.util.regex.Pattern
+
+tasks.register("validateAndFormatLocalization") {
+	group = "verification"
+	description = "Performs strict localization validation and groups JSON entries with deterministic formatting."
+
+	def langDir = layout.projectDirectory.dir("src/main/resources/assets/merryevents/lang")
+	def sourceDirs = [
+		layout.projectDirectory.dir("src/main/java"),
+		layout.projectDirectory.dir("src/client/java")
+	]
+
+	inputs.dir(langDir)
+	sourceDirs.each { inputs.dir(it) }
+	outputs.dir(langDir)
+
+	doLast {
+		final String cReset = "\u001B[0m"
+		final String cRed = "\u001B[1;31m"
+		final String cYellow = "\u001B[1;33m"
+		final String cCyan = "\u001B[1;36m"
+		final String cWhite = "\u001B[37m"
+		final String cGray = "\u001B[90m"
+
+		def langFiles = langDir.asFile.listFiles({ file -> file.name.endsWith(".json") } as FileFilter)
+		if (langFiles == null || langFiles.length == 0) {
+			logger.warn("[validateAndFormatLocalization] No localization assets found in {}", langDir.asFile.path)
+			return
+		}
+
+		def keyPattern = Pattern.compile('^\\s*"((?:[^"\\\\]|\\\\.)+)"\\s*:\\s*"((?:[^"\\\\]|\\\\.)*)"')
+
+		Map<String, Map<String, String>> localeMaps = [:]
+		Map<String, List<String>> localeDuplicates = [:]
+
+		langFiles.each { File file ->
+			def localeName = file.name
+			def lines = file.readLines("UTF-8")
+			def orderedMap = new LinkedHashMap<String, String>()
+			def duplicates = []
+
+			lines.each { line ->
+				def matcher = keyPattern.matcher(line)
+				if (matcher.find()) {
+					def k = matcher.group(1)
+					def v = matcher.group(2)
+					if (orderedMap.containsKey(k)) {
+						duplicates.add(k)
+					} else {
+						orderedMap.put(k, v)
+					}
+				}
+			}
+
+			if (!duplicates.isEmpty()) {
+				localeDuplicates.put(localeName, duplicates)
+			}
+			localeMaps.put(localeName, orderedMap)
+		}
+
+		def referenceLocale = "en_us.json"
+		def referenceMap = localeMaps.get(referenceLocale)
+		if (referenceMap == null) {
+			throw new GradleException("${cRed}Reference localization file '${referenceLocale}' not found!${cReset}")
+		}
+
+		Map<String, List<String>> missingInOtherLocales = [:]
+		Map<String, List<String>> extraInOtherLocales = [:]
+
+		localeMaps.each { locale, keys ->
+			if (locale != referenceLocale) {
+				def missing = (referenceMap.keySet() - keys.keySet()) as List<String>
+				if (!missing.isEmpty()) {
+					missingInOtherLocales.put(locale, missing.sort())
+				}
+
+				def extra = (keys.keySet() - referenceMap.keySet()) as List<String>
+				if (!extra.isEmpty()) {
+					extraInOtherLocales.put(locale, extra.sort())
+				}
+			}
+		}
+
+		Set<String> codeLiterals = new HashSet<>()
+		def literalPattern = Pattern.compile('"([^"\\\\]*(?:\\\\.[^"\\\\]*)*)"')
+
+		sourceDirs.each { dir ->
+			if (dir.asFile.exists()) {
+				dir.asFile.eachFileRecurse(groovy.io.FileType.FILES) { File f ->
+					if (f.name.endsWith(".java")) {
+						def content = f.getText("UTF-8")
+						def m = literalPattern.matcher(content)
+						while (m.find()) {
+							codeLiterals.add(m.group(1))
+						}
+					}
+				}
+			}
+		}
+
+		Map<String, List<String>> deadKeysByLocale = [:]
+		localeMaps.each { locale, keys ->
+			List<String> dead = []
+			keys.keySet().each { key ->
+				boolean referenced = false
+
+				if (codeLiterals.contains(key)) {
+					referenced = true
+				} else {
+					def parts = key.tokenize('.')
+					if (parts.size() == 3) {
+						if (parts[0] == "category" && parts[1] == "merryevents") {
+							referenced = codeLiterals.contains(parts[2]) || codeLiterals.contains(parts[2].toUpperCase())
+						} else if (parts[0] == "event" && parts[1] == "merryevents") {
+							referenced = codeLiterals.contains(parts[2])
+						}
+					}
+				}
+
+				if (!referenced) {
+					dead.add(key)
+				}
+			}
+
+			if (!dead.isEmpty()) {
+				deadKeysByLocale.put(locale, dead.sort())
+			}
+		}
+
+		def translatablePattern = Pattern.compile('Text\\.translatable\\(\\s*"([^"]+)"')
+		Set<String> missingCodeKeys = new HashSet<>()
+		sourceDirs.each { dir ->
+			if (dir.asFile.exists()) {
+				dir.asFile.eachFileRecurse(groovy.io.FileType.FILES) { File f ->
+					if (f.name.endsWith(".java")) {
+						def content = f.getText("UTF-8")
+						def m = translatablePattern.matcher(content)
+						while (m.find()) {
+							def transKey = m.group(1)
+							if (!referenceMap.containsKey(transKey) && !transKey.startsWith("gui.")) {
+								missingCodeKeys.add(transKey)
+							}
+						}
+					}
+				}
+			}
+		}
+		def sortedMissingCodeKeys = missingCodeKeys.sort()
+
+		langFiles.each { File file ->
+			def entries = localeMaps.get(file.name)
+			if (entries == null) return
+
+			def sortedKeys = new ArrayList<>(entries.keySet())
+			sortedKeys.sort { a, b -> a.compareTo(b) }
+
+			def sb = new StringBuilder()
+			sb.append("{\n")
+
+			String previousGroup = null
+			for (int i = 0; i < sortedKeys.size(); i++) {
+				def k = sortedKeys.get(i)
+				def v = entries.get(k)
+				def currentGroup = k.contains('.') ? k.substring(0, k.indexOf('.')) : ""
+
+				if (previousGroup != null && previousGroup != currentGroup) {
+					sb.append("\n")
+				}
+				previousGroup = currentGroup
+
+				sb.append("  \"").append(k).append("\": \"").append(v).append("\"")
+				if (i < sortedKeys.size() - 1) {
+					sb.append(",")
+				}
+				sb.append("\n")
+			}
+			sb.append("}\n")
+
+			def formatted = sb.toString()
+			if (file.getText("UTF-8") != formatted) {
+				file.write(formatted, "UTF-8")
+				logger.lifecycle("[validateAndFormatLocalization] Formatted and grouped {}", file.name)
+			}
+		}
+
+		boolean hasViolations = !localeDuplicates.isEmpty() ||
+								!missingInOtherLocales.isEmpty() ||
+								!extraInOtherLocales.isEmpty() ||
+								!deadKeysByLocale.isEmpty() ||
+								!sortedMissingCodeKeys.isEmpty()
+
+		if (hasViolations) {
+			def sb = new StringBuilder()
+			sb.append("\n").append(cRed).append("Validate Localization Failed:").append(cReset).append("\n")
+
+			if (!localeDuplicates.isEmpty()) {
+				sb.append("\n  ").append(cYellow).append("Duplicate Keys:").append(cReset).append("\n")
+				localeDuplicates.each { locale, dups ->
+					sb.append("    ").append(cCyan).append(locale).append(cReset).append(":\n")
+					dups.unique().each { sb.append("      ").append(cGray).append("- ").append(cWhite).append(it).append(cReset).append("\n") }
+				}
+			}
+
+			if (!missingInOtherLocales.isEmpty()) {
+				sb.append("\n  ").append(cYellow).append("Missing Keys in Locales (Present in ").append(referenceLocale).append("):").append(cReset).append("\n")
+				missingInOtherLocales.each { locale, missing ->
+					sb.append("    ").append(cCyan).append(locale).append(cGray).append(" (").append(missing.size()).append(" missing)").append(cReset).append(":\n")
+					missing.each { sb.append("      ").append(cGray).append("- ").append(cWhite).append(it).append(cReset).append("\n") }
+				}
+			}
+
+			if (!extraInOtherLocales.isEmpty()) {
+				sb.append("\n  ").append(cYellow).append("Extra Keys in Locales (Missing from ").append(referenceLocale).append("):").append(cReset).append("\n")
+				extraInOtherLocales.each { locale, extra ->
+					sb.append("    ").append(cCyan).append(locale).append(cGray).append(" (").append(extra.size()).append(" extra)").append(cReset).append(":\n")
+					extra.each { sb.append("      ").append(cGray).append("- ").append(cWhite).append(it).append(cReset).append("\n") }
+				}
+			}
+
+			if (!deadKeysByLocale.isEmpty()) {
+				sb.append("\n  ").append(cYellow).append("Dead / Unused Keys (Not referenced in code):").append(cReset).append("\n")
+				deadKeysByLocale.each { locale, dead ->
+					sb.append("    ").append(cCyan).append(locale).append(cGray).append(" (").append(dead.size()).append(" dead)").append(cReset).append(":\n")
+					dead.each { sb.append("      ").append(cGray).append("- ").append(cWhite).append(it).append(cReset).append("\n") }
+				}
+			}
+
+			if (!sortedMissingCodeKeys.isEmpty()) {
+				sb.append("\n  ").append(cYellow).append("Missing Translations in Code (Referenced in Text.translatable):").append(cReset).append("\n")
+				sortedMissingCodeKeys.each { sb.append("    ").append(cGray).append("- ").append(cWhite).append(it).append(cReset).append("\n") }
+			}
+
+			throw new GradleException(sb.toString())
+		}
+	}
+}
+
+tasks.named("processResources") {
+	dependsOn("validateAndFormatLocalization")
+}
+
+tasks.named("check") {
+	dependsOn("validateAndFormatLocalization")
+}
