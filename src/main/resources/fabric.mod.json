@@ -1,38 +1,31 @@
 {
-	"schemaVersion": 1,
-	"id": "merryevents",
-	"version": "${version}",
-	"name": "MerryEvents",
-	"description": "This is an example description! Tell everyone what your mod is about!",
-	"authors": [
-		"Me!"
-	],
-	"contact": {
-		"homepage": "https://fabricmc.net/",
-		"sources": "https://github.com/FabricMC/fabric-example-mod"
-	},
-	"license": "CC0-1.0",
-	"icon": "assets/merryevents/icon.png",
-	"environment": "*",
-	"entrypoints": {
-		"main": [
-			"com.merry.merryevents.MerryEvents"
-		],
-		"client": [
-			"com.merry.merryevents.client.MerryEventsClient"
-		]
-	},
-	"mixins": [
-		"merryevents.mixins.json",
-		{
-			"config": "merryevents.client.mixins.json",
-			"environment": "client"
-		}
-	],
-	"depends": {
-		"fabricloader": ">=0.19.5",
-		"minecraft": "~1.21.1",
-		"java": ">=21",
-		"fabric-api": "*"
-	}
+  "schemaVersion": 1,
+  "id": "merryevents",
+  "version": "${version}",
+  "name": "MerryEvents",
+  "description": "Dynamic, high-performance chaotic event system for Minecraft 1.21.1.",
+  "authors": ["Merry Team"],
+  "contact": {
+    "sources": "https://github.com/your-username/MerryEvents"
+  },
+  "license": "CC0-1.0",
+  "icon": "assets/merryevents/icon.png",
+  "environment": "*",
+  "entrypoints": {
+    "main": ["com.merry.merryevents.MerryEvents"],
+    "client": ["com.merry.merryevents.client.MerryEventsClient"]
+  },
+  "mixins": [
+    "merryevents.mixins.json",
+    {
+      "config": "merryevents.client.mixins.json",
+      "environment": "client"
+    }
+  ],
+  "depends": {
+    "fabricloader": ">=0.19.5",
+    "minecraft": "~1.21.1",
+    "java": ">=21",
+    "fabric-api": "*"
+  }
 }

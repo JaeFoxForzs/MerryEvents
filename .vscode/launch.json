@@ -1,0 +1,27 @@
+{
+  "version": "0.2.0",
+  "configurations": [
+    {
+      "type": "java",
+      "name": "Minecraft Client",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
+      "projectName": "merryevents"
+    },
+    {
+      "type": "java",
+      "name": "Minecraft Server",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=server -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotServer",
+      "projectName": "merryevents"
+    }
+  ]
+}

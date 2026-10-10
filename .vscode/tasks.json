@@ -1,0 +1,28 @@
+{
+  "version": "2.0.0",
+  "tasks": [
+    {
+      "label": "Generate Sources (genSources)",
+      "type": "shell",
+      "command": "./gradlew genSources",
+      "windows": {
+        "command": ".\\gradlew.bat genSources"
+      },
+      "group": "build",
+      "problemMatcher": []
+    },
+    {
+      "label": "Build Mod JAR",
+      "type": "shell",
+      "command": "./gradlew build",
+      "windows": {
+        "command": ".\\gradlew.bat build"
+      },
+      "group": {
+        "kind": "build",
+        "isDefault": true
+      },
+      "problemMatcher": "$gradle"
+    }
+  ]
+}
