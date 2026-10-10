@@ -104,6 +104,9 @@ public final class ConfigManager {
             case "personal_killer" -> EventConfigEntry.ofDefault(60, 240);
             case "anvil_rain" -> EventConfigEntry.ofDefault(60, 180);
             case "dense_darkness" -> EventConfigEntry.ofDefault(60, 180);
+            case "rust_rain" -> EventConfigEntry.ofDefault(180, 600);
+            case "food_rain" -> EventConfigEntry.ofDefault(120, 300);
+            case "fire_storm" -> EventConfigEntry.ofDefault(60, 240);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

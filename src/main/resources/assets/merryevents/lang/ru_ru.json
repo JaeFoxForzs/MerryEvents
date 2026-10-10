@@ -21,6 +21,9 @@
   "event.merryevents.personal_killer.mob_name_target": "Личный киллер ➔ %s",
   "event.merryevents.anvil_rain": "Дождь из наковален",
   "event.merryevents.dense_darkness": "Густая тьма",
+  "event.merryevents.rust_rain": "Ржавый дождь",
+  "event.merryevents.food_rain": "Дождь из еды",
+  "event.merryevents.fire_storm": "Огненный шторм",
 
   "command.merryevents.start.success.global": "Запущено глобальное событие: %s (%sс)",
   "command.merryevents.start.success.player": "Запущено событие %s для %s (%sс)",
