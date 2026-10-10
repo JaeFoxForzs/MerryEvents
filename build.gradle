@@ -20,6 +20,46 @@ loom {
 			sourceSet sourceSets.client
 		}
 	}
+
+	runs {
+		client {
+			client()
+			configName = "Minecraft Client 1"
+			ideConfigGenerated = true
+			runDir = "run"
+			programArgs "--username", "DevPlayer1"
+		}
+		client2 {
+			client()
+			configName = "Minecraft Client 2"
+			ideConfigGenerated = true
+			runDir = "run-client2"
+			programArgs "--username", "DevPlayer2"
+		}
+		server {
+			server()
+			configName = "Minecraft Server"
+			ideConfigGenerated = true
+			runDir = "run-server"
+			programArgs "nogui"
+		}
+	}
+}
+
+tasks.register("acceptEula") {
+	def eulaFile = layout.projectDirectory.file("run-server/eula.txt").asFile
+	outputs.file(eulaFile)
+
+	doLast {
+		if (!eulaFile.exists()) {
+			eulaFile.parentFile.mkdirs()
+			eulaFile.text = "eula=true\n"
+		}
+	}
+}
+
+tasks.named("runServer") {
+	dependsOn("acceptEula")
 }
 
 dependencies {

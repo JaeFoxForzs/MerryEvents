@@ -2,27 +2,50 @@
   "version": "2.0.0",
   "tasks": [
     {
-      "label": "Generate Sources (genSources)",
+      "label": "Run: Client 1",
       "type": "shell",
-      "command": "./gradlew genSources",
+      "command": "./gradlew runClient",
       "windows": {
-        "command": ".\\gradlew.bat genSources"
+        "command": ".\\gradlew.bat runClient"
       },
-      "group": "build",
       "problemMatcher": []
     },
     {
-      "label": "Build Mod JAR",
+      "label": "Run: Client 2",
       "type": "shell",
-      "command": "./gradlew build",
+      "command": "./gradlew runClient2",
       "windows": {
-        "command": ".\\gradlew.bat build"
+        "command": ".\\gradlew.bat runClient2"
       },
-      "group": {
-        "kind": "build",
-        "isDefault": true
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Server",
+      "type": "shell",
+      "command": "./gradlew runServer",
+      "windows": {
+        "command": ".\\gradlew.bat runServer"
       },
-      "problemMatcher": "$gradle"
+      "problemMatcher": []
+    },
+    {
+      "label": "⚡ Run: Server + Client",
+      "dependsOn": [
+        "Run: Server",
+        "Run: Client 1"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
+    },
+    {
+      "label": "⚡ Run: Server + 2 Clients",
+      "dependsOn": [
+        "Run: Server",
+        "Run: Client 1",
+        "Run: Client 2"
+      ],
+      "dependsOrder": "parallel",
+      "problemMatcher": []
     }
   ]
 }
