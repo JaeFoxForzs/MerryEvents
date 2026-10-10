@@ -13,6 +13,16 @@ public interface ChaosEvent {
 
     boolean isGlobal();
 
+    /**
+     * Позволяет ивенту динамически рассчитать свою длительность в тиках
+     * на основе состояния мира (время суток, погода и т.д.).
+     *
+     * @return Длительность в тиках, либо -1, если следует использовать значения из конфига.
+     */
+    default int getCustomDurationTicks(MinecraftServer server) {
+        return -1;
+    }
+
     void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context);
 
     void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context, int remainingTicks);

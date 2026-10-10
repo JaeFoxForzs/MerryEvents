@@ -32,19 +32,16 @@ public final class StiffNeckEvent implements ChaosEvent {
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         if (targetPlayer != null) {
-
-
             targetPlayer.getServerWorld().playSound(
-                null,
-                targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(),
-                SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 0.7F, 1.25F
+                    null,
+                    targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(),
+                    SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 0.7F, 1.25F
             );
             targetPlayer.getServerWorld().playSound(
                     null,
                     targetPlayer.getX(), targetPlayer.getY(), targetPlayer.getZ(),
                     SoundEvents.ENTITY_ITEM_BREAK, SoundCategory.PLAYERS, 1.0F, 0.75F
             );
-
 
             MerryEvents.LOGGER.info("[StiffNeckEvent] Stiff neck effect started for {}", targetPlayer.getName().getString());
         }

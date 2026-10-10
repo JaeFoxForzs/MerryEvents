@@ -8,6 +8,7 @@ import com.merry.merryevents.engine.EventPersistentState;
 import com.merry.merryevents.event.inventory.DiamondRushEvent;
 import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
 import com.merry.merryevents.network.EventSyncPayload;
+import com.merry.merryevents.network.OrbitalStrikeSpawnPayload;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
 import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
@@ -48,6 +49,7 @@ public class MerryEvents implements ModInitializer {
 
         ConfigManager.load();
         PayloadTypeRegistry.playS2C().register(EventSyncPayload.ID, EventSyncPayload.CODEC);
+        PayloadTypeRegistry.playS2C().register(OrbitalStrikeSpawnPayload.ID, OrbitalStrikeSpawnPayload.CODEC);
 
         ServerWorldEvents.LOAD.register((server, world) -> {
             if (world.getRegistryKey() == World.OVERWORLD) {

@@ -62,10 +62,19 @@ public final class EventManager {
         register(new FoodRainEvent());
         register(new FireStormEvent());
         register(new StiffNeckEvent());
+        register(new SolarVerdictEvent());
+        register(new OrbitalStrikeEvent());
     }
 
     public static EventManager getInstance() {
         return INSTANCE;
+    }
+
+    public void setGlobalRemainingTicks(Identifier eventId, int ticks) {
+        ActiveEventInstance instance = activeGlobalEvents.get(eventId);
+        if (instance != null) {
+            instance.remainingTicks = ticks;
+        }
     }
 
     public void register(ChaosEvent event) {

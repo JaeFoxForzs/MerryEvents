@@ -26,6 +26,8 @@
   "event.merryevents.rust_rain": "Ржавый дождь",
   "event.merryevents.food_rain": "Дождь из еды",
   "event.merryevents.fire_storm": "Огненный шторм",
+  "event.merryevents.solar_verdict": "Солнечный приговор",
+  "event.merryevents.orbital_strike": "Орбитальный обстрел",
 
   "command.merryevents.start.success.global": "Запущено глобальное событие: %s (%sс)",
   "command.merryevents.start.success.player": "Запущено событие %s для %s (%sс)",

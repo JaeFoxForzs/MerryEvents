@@ -102,9 +102,15 @@ public final class ChaosDirector {
                 continue;
             }
 
-            int minSec = entry != null ? entry.minDurationSeconds() : 30;
-            int maxSec = entry != null ? entry.maxDurationSeconds() : 60;
-            int durationTicks = (minSec + random.nextInt(Math.max(1, maxSec - minSec + 1))) * 20;
+            int customTicks = event.getCustomDurationTicks(server);
+            int durationTicks;
+            if (customTicks > 0) {
+                durationTicks = customTicks;
+            } else {
+                int minSec = entry != null ? entry.minDurationSeconds() : 30;
+                int maxSec = entry != null ? entry.maxDurationSeconds() : 60;
+                durationTicks = (minSec + random.nextInt(Math.max(1, maxSec - minSec + 1))) * 20;
+            }
 
             if (event.isGlobal()) {
                 boolean started = EventManager.getInstance().startGlobalEvent(server, candidateId, durationTicks);

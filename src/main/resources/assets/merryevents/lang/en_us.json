@@ -27,6 +27,8 @@
   "event.merryevents.rust_rain": "Rust Rain",
   "event.merryevents.food_rain": "Food Rain",
   "event.merryevents.fire_storm": "Fire Storm",
+  "event.merryevents.solar_verdict": "Solar Verdict",
+  "event.merryevents.orbital_strike": "Orbital Strike",
 
   "command.merryevents.start.success.global": "Started global event: %s (%ss)",
   "command.merryevents.start.success.player": "Started event %s for %s (%ss)",

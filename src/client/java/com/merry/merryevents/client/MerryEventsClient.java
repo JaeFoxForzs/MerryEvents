@@ -2,8 +2,11 @@ package com.merry.merryevents.client;
 
 import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.client.effect.GhostGuiVisualEffect;
+import com.merry.merryevents.client.effect.OrbitalStrikeClientEffect;
 import com.merry.merryevents.client.effect.StiffNeckClientEffect;
+import com.merry.merryevents.client.render.OrbitalBeamRenderer;
 import com.merry.merryevents.network.EventSyncPayload;
+import com.merry.merryevents.network.OrbitalStrikeSpawnPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -15,8 +18,7 @@ public class MerryEventsClient implements ClientModInitializer {
 
         ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());
         ClientEventManager.registerEffect(MerryEvents.id("stiff_neck"), new StiffNeckClientEffect());
-
-        ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("orbital_strike"), new OrbitalStrikeClientEffect());
 
         ClientEventManager.registerEffect(com.merry.merryevents.event.world.LavaWaterSwapEvent.ID,
                 new com.merry.merryevents.client.api.ClientChaosEffect() {
@@ -37,6 +39,16 @@ public class MerryEventsClient implements ClientModInitializer {
                         payload.active(), payload.durationTicks());
                 ClientEventManager.handleEventSync(context.client(), payload.eventId(), payload.durationTicks(),
                         payload.active());
+            });
+        });
+
+        // Инициализация рендерера шейдерного луча
+        OrbitalBeamRenderer.init();
+
+        // Получение координат удара от сервера
+        ClientPlayNetworking.registerGlobalReceiver(OrbitalStrikeSpawnPayload.ID, (payload, context) -> {
+            context.client().execute(() -> {
+                OrbitalBeamRenderer.addBeam(payload.pos(), payload.warmupTicks());
             });
         });
 
