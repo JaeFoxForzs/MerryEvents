@@ -46,6 +46,24 @@ public final class ClientEventManager {
         return false;
     }
 
+    public static boolean isYawLocked() {
+        for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
+            if (effect.isYawLocked()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
+    public static boolean isPitchLocked() {
+        for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
+            if (effect.isPitchLocked()) {
+                return true;
+            }
+        }
+        return false;
+    }
+
     public static void reset(MinecraftClient client) {
         for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
             effect.onStop(client);

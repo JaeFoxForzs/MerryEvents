@@ -104,6 +104,7 @@ public final class ConfigManager {
             case "personal_killer" -> EventConfigEntry.ofDefault(60, 240);
             case "anvil_rain" -> EventConfigEntry.ofDefault(60, 180);
             case "dense_darkness" -> EventConfigEntry.ofDefault(60, 180);
+            case "stiff_neck" -> EventConfigEntry.ofDefault(60, 240);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

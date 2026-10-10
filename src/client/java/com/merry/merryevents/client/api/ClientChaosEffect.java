@@ -13,4 +13,12 @@ public interface ClientChaosEffect {
     default boolean shouldHideHud() {
         return false;
     }
+
+    default boolean isYawLocked() {
+        return false;
+    }
+
+    default boolean isPitchLocked() {
+        return false;
+    }
 }

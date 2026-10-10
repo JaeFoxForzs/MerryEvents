@@ -14,7 +14,8 @@ public enum EventCategory {
     STATUS("status"),
     INVENTORY("inventory"),
     VISUAL("visual"),
-    SOUNDS("sounds");
+    SOUNDS("sounds"),
+    CAMERA("camera");
 
     private final String id;
     private final int mask;

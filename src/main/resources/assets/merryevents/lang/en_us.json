@@ -7,6 +7,7 @@
   "category.merryevents.inventory": "Inventory",
   "category.merryevents.visual": "Visual",
   "category.merryevents.sounds": "Sounds",
+  "category.merryevents.camera": "Camera",
 
   "event.merryevents.acid_rain": "Acid Rain",
   "event.merryevents.moon_gravity": "Moon Gravity",
@@ -21,6 +22,7 @@
   "event.merryevents.personal_killer.mob_name_target": "Personal Killer ➔ %s",
   "event.merryevents.anvil_rain": "Anvil Rain",
   "event.merryevents.dense_darkness": "Dense Darkness",
+  "event.merryevents.stiff_neck": "Stiff Neck",
 
   "command.merryevents.start.success.global": "Started global event: %s (%ss)",
   "command.merryevents.start.success.player": "Started event %s for %s (%ss)",

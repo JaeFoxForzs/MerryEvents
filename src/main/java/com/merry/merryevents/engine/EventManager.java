@@ -5,6 +5,7 @@ import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.config.ConfigManager;
+import com.merry.merryevents.event.camera.StiffNeckEvent;
 import com.merry.merryevents.event.inventory.DiamondRushEvent;
 import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
 import com.merry.merryevents.event.mobs.PersonalKillerEvent;
@@ -59,6 +60,7 @@ public final class EventManager {
         register(new PersonalKillerEvent());
         register(new AnvilRainEvent());
         register(new DenseDarknessEvent());
+        register(new StiffNeckEvent());
     }
 
     public static EventManager getInstance() {

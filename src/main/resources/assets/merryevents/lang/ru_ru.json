@@ -7,6 +7,7 @@
   "category.merryevents.inventory": "Вещи и Крафты",
   "category.merryevents.visual": "Визуал и Интерфейс",
   "category.merryevents.sounds": "Звуки",
+  "category.merryevents.camera": "Камера",
 
   "event.merryevents.acid_rain": "Кислотный дождь",
   "event.merryevents.moon_gravity": "Лунная гравитация",
@@ -21,6 +22,7 @@
   "event.merryevents.personal_killer.mob_name_target": "Личный киллер ➔ %s",
   "event.merryevents.anvil_rain": "Дождь из наковален",
   "event.merryevents.dense_darkness": "Густая тьма",
+  "event.merryevents.stiff_neck": "Заклинившая шея",
 
   "command.merryevents.start.success.global": "Запущено глобальное событие: %s (%sс)",
   "command.merryevents.start.success.player": "Запущено событие %s для %s (%sс)",

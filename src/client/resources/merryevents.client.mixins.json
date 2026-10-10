@@ -1,15 +1,18 @@
 {
-	"required": true,
-	"package": "com.merry.merryevents.client.mixin",
-	"compatibilityLevel": "JAVA_21",
-	"client": [
-		"GameRendererAccessor",
-		"InGameHudMixin"
-	],
-	"injectors": {
-		"defaultRequire": 1
-	},
-	"overwrites": {
-		"requireAnnotations": true
-	}
+  "required": true,
+  "package": "com.merry.merryevents.client.mixin",
+  "compatibilityLevel": "JAVA_21",
+  "client": [
+    "GameRendererAccessor",
+    "InGameHudMixin"
+  ],
+  "injectors": {
+    "defaultRequire": 1
+  },
+  "overwrites": {
+    "requireAnnotations": true
+  },
+  "mixins": [
+    "CameraEntityMixin"
+  ]
 }
