@@ -2,6 +2,7 @@ package com.merry.merryevents.api;
 
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
+import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
@@ -19,5 +20,13 @@ public interface ChaosEvent {
     void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context);
 
     default void onPlayerRespawn(MinecraftServer server, ServerPlayerEntity oldPlayer, ServerPlayerEntity newPlayer, EventContext context) {
+    }
+
+    default String getTranslationKey() {
+        return "event." + getId().getNamespace() + "." + getId().getPath();
+    }
+
+    default Text getDisplayName() {
+        return Text.translatable(getTranslationKey());
     }
 }

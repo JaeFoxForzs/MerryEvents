@@ -2,7 +2,9 @@ package com.merry.merryevents.engine;
 
 import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
+import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.config.ConfigManager;
 import com.merry.merryevents.event.inventory.DiamondRushEvent;
 import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
 import com.merry.merryevents.event.physics.MoonGravityEvent;
@@ -25,15 +27,17 @@ import java.util.Map;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
+/**
+ * Authoritative lifecycle and conflict resolution engine for chaos events.
+ * Enforces single source of truth (SSOT) state without independent redundant
+ * category bitmasks.
+ */
 public final class EventManager {
     private static final EventManager INSTANCE = new EventManager();
 
     private final Map<Identifier, ChaosEvent> registry = new ConcurrentHashMap<>();
     private final Map<Identifier, ActiveEventInstance> activeGlobalEvents = new ConcurrentHashMap<>();
     private final Map<UUID, Map<Identifier, ActiveEventInstance>> activePlayerEvents = new ConcurrentHashMap<>();
-
-    private int globalCategoryMask = 0;
-    private final Map<UUID, Integer> playerCategoryMasks = new ConcurrentHashMap<>();
 
     private final List<Identifier> globalRemovalQueue = new ArrayList<>();
     private final List<Identifier> playerRemovalQueue = new ArrayList<>();
@@ -82,7 +86,31 @@ public final class EventManager {
     }
 
     public int getGlobalCategoryMask() {
-        return globalCategoryMask;
+        int mask = 0;
+        for (ActiveEventInstance instance : activeGlobalEvents.values()) {
+            mask |= instance.event.getCategory().getMask();
+        }
+        return mask;
+    }
+
+    public int getPlayerCategoryMask(UUID uuid) {
+        Map<Identifier, ActiveEventInstance> map = activePlayerEvents.get(uuid);
+        if (map == null || map.isEmpty()) {
+            return 0;
+        }
+        int mask = 0;
+        for (ActiveEventInstance instance : map.values()) {
+            mask |= instance.event.getCategory().getMask();
+        }
+        return mask;
+    }
+
+    public boolean isCategoryOccupiedGlobally(EventCategory category) {
+        return (getGlobalCategoryMask() & category.getMask()) != 0;
+    }
+
+    public boolean isCategoryOccupiedForPlayer(UUID uuid, EventCategory category) {
+        return (getPlayerCategoryMask(uuid) & category.getMask()) != 0;
     }
 
     public boolean isGlobalEventActive(Identifier eventId) {
@@ -107,15 +135,15 @@ public final class EventManager {
 
     public void initPersistentState(MinecraftServer server, EventPersistentState state) {
         this.persistentState = state;
+        ConfigManager.syncRegisteredEvents(registry);
+
         activeGlobalEvents.clear();
-        globalCategoryMask = 0;
 
         for (Map.Entry<Identifier, EventPersistentState.SavedEventData> entry : state.globalEvents.entrySet()) {
             ChaosEvent event = registry.get(entry.getKey());
             if (event != null && event.isGlobal()) {
                 ActiveEventInstance instance = new ActiveEventInstance(event, entry.getValue().remainingTicks());
                 activeGlobalEvents.put(entry.getKey(), instance);
-                globalCategoryMask |= event.getCategory().getMask();
                 instance.event.onStartServer(server, null, instance.context);
                 MerryEvents.LOGGER.info("[EventManager] Resumed global event '{}' ({} ticks remaining)", entry.getKey(),
                         instance.remainingTicks);
@@ -123,27 +151,37 @@ public final class EventManager {
         }
 
         activePlayerEvents.clear();
-        playerCategoryMasks.clear();
 
         for (Map.Entry<UUID, Map<Identifier, EventPersistentState.SavedEventData>> pEntry : state.playerEvents
                 .entrySet()) {
             UUID uuid = pEntry.getKey();
             Map<Identifier, ActiveEventInstance> map = new ConcurrentHashMap<>();
-            int mask = 0;
 
             for (Map.Entry<Identifier, EventPersistentState.SavedEventData> eEntry : pEntry.getValue().entrySet()) {
                 ChaosEvent event = registry.get(eEntry.getKey());
                 if (event != null && !event.isGlobal()) {
                     ActiveEventInstance instance = new ActiveEventInstance(event, eEntry.getValue().remainingTicks());
                     map.put(eEntry.getKey(), instance);
-                    mask |= event.getCategory().getMask();
                 }
             }
 
             if (!map.isEmpty()) {
                 activePlayerEvents.put(uuid, map);
-                playerCategoryMasks.put(uuid, mask);
             }
+        }
+
+        ChaosDirector director = ChaosDirector.getInstance();
+        if (state.directorCountdown > 0) {
+            director.setCountdown(state.directorCountdown);
+        } else {
+            director.initializeCountdown();
+        }
+
+        if (!state.directorDeck.isEmpty()) {
+            director.getDeck().clear();
+            director.getDeck().addAll(state.directorDeck);
+        } else {
+            director.refillDeck();
         }
 
         state.markDirty();
@@ -156,15 +194,13 @@ public final class EventManager {
             return false;
         }
 
-        int mask = event.getCategory().getMask();
-        if ((globalCategoryMask & mask) != 0) {
+        if (isCategoryOccupiedGlobally(event.getCategory())) {
             MerryEvents.LOGGER.warn("[EventManager] Conflict: category {} already occupied globally",
                     event.getCategory());
             return false;
         }
 
         ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks);
-        globalCategoryMask |= mask;
         activeGlobalEvents.put(eventId, instance);
         event.onStartServer(server, null, instance.context);
 
@@ -190,17 +226,13 @@ public final class EventManager {
         }
 
         UUID uuid = player.getUuid();
-        int currentMask = playerCategoryMasks.getOrDefault(uuid, 0);
-        int categoryMask = event.getCategory().getMask();
-
-        if ((currentMask & categoryMask) != 0) {
+        if (isCategoryOccupiedForPlayer(uuid, event.getCategory())) {
             MerryEvents.LOGGER.warn("[EventManager] Conflict: category {} active for {}", event.getCategory(),
                     player.getName().getString());
             return false;
         }
 
         ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks);
-        playerCategoryMasks.put(uuid, currentMask | categoryMask);
         activePlayerEvents.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(eventId, instance);
         event.onStartServer(server, player, instance.context);
 
@@ -220,7 +252,6 @@ public final class EventManager {
     public void stopGlobalEvent(MinecraftServer server, Identifier eventId) {
         ActiveEventInstance instance = activeGlobalEvents.remove(eventId);
         if (instance != null) {
-            globalCategoryMask &= ~instance.event.getCategory().getMask();
             instance.event.onStopServer(server, null, instance.context);
             instance.context.discardTrackedEntities(server);
             instance.context.clear();
@@ -245,15 +276,12 @@ public final class EventManager {
         if (events != null) {
             ActiveEventInstance instance = events.remove(eventId);
             if (instance != null) {
-                int currentMask = playerCategoryMasks.getOrDefault(uuid, 0);
-                playerCategoryMasks.put(uuid, currentMask & ~instance.event.getCategory().getMask());
                 instance.event.onStopServer(server, player, instance.context);
                 instance.context.discardTrackedEntities(server);
                 instance.context.clear();
 
                 if (events.isEmpty()) {
                     activePlayerEvents.remove(uuid);
-                    playerCategoryMasks.remove(uuid);
                 }
 
                 if (persistentState != null) {
@@ -344,6 +372,8 @@ public final class EventManager {
     }
 
     public void tick(MinecraftServer server) {
+        ChaosDirector.getInstance().tick(server);
+
         globalRemovalQueue.clear();
         for (Map.Entry<Identifier, ActiveEventInstance> entry : activeGlobalEvents.entrySet()) {
             ActiveEventInstance instance = entry.getValue();
@@ -386,8 +416,8 @@ public final class EventManager {
     }
 
     public static final class ActiveEventInstance {
-        final ChaosEvent event;
-        final EventContext context;
+        private final ChaosEvent event;
+        private final EventContext context;
         int remainingTicks;
 
         ActiveEventInstance(ChaosEvent event, int remainingTicks) {
@@ -396,6 +426,29 @@ public final class EventManager {
             this.remainingTicks = remainingTicks;
         }
 
+        /**
+         * Resolves the underlying chaos event definition.
+         *
+         * @return ChaosEvent instance
+         */
+        public ChaosEvent getEvent() {
+            return event;
+        }
+
+        /**
+         * Resolves the isolated lifecycle context of this running instance.
+         *
+         * @return EventContext instance
+         */
+        public EventContext getContext() {
+            return context;
+        }
+
+        /**
+         * Resolves remaining lifetime in server ticks.
+         *
+         * @return Remaining ticks count
+         */
         public int getRemainingTicks() {
             return remainingTicks;
         }

@@ -3,18 +3,19 @@ package com.merry.merryevents.engine;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
+import net.minecraft.nbt.NbtString;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.PersistentState;
 
+import java.util.ArrayDeque;
+import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
 
 /**
- * World-level persistence layer for active chaos events.
- * Manages serialization and restoration of active global and player event
- * instances.
+ * World-level persistence layer for active chaos events and director scheduler.
  */
 public final class EventPersistentState extends PersistentState {
     public static final String KEY = "merryevents_state";
@@ -26,17 +27,12 @@ public final class EventPersistentState extends PersistentState {
 
     final Map<Identifier, SavedEventData> globalEvents = new HashMap<>();
     final Map<UUID, Map<Identifier, SavedEventData>> playerEvents = new HashMap<>();
+    final Deque<Identifier> directorDeck = new ArrayDeque<>();
+    int directorCountdown = -1;
 
     public EventPersistentState() {
     }
 
-    /**
-     * Deserializes stored chaos events from world NBT storage.
-     *
-     * @param nbt        Root compound tag containing saved event data
-     * @param registries Dynamic registry lookup context
-     * @return Populated persistent state instance
-     */
     public static EventPersistentState readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         EventPersistentState state = new EventPersistentState();
 
@@ -62,6 +58,15 @@ public final class EventPersistentState extends PersistentState {
                 map.put(id, new SavedEventData(id, remainingTicks));
             }
             state.playerEvents.put(uuid, map);
+        }
+
+        if (nbt.contains("directorCountdown", NbtElement.INT_TYPE)) {
+            state.directorCountdown = nbt.getInt("directorCountdown");
+        }
+
+        NbtList deckList = nbt.getList("directorDeck", NbtElement.STRING_TYPE);
+        for (int i = 0; i < deckList.size(); i++) {
+            state.directorDeck.add(Identifier.of(deckList.getString(i)));
         }
 
         return state;
@@ -98,6 +103,15 @@ public final class EventPersistentState extends PersistentState {
             playerList.add(playerTag);
         }
         nbt.put("playerEvents", playerList);
+
+        ChaosDirector director = ChaosDirector.getInstance();
+        nbt.putInt("directorCountdown", director.getTicksUntilNextEvent());
+
+        NbtList deckList = new NbtList();
+        for (Identifier id : director.getDeck()) {
+            deckList.add(NbtString.of(id.toString()));
+        }
+        nbt.put("directorDeck", deckList);
 
         return nbt;
     }

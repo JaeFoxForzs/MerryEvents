@@ -1,5 +1,7 @@
 package com.merry.merryevents.api;
 
+import net.minecraft.text.Text;
+
 /**
  * Universal architectural categories for deterministic event conflict resolution.
  * Each constant encapsulates a bitwise mask enabling O(1) concurrency checks.
@@ -28,5 +30,13 @@ public enum EventCategory {
 
     public int getMask() {
         return this.mask;
+    }
+
+    public String getTranslationKey() {
+        return "category.merryevents." + this.id;
+    }
+
+    public Text getDisplayName() {
+        return Text.translatable(getTranslationKey());
     }
 }
