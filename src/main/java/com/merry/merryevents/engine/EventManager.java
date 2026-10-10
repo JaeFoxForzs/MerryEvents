@@ -7,11 +7,14 @@ import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.config.ConfigManager;
 import com.merry.merryevents.event.inventory.DiamondRushEvent;
 import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
+import com.merry.merryevents.event.mobs.PersonalKillerEvent;
 import com.merry.merryevents.event.physics.MoonGravityEvent;
 import com.merry.merryevents.event.sounds.ParanoiaSoundsEvent;
+import com.merry.merryevents.event.status.DenseDarknessEvent;
 import com.merry.merryevents.event.status.FragilityEvent;
 import com.merry.merryevents.event.visual.GhostGuiEvent;
 import com.merry.merryevents.event.weather.AcidRainEvent;
+import com.merry.merryevents.event.weather.AnvilRainEvent;
 import com.merry.merryevents.event.world.FalseWaterEvent;
 import com.merry.merryevents.network.EventSyncPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -53,6 +56,9 @@ public final class EventManager {
         register(new DiamondRushEvent());
         register(new GhostGuiEvent());
         register(new ParanoiaSoundsEvent());
+        register(new PersonalKillerEvent());
+        register(new AnvilRainEvent());
+        register(new DenseDarknessEvent());
     }
 
     public static EventManager getInstance() {

@@ -14,7 +14,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 /**
- * Thread-safe configuration manager responsible for disk synchronization and schema updates.
+ * Thread-safe configuration manager responsible for disk synchronization and
+ * schema updates.
  */
 public final class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -30,7 +31,8 @@ public final class ConfigManager {
     }
 
     /**
-     * Loads the configuration from disk, creating default schema and population if missing.
+     * Loads the configuration from disk, creating default schema and population if
+     * missing.
      */
     public static synchronized void load() {
         if (Files.exists(CONFIG_PATH)) {
@@ -52,7 +54,8 @@ public final class ConfigManager {
     }
 
     /**
-     * Synchronizes registered events into the config with default durations from game design specs.
+     * Synchronizes registered events into the config with default durations from
+     * game design specs.
      *
      * @param events Registered events map
      */
@@ -98,6 +101,9 @@ public final class ConfigManager {
             case "diamond_rush" -> EventConfigEntry.ofDefault(60, 180);
             case "ghost_gui" -> EventConfigEntry.ofDefault(60, 180);
             case "paranoia_sounds" -> EventConfigEntry.ofDefault(60, 180);
+            case "personal_killer" -> EventConfigEntry.ofDefault(60, 240);
+            case "anvil_rain" -> EventConfigEntry.ofDefault(60, 180);
+            case "dense_darkness" -> EventConfigEntry.ofDefault(60, 180);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

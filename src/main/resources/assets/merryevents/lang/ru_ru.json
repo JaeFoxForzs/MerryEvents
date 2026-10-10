@@ -16,6 +16,11 @@
   "event.merryevents.diamond_rush": "Алмазная лихорадка",
   "event.merryevents.ghost_gui": "Призрачный интерфейс",
   "event.merryevents.paranoia_sounds": "Фантомные звуки",
+  "event.merryevents.personal_killer": "Личный киллер",
+  "event.merryevents.personal_killer.mob_name": "Личный киллер",
+  "event.merryevents.personal_killer.mob_name_target": "Личный киллер ➔ %s",
+  "event.merryevents.anvil_rain": "Дождь из наковален",
+  "event.merryevents.dense_darkness": "Густая тьма",
 
   "command.merryevents.start.success.global": "Запущено глобальное событие: %s (%sс)",
   "command.merryevents.start.success.player": "Запущено событие %s для %s (%sс)",
