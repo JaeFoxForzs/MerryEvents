@@ -9,18 +9,18 @@ The mod orchestrates timed, randomized game-altering phenomena split into **Glob
 ## ⚡ Architectural Advantages (Why 1.21.1?)
 
 - **Immutable Data Components**: Fully migrated from legacy NBT compound tags to modern `DataComponentType` APIs (`DataComponents.DAMAGE`, custom item modifiers). Zero arbitrary string-tag lookups, guaranteed type-safety, and seamless integration with modern 3D model predicates.
-- **Modern Payload Networking**: Uses Minecraft 1.21's `CustomPacketPayload` architecture paired with modern Java `record` declarations and zero-boilerplate `StreamCodec` serialization. No raw byte stream desyncs.
+- **Modern Payload Networking**: Uses Minecraft 1.21's `CustomPayload` architecture paired with modern Java 21 `record` declarations and zero-boilerplate `PacketCodec` serialization. No raw byte stream desyncs.
 - **Strict Logical Isolation**: Enforced via `splitEnvironmentSourceSets()`:
   - `src/main`: Common & Server-Authoritative domain (Event scheduler, anti-conflict matrix, ticking state machines, network transmitters).
   - `src/client`: Client-only domain (Custom post-processing shaders, camera manipulation mixins, dynamic skybox hooks, HUD occlusion controllers).
-- **Deterministic Anti-Conflict Matrix**: Events belong to 7 strict categories. The state manager guarantees that concurrent events cannot claim the same architectural domain, preventing game-breaking rendering/gameplay softlocks.
+- **Deterministic Anti-Conflict Matrix**: Events belong to 8 strict categories. The state manager guarantees that concurrent events cannot claim the same architectural domain, preventing game-breaking rendering/gameplay softlocks.
 - **Zero-Allocation Hot Paths**: Server tick listeners (`ServerTickEvents.END_SERVER_TICK`) and entity damage hooks are strictly free of stream pipelines, closure captures, and object allocation overhead.
 
 ---
 
 ## 🏷 Event Categories
 
-Both Global and Unique events are partitioned across 7 universal categories:
+Both Global and Unique events are partitioned across 8 universal categories:
 
 | Category    | Domain                          | Example Mechanics                                               |
 | :---------- | :------------------------------ | :-------------------------------------------------------------- |
@@ -31,6 +31,20 @@ Both Global and Unique events are partitioned across 7 universal categories:
 | `STATUS`    | Player Attributes & Needs       | Fragility (3 HP cap), Fall Multiplier, Hydrophile (Water Diet)  |
 | `INVENTORY` | Economies, Crafts & Drops       | Resource Deflation (x4 Craft Cost), Leaky Pockets, Diamond Rush |
 | `VISUAL`    | Post-Processing & Rendering     | Ghost Interface (Hidden GUI), Cucumber Clouds, Inverted Shaders |
+| `SOUNDS`    | Auditory Overrides & Illusions  | Phantom Creeper Hiss, Anvil Drops, Pitch Shift, Auditory Horror |
+
+---
+
+## 💻 In-Game Commands (CLI)
+
+The mod includes permission-level 2 operator commands equipped with Brigadier autocompletion:
+
+- `/merry start <eventId> [durationSeconds] [targetPlayer]`  
+  Starts an event. Global events target the entire server; unique events target the sender (or specified player). Default duration: `30` seconds.
+- `/merry stop <eventId>`  
+  Stops an active global or personal event and safely triggers state rollback.
+- `/merry status`  
+  Displays active server events and current category bitmasks.
 
 ---
 
