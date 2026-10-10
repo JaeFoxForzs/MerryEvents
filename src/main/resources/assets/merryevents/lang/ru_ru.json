@@ -23,6 +23,9 @@
   "event.merryevents.anvil_rain": "Дождь из наковален",
   "event.merryevents.dense_darkness": "Густая тьма",
   "event.merryevents.stiff_neck": "Заклинившая шея",
+  "event.merryevents.rust_rain": "Ржавый дождь",
+  "event.merryevents.food_rain": "Дождь из еды",
+  "event.merryevents.fire_storm": "Огненный шторм",
 
   "command.merryevents.start.success.global": "Запущено глобальное событие: %s (%sс)",
   "command.merryevents.start.success.player": "Запущено событие %s для %s (%sс)",

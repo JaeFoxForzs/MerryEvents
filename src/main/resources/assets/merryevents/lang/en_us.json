@@ -12,6 +12,7 @@
   "event.merryevents.acid_rain": "Acid Rain",
   "event.merryevents.moon_gravity": "Moon Gravity",
   "event.merryevents.false_water": "False Water",
+  "event.merryevents.lava_water_swap": "Lava - Water - Lava",
   "event.merryevents.exploding_mobs": "Exploding Mobs",
   "event.merryevents.fragility": "Fragility",
   "event.merryevents.diamond_rush": "Diamond Rush",
@@ -23,6 +24,9 @@
   "event.merryevents.anvil_rain": "Anvil Rain",
   "event.merryevents.dense_darkness": "Dense Darkness",
   "event.merryevents.stiff_neck": "Stiff Neck",
+  "event.merryevents.rust_rain": "Rust Rain",
+  "event.merryevents.food_rain": "Food Rain",
+  "event.merryevents.fire_storm": "Fire Storm",
 
   "command.merryevents.start.success.global": "Started global event: %s (%ss)",
   "command.merryevents.start.success.player": "Started event %s for %s (%ss)",

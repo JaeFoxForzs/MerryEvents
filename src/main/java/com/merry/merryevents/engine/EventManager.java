@@ -5,19 +5,15 @@ import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.config.ConfigManager;
-import com.merry.merryevents.event.camera.StiffNeckEvent;
-import com.merry.merryevents.event.inventory.DiamondRushEvent;
-import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
-import com.merry.merryevents.event.mobs.PersonalKillerEvent;
-import com.merry.merryevents.event.physics.MoonGravityEvent;
-import com.merry.merryevents.event.sounds.ParanoiaSoundsEvent;
-import com.merry.merryevents.event.status.DenseDarknessEvent;
-import com.merry.merryevents.event.status.FragilityEvent;
-import com.merry.merryevents.event.visual.GhostGuiEvent;
-import com.merry.merryevents.event.weather.AcidRainEvent;
-import com.merry.merryevents.event.weather.AnvilRainEvent;
-import com.merry.merryevents.event.world.FalseWaterEvent;
-import com.merry.merryevents.network.EventSyncPayload;
+import com.merry.merryevents.event.inventory.*;
+import com.merry.merryevents.event.mobs.*;
+import com.merry.merryevents.event.physics.*;
+import com.merry.merryevents.event.sounds.*;
+import com.merry.merryevents.event.status.*;
+import com.merry.merryevents.event.visual.*;
+import com.merry.merryevents.event.weather.*;
+import com.merry.merryevents.event.world.*;
+import com.merry.merryevents.network.*;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -52,6 +48,7 @@ public final class EventManager {
         register(new AcidRainEvent());
         register(new MoonGravityEvent());
         register(new FalseWaterEvent());
+        register(new LavaWaterSwapEvent());
         register(new ExplodingMobsEvent());
         register(new FragilityEvent());
         register(new DiamondRushEvent());
@@ -60,7 +57,9 @@ public final class EventManager {
         register(new PersonalKillerEvent());
         register(new AnvilRainEvent());
         register(new DenseDarknessEvent());
-        register(new StiffNeckEvent());
+        register(new RustRainEvent());
+        register(new FoodRainEvent());
+        register(new FireStormEvent());
     }
 
     public static EventManager getInstance() {

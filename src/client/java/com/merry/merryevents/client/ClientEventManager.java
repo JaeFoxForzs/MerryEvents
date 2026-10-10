@@ -37,6 +37,10 @@ public final class ClientEventManager {
         }
     }
 
+    public static boolean isEventActive(Identifier eventId) {
+        return ACTIVE_EFFECTS.containsKey(eventId);
+    }
+
     public static boolean isHudHidden() {
         for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
             if (effect.shouldHideHud()) {

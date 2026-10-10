@@ -3,11 +3,36 @@
   "configurations": [
     {
       "type": "java",
-      "name": "Debug Client (Attach to Gradle :5005)",
-      "request": "attach",
-      "hostName": "localhost",
-      "port": 5005,
-      "preLaunchTask": "Run Client (Debug Mode)"
+      "name": "Minecraft Client 1",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
+      "args": "--username DevPlayer1"
+    },
+    {
+      "type": "java",
+      "name": "Minecraft Client 2",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run-client2",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
+      "args": "--username DevPlayer2"
+    },
+    {
+      "type": "java",
+      "name": "Minecraft Server",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run-server",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=server -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotServer",
+      "args": "nogui"
     }
   ]
 }
