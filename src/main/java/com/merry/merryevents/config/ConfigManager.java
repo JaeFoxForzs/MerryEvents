@@ -96,6 +96,7 @@ public final class ConfigManager {
             case "acid_rain" -> EventConfigEntry.ofDefault(120, 480);
             case "moon_gravity" -> EventConfigEntry.ofDefault(180, 600);
             case "false_water" -> EventConfigEntry.ofDefault(120, 420);
+            case "lava_water_swap" -> EventConfigEntry.ofDefault(120, 420);
             case "exploding_mobs" -> EventConfigEntry.ofDefault(120, 360);
             case "fragility" -> EventConfigEntry.ofDefault(60, 240);
             case "diamond_rush" -> EventConfigEntry.ofDefault(60, 180);

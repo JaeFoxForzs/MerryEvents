@@ -48,6 +48,7 @@ public final class EventManager {
         register(new AcidRainEvent());
         register(new MoonGravityEvent());
         register(new FalseWaterEvent());
+        register(new LavaWaterSwapEvent());
         register(new ExplodingMobsEvent());
         register(new FragilityEvent());
         register(new DiamondRushEvent());
