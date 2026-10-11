@@ -142,6 +142,10 @@ public final class ConfigManager {
             case "lobotomy" -> EventConfigEntry.ofDefault(120, 480);
             case "rubber_world" -> EventConfigEntry.ofDefault(120, 480);
             case "closed_inventory" -> EventConfigEntry.ofDefault(60, 180);
+            case "creeper_revenge" -> EventConfigEntry.ofDefault(120, 480);
+            case "ant_man" -> EventConfigEntry.ofDefault(120, 300);
+            case "butterfingers" -> EventConfigEntry.ofDefault(120, 300);
+            case "adhd" -> EventConfigEntry.ofDefault(60, 180);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

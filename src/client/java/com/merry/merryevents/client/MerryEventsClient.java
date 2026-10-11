@@ -3,6 +3,7 @@ package com.merry.merryevents.client;
 import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.client.api.*;
 import com.merry.merryevents.client.effect.*;
+import com.merry.merryevents.event.camera.AdhdEvent;
 import com.merry.merryevents.event.sounds.RubberWorldEvent;
 import com.merry.merryevents.event.ui.ClosedInventoryEvent;
 import com.merry.merryevents.network.*;
@@ -44,6 +45,37 @@ public class MerryEventsClient implements ClientModInitializer {
             public void onStop(MinecraftClient client) {
             }
         });
+
+        ClientEventManager.registerEffect(MerryEvents.id("creeper_revenge"), new ClientChaosEffect() {
+            @Override
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override
+            public void onStop(MinecraftClient client) {}
+        });
+        ClientEventManager.registerEffect(MerryEvents.id("ant_man"), new ClientChaosEffect() {
+            @Override
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override
+            public void onStop(MinecraftClient client) {}
+        });
+
+        ClientEventManager.registerEffect(MerryEvents.id("butterfingers"), new ClientChaosEffect() {
+            @Override
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
+            @Override
+            public void onStop(MinecraftClient client) {
+            }
+        });
+        ClientEventManager.registerEffect(MerryEvents.id("adhd"), new ClientChaosEffect() {
+            @Override
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override
+            public void onStop(MinecraftClient client) {}
+        });
+        ClientEventManager.registerEffect(AdhdEvent.ID, new AdhdClientEffect());
+        AdhdClientEffect.init();
 
         // Sensory and vision shaders
         ClientEventManager.registerEffect(DiscoEvent.ID, new DiscoClientEffect());

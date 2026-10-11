@@ -89,6 +89,10 @@ public final class EventManager {
         this.register(new LobotomyEvent());
         this.register(new RubberWorldEvent());
         this.register(new ClosedInventoryEvent());
+        this.register(new CreeperRevengeEvent());
+        this.register(new AntManEvent());
+        this.register(new ButterfingersEvent());
+        this.register(new AdhdEvent());
     }
 
     public static EventManager getInstance() {
