@@ -1,4 +1,4 @@
-package com.merry.merryevents.event.visual;
+package com.merry.merryevents.event.ui;
 
 import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
@@ -10,7 +10,7 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Player-specific interface blackout event belonging to EventCategory.VISUAL.
+ * Player-specific interface blackout event belonging to EventCategory.UI.
  * Disables client-side HUD rendering.
  */
 public final class GhostGuiEvent implements ChaosEvent {
@@ -23,7 +23,7 @@ public final class GhostGuiEvent implements ChaosEvent {
 
     @Override
     public EventCategory getCategory() {
-        return EventCategory.VISUAL;
+        return EventCategory.UI;
     }
 
     @Override

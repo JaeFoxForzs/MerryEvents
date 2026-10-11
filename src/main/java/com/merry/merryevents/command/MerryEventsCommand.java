@@ -24,11 +24,13 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
+import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
+import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public final class MerryEventsCommand {
@@ -94,6 +96,8 @@ public final class MerryEventsCommand {
                                         }))))
                 .then(CommandManager.literal("status")
                         .executes(ctx -> executeStatus(ctx.getSource())))
+                .then(CommandManager.literal("events")
+                        .executes(ctx -> executeEvents(ctx.getSource())))
                 .then(CommandManager.literal("director")
                         .then(CommandManager.literal("status")
                                 .executes(ctx -> {
@@ -274,26 +278,40 @@ public final class MerryEventsCommand {
             }
         }
 
-        List<Text> activeCategoryNames = new ArrayList<>();
-        for (EventCategory cat : EventCategory.values()) {
-            if (manager.isCategoryOccupiedGlobally(cat)) {
-                activeCategoryNames.add(cat.getDisplayName());
-            }
-        }
-
-        MutableText categoriesText = Text.empty();
-        if (activeCategoryNames.isEmpty()) {
-            categoriesText.append(
-                    Text.translatable("command.merryevents.status.no_categories").formatted(Formatting.DARK_GRAY));
-        } else {
-            for (int i = 0; i < activeCategoryNames.size(); i++) {
-                if (i > 0)
-                    categoriesText.append(Text.literal(", ").formatted(Formatting.GRAY));
-                categoriesText.append(activeCategoryNames.get(i).copy().formatted(Formatting.YELLOW));
-            }
-        }
         source.sendMessage(
-                Text.translatable("command.merryevents.status.categories", categoriesText).formatted(Formatting.GRAY));
+                Text.translatable("command.merryevents.status.categories_header").formatted(Formatting.YELLOW));
+        for (EventCategory cat : EventCategory.values()) {
+            List<Text> globalEvents = new ArrayList<>();
+            for (EventManager.ActiveEventInstance instance : manager.getActiveGlobalEvents().values()) {
+                if (instance.getEvent().getCategory() == cat) {
+                    globalEvents.add(instance.getEvent().getDisplayName());
+                }
+            }
+
+            List<Text> playerEvents = new ArrayList<>();
+            for (Map.Entry<UUID, Map<Identifier, EventManager.ActiveEventInstance>> playerEntry : manager
+                    .getActivePlayerEvents().entrySet()) {
+                ServerPlayerEntity activePlayer = source.getServer().getPlayerManager()
+                        .getPlayer(playerEntry.getKey());
+                Text playerName = activePlayer != null
+                        ? activePlayer.getName().copy()
+                        : Text.literal(playerEntry.getKey().toString());
+                for (EventManager.ActiveEventInstance instance : playerEntry.getValue().values()) {
+                    if (instance.getEvent().getCategory() == cat) {
+                        playerEvents.add(Text.translatable("command.merryevents.status.category_player_event",
+                                playerName, instance.getEvent().getDisplayName()));
+                    }
+                }
+            }
+
+            source.sendMessage(Text.translatable("command.merryevents.status.category_entry",
+                    cat.getDisplayName(),
+                    joinOrFree(globalEvents),
+                    joinOrFree(playerEvents)).formatted(
+                            globalEvents.isEmpty() && playerEvents.isEmpty()
+                                    ? Formatting.DARK_GRAY
+                                    : Formatting.GRAY));
+        }
 
         ChaosDirector director = ChaosDirector.getInstance();
         boolean directorEnabled = ConfigManager.get().isAutoDirectorEnabled();
@@ -305,6 +323,47 @@ public final class MerryEventsCommand {
                 nextSeconds,
                 director.getDeck().size()).formatted(Formatting.DARK_AQUA));
 
+        return 1;
+    }
+
+    private static Text joinOrFree(List<Text> entries) {
+        if (entries.isEmpty()) {
+            return Text.translatable("command.merryevents.status.category_free").formatted(Formatting.DARK_GRAY);
+        }
+
+        MutableText joined = Text.empty();
+        for (int i = 0; i < entries.size(); i++) {
+            if (i > 0) {
+                joined.append(Text.literal(", ").formatted(Formatting.GRAY));
+            }
+            joined.append(entries.get(i).copy().formatted(Formatting.WHITE));
+        }
+        return joined;
+    }
+
+    private static int executeEvents(ServerCommandSource source) {
+        EventManager manager = EventManager.getInstance();
+        List<ChaosEvent> events = new ArrayList<>(manager.getRegistry().values());
+        events.sort(Comparator.comparing(event -> event.getId().toString()));
+
+        source.sendMessage(Text.translatable("command.merryevents.events.header", events.size())
+                .formatted(Formatting.GOLD));
+        for (ChaosEvent event : events) {
+            var config = ConfigManager.get().getEvents().get(event.getId().toString());
+            boolean autoEnabled = config == null || config.enabled();
+            Text scope = Text.translatable(event.isGlobal()
+                    ? "command.merryevents.events.scope.global"
+                    : "command.merryevents.events.scope.player");
+            Text autoStart = Text.translatable(autoEnabled
+                    ? "command.merryevents.events.autostart.enabled"
+                    : "command.merryevents.events.autostart.disabled");
+            source.sendMessage(Text.translatable("command.merryevents.events.entry",
+                    event.getDisplayName(),
+                    event.getId().toString(),
+                    event.getCategory().getDisplayName(),
+                    scope,
+                    autoStart).formatted(Formatting.GRAY));
+        }
         return 1;
     }
 

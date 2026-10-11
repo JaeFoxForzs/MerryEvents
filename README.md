@@ -13,26 +13,29 @@ The mod orchestrates timed, randomized game-altering phenomena split into **Glob
 - **Strict Logical Isolation**: Enforced via `splitEnvironmentSourceSets()`:
   - `src/main`: Common & Server-Authoritative domain (Event scheduler, anti-conflict matrix, ticking state machines, network transmitters).
   - `src/client`: Client-only domain (Custom post-processing shaders, camera manipulation mixins, dynamic skybox hooks, HUD occlusion controllers).
-- **Deterministic Anti-Conflict Matrix**: Events belong to 9 categories. The state manager prevents events in the same category from running together in the same scope.
+- **Deterministic Anti-Conflict Matrix**: The state manager prevents events in the same category from running together in the same scope.
 - **Weighted Event Director**: Automatic events are selected from a shuffled, weighted queue. Event weights affect how often an event appears; events whose category is occupied wait for a later opportunity.
 
 ---
 
 ## 🏷 Event Categories
 
-Global and Personal events use the same 9 categories:
+Global and Personal events use the same 12 categories:
 
-| Category    | Domain                       | Example Events                                     |
-| :---------- | :--------------------------- | :------------------------------------------------- |
-| `CAMERA`    | Camera movement and view     | Stiff Neck                                         |
-| `INVENTORY` | Items and inventory          | Diamond Rush                                       |
-| `MOBS`      | Mob behavior and encounters  | Exploding Mobs, Personal Killer                    |
-| `PHYSICS`   | Movement and forces          | Moon Gravity                                       |
-| `SOUNDS`    | Unexpected sounds            | Paranoia Sounds                                    |
-| `STATUS`    | Player status and effects    | Fragility, Dense Darkness                          |
-| `VISUAL`    | Visual effects and interface | Ghost GUI                                          |
-| `WEATHER`   | Weather and aerial hazards   | Acid Rain, Anvil Rain, Fire Storms, Orbital Strike |
-| `WORLD`     | Blocks and the environment   | False Water, Floor Hole, Wandering Blocks          |
+| Category    | Domain                                           | Example Events                                |
+| :---------- | :----------------------------------------------- | :-------------------------------------------- |
+| `WEATHER`   | Weather, precipitation, and weather hazards      | Acid Rain, Rust Rain, Anvil Rain, Fire Storms |
+| `SKY`       | Sun, moon, clouds, and sky appearance            | —                                             |
+| `PHYSICS`   | Movement, gravity, speed, and collisions         | Moon Gravity                                  |
+| `WORLD`     | Blocks, water, and lava mechanics                | False Water, Floor Hole, Wandering Blocks     |
+| `MOBS`      | Mob spawning and behavior                        | Exploding Mobs, Personal Killer               |
+| `STATUS`    | Health, hunger, effects, and entity states       | Fragility                                     |
+| `INVENTORY` | Items, recipes, experience, slots, and trading   | Diamond Rush                                  |
+| `VISION`    | Player perception, darkness, and screen filters  | Dense Darkness                                |
+| `VISUAL`    | World and object textures, models, and rendering | —                                             |
+| `UI`        | HUD, menus, and GUI elements                     | Ghost GUI                                     |
+| `SOUNDS`    | Sound effects                                    | Paranoia Sounds                               |
+| `CAMERA`    | Camera direction and position                    | Stiff Neck                                    |
 
 ### Event Director
 
@@ -51,7 +54,9 @@ The mod includes permission-level 2 operator commands equipped with Brigadier au
 - `/merry stop <eventId>`  
   Stops an active global or personal event and safely triggers state rollback.
 - `/merry status`  
-  Displays active global and personal events, their remaining duration, occupied categories, and the director queue status.
+  Displays active global and personal events, category availability per scope, and the director queue status.
+- `/merry events`
+  Lists all registered events with their IDs, categories, scope, and auto-start setting.
 - `/merry director status`
   Displays automatic event scheduling status, the next-event countdown, and the number of entries left in the queue.
 

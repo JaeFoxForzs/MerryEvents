@@ -9,12 +9,15 @@ import net.minecraft.text.Text;
  */
 public enum EventCategory {
     WEATHER("weather"),
+    SKY("sky"),
     PHYSICS("physics"),
     WORLD("world"),
     MOBS("mobs"),
     STATUS("status"),
     INVENTORY("inventory"),
+    VISION("vision"),
     VISUAL("visual"),
+    UI("ui"),
     SOUNDS("sounds"),
     CAMERA("camera");
 

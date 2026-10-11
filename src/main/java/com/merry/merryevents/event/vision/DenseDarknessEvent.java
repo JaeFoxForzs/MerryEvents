@@ -1,4 +1,4 @@
-package com.merry.merryevents.event.status;
+package com.merry.merryevents.event.vision;
 
 import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
@@ -12,7 +12,7 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Player-specific visual occlusion event belonging to EventCategory.STATUS.
+ * Player-specific visual occlusion event belonging to EventCategory.VISION.
  * Compresses effective sight range using combined Darkness and Blindness status
  * effects.
  */
@@ -26,7 +26,7 @@ public final class DenseDarknessEvent implements ChaosEvent {
 
     @Override
     public EventCategory getCategory() {
-        return EventCategory.STATUS;
+        return EventCategory.VISION;
     }
 
     @Override

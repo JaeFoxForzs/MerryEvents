@@ -90,6 +90,15 @@ public final class ChaosDirector {
             refillDeck();
         }
 
+        if (dispatchFromDeck(server)) {
+            return true;
+        }
+
+        refillDeck();
+        return dispatchFromDeck(server);
+    }
+
+    private boolean dispatchFromDeck(MinecraftServer server) {
         int attempts = deck.size();
         for (int i = 0; i < attempts; i++) {
             Identifier candidateId = deck.pollFirst();
