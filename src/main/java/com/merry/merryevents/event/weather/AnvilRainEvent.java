@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialTargeting;
 import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.FallingBlockEntity;
@@ -14,7 +15,6 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
@@ -68,7 +68,7 @@ public final class AnvilRainEvent implements ChaosEvent {
         double radius = context.getDouble(RADIUS_KEY, 16.0);
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.isSpectator()) {
+            if (SpatialTargeting.isHazardImmune(player)) {
                 continue;
             }
 
@@ -79,23 +79,12 @@ public final class AnvilRainEvent implements ChaosEvent {
                 continue;
             }
 
-            Random random = player.getRandom();
-            double offsetX = (random.nextDouble() - 0.5) * radius * 2.0;
-            double offsetZ = (random.nextDouble() - 0.5) * radius * 2.0;
+            BlockPos spawnPos = SpatialTargeting.findRandomSkyPosition(
+                    world, player, radius, Heightmap.Type.MOTION_BLOCKING, 20, 8);
 
-            int targetX = (int) (player.getX() + offsetX);
-            int targetZ = (int) (player.getZ() + offsetZ);
-
-            int chunkX = ChunkSectionPos.getSectionCoord(targetX);
-            int chunkZ = ChunkSectionPos.getSectionCoord(targetZ);
-            if (!world.isChunkLoaded(chunkX, chunkZ)) {
+            if (spawnPos == null) {
                 continue;
             }
-
-            int surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, targetX, targetZ);
-            int spawnY = Math.min(world.getTopY() - 2,
-                    Math.max(player.getBlockY() + 20, surfaceY + 16) + random.nextInt(8));
-            BlockPos spawnPos = new BlockPos(targetX, spawnY, targetZ);
 
             FallingBlockEntity anvil = FallingBlockEntity.spawnFromBlock(world, spawnPos,
                     Blocks.ANVIL.getDefaultState());

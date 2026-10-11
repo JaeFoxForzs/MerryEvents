@@ -1,13 +1,12 @@
 package com.merry.merryevents.mixin;
 
+import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
+import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
 import com.merry.merryevents.event.world.LavaWaterSwapEvent;
-import net.minecraft.block.BlockState;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
 import net.minecraft.fluid.LavaFluid;
 import net.minecraft.registry.tag.TagKey;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Direction;
 import net.minecraft.world.GameRules;
 import net.minecraft.world.World;
 import net.minecraft.world.WorldAccess;
@@ -15,12 +14,11 @@ import net.minecraft.world.WorldView;
 import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.injection.At;
 import org.spongepowered.asm.mixin.injection.Inject;
-import org.spongepowered.asm.mixin.injection.Redirect;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
  * Mixin transposing lava spread speed, infinite source creation, and downward
- * solidification.
+ * solidification mechanics during active fluid swap events.
  */
 @Mixin(LavaFluid.class)
 public abstract class LavaFluidMixin {
@@ -38,7 +36,8 @@ public abstract class LavaFluidMixin {
     }
 
     /**
-     * Expands lava maximum spread distance to 7 blocks during active transposition.
+     * Expands lava maximum spread distance to match water limits during active
+     * transposition.
      *
      * @param world Current world view
      * @param cir   Callback info returnable
@@ -65,25 +64,24 @@ public abstract class LavaFluidMixin {
     }
 
     /**
-     * Suppresses downward stone formation when lava falls onto water during active
-     * transposition.
+     * Safely wraps fluid tag checks during downward flow to suppress stone
+     * formation when lava falls onto water.
+     * Evaluates active fluid inversion status to bypass stone conversion and
+     * maintain fluid mechanics.
      *
-     * @param instance   Target fluid state being tested
-     * @param tag        Fluid tag checked by vanilla logic
-     * @param world      World access instance
-     * @param pos        Target block position
-     * @param state      Target block state
-     * @param direction  Spread direction vector
-     * @param fluidState Active fluid state
-     * @return False if transposition is active to bypass stone creation and allow
-     *         fluid flow
+     * @param instance Target fluid state being tested
+     * @param tag      Fluid tag checked by vanilla logic
+     * @param original Original operation wrapper
+     * @param world    World access instance
+     * @return False if fluid swap event is active to bypass stone formation,
+     *         otherwise original result
      */
-    @Redirect(method = "flow", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FluidState;isIn(Lnet/minecraft/registry/tag/TagKey;)Z"))
-    private boolean merryevents$redirectLavaDownWaterCheck(FluidState instance, TagKey<Fluid> tag, WorldAccess world,
-            BlockPos pos, BlockState state, Direction direction, FluidState fluidState) {
+    @WrapOperation(method = "flow", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FluidState;isIn(Lnet/minecraft/registry/tag/TagKey;)Z"))
+    private boolean merryevents$wrapLavaDownWaterCheck(FluidState instance, TagKey<Fluid> tag,
+            Operation<Boolean> original, WorldAccess world) {
         if (world instanceof World w && LavaWaterSwapEvent.isActive(w)) {
             return false;
         }
-        return instance.isIn(tag);
+        return original.call(instance, tag);
     }
 }

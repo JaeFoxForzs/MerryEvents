@@ -31,8 +31,8 @@ public abstract class WaterFluidMixin {
     }
 
     /**
-     * Compresses water maximum spread distance from 7 down to 4 blocks during
-     * active transposition.
+     * Compresses water maximum spread distance down to lava limits during active
+     * transposition.
      *
      * @param world Current world view
      * @param cir   Callback info returnable

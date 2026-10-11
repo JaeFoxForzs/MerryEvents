@@ -6,7 +6,8 @@ import org.spongepowered.asm.mixin.Mixin;
 import org.spongepowered.asm.mixin.gen.Invoker;
 
 /**
- * Accessor interface exposing internal shader pipeline compilation in GameRenderer.
+ * Accessor interface exposing internal shader pipeline compilation in
+ * GameRenderer.
  */
 @Mixin(GameRenderer.class)
 public interface GameRendererAccessor {

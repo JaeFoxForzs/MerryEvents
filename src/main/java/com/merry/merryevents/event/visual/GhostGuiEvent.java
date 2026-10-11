@@ -9,6 +9,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Player-specific interface blackout event belonging to EventCategory.VISUAL.
+ * Disables client-side HUD rendering.
+ */
 public final class GhostGuiEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("ghost_gui");
 

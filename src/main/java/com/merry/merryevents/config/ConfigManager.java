@@ -14,8 +14,8 @@ import java.nio.file.Path;
 import java.util.Map;
 
 /**
- * Thread-safe configuration manager responsible for disk synchronization and
- * schema updates.
+ * Thread-safe configuration manager responsible for disk persistence and schema
+ * synchronization.
  */
 public final class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
@@ -26,13 +26,17 @@ public final class ConfigManager {
     private ConfigManager() {
     }
 
+    /**
+     * Resolves the active root configuration instance.
+     *
+     * @return Active configuration
+     */
     public static MerryConfig get() {
         return currentConfig;
     }
 
     /**
-     * Loads the configuration from disk, creating default schema and population if
-     * missing.
+     * Loads the configuration from disk, creating default schema if missing.
      */
     public static synchronized void load() {
         if (Files.exists(CONFIG_PATH)) {
@@ -54,12 +58,16 @@ public final class ConfigManager {
     }
 
     /**
-     * Synchronizes registered events into the config with default durations from
-     * game design specs.
+     * Synchronizes registered event entries with configuration storage using game
+     * design defaults.
      *
      * @param events Registered events map
      */
     public static synchronized void syncRegisteredEvents(Map<net.minecraft.util.Identifier, ChaosEvent> events) {
+        if (events == null) {
+            return;
+        }
+
         boolean changed = false;
         Map<String, EventConfigEntry> eventMap = currentConfig.getEvents();
 
@@ -78,7 +86,7 @@ public final class ConfigManager {
     }
 
     /**
-     * Serializes current configuration to disk atomically.
+     * Serializes current configuration to disk.
      */
     public static synchronized void save() {
         try {

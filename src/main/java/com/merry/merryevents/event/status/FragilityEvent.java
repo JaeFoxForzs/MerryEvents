@@ -12,6 +12,10 @@ import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Player-specific vulnerability event belonging to EventCategory.STATUS.
+ * Enforces a temporary attribute modifier reducing maximum health to 3 hearts.
+ */
 public final class FragilityEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("fragility");
     private static final Identifier MODIFIER_ID = MerryEvents.id("fragility_health_penalty");

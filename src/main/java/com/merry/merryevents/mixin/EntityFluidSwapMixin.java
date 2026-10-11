@@ -17,8 +17,8 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 import java.util.Set;
 
 /**
- * Mixin intercepting entity fluid detection to transpose water and lava
- * mechanics during active events.
+ * Transposes entity fluid detection and immersion mechanics during active
+ * LavaWaterSwapEvents.
  */
 @Mixin(Entity.class)
 public abstract class EntityFluidSwapMixin {
@@ -40,10 +40,10 @@ public abstract class EntityFluidSwapMixin {
     private Set<TagKey<Fluid>> submergedFluidTag;
 
     /**
-     * Transposes lava immersion checks to evaluate water contact when transposition
-     * is active.
+     * Intercepts lava contact checks to return true only if the entity is currently
+     * touching water.
      *
-     * @param cir Callback info returnable for isInLava
+     * @param cir Callback returnable for isInLava
      */
     @Inject(method = "isInLava", at = @At("HEAD"), cancellable = true)
     private void merryevents$swapIsInLava(CallbackInfoReturnable<Boolean> cir) {
@@ -53,10 +53,10 @@ public abstract class EntityFluidSwapMixin {
     }
 
     /**
-     * Transposes water immersion checks to evaluate lava contact when transposition
-     * is active.
+     * Intercepts water contact checks to return true only if the entity is touching
+     * lava.
      *
-     * @param cir Callback info returnable for isTouchingWater
+     * @param cir Callback returnable for isTouchingWater
      */
     @Inject(method = "isTouchingWater", at = @At("HEAD"), cancellable = true)
     private void merryevents$swapIsTouchingWater(CallbackInfoReturnable<Boolean> cir) {
@@ -66,10 +66,11 @@ public abstract class EntityFluidSwapMixin {
     }
 
     /**
-     * Inverts fluid tag queries for respiratory and eye-level submergence checks.
+     * Transposes eye-level fluid tag queries between water and lava for respiration
+     * and visual fog logic.
      *
-     * @param fluidTag Target fluid tag being tested
-     * @param cir      Callback info returnable for isSubmergedIn
+     * @param fluidTag Fluid tag being tested
+     * @param cir      Callback returnable for isSubmergedIn
      */
     @Inject(method = "isSubmergedIn", at = @At("HEAD"), cancellable = true)
     private void merryevents$swapSubmergedTag(TagKey<Fluid> fluidTag, CallbackInfoReturnable<Boolean> cir) {
@@ -83,11 +84,11 @@ public abstract class EntityFluidSwapMixin {
     }
 
     /**
-     * Inverts fluid height values to synchronize kinematic swimming vectors and
-     * jump boosts.
+     * Transposes fluid height levels between water and lava for buoyancy and
+     * kinematic swimming velocities.
      *
-     * @param fluid Target fluid tag being queried
-     * @param cir   Callback info returnable for getFluidHeight
+     * @param fluid Target fluid tag queried
+     * @param cir   Callback returnable for getFluidHeight
      */
     @Inject(method = "getFluidHeight", at = @At("HEAD"), cancellable = true)
     private void merryevents$swapFluidHeight(TagKey<Fluid> fluid, CallbackInfoReturnable<Double> cir) {

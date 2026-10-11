@@ -17,9 +17,8 @@ import java.util.Deque;
 import java.util.List;
 
 /**
- * Autonomous event director running the Stochastic Shuffle Bag algorithm.
- * Strictly operates silently without intrusive chat broadcasts to preserve
- * diegetic UX.
+ * Autonomous scheduler running the Stochastic Shuffle Bag algorithm to trigger
+ * chaos events.
  */
 public final class ChaosDirector {
     private static final ChaosDirector INSTANCE = new ChaosDirector();
@@ -47,6 +46,10 @@ public final class ChaosDirector {
         this.ticksUntilNextEvent = ticks;
     }
 
+    /**
+     * Initializes random tick countdown between configured minimum and maximum
+     * bounds.
+     */
     public void initializeCountdown() {
         MerryConfig config = ConfigManager.get();
         int minTicks = config.getMinIntervalSeconds() * 20;
@@ -55,6 +58,11 @@ public final class ChaosDirector {
         this.ticksUntilNextEvent = minTicks + random.nextInt(delta);
     }
 
+    /**
+     * Ticks director scheduler and fires next event when countdown expires.
+     *
+     * @param server Active MinecraftServer instance
+     */
     public void tick(MinecraftServer server) {
         if (!ConfigManager.get().isAutoDirectorEnabled()) {
             return;
@@ -142,6 +150,9 @@ public final class ChaosDirector {
         return false;
     }
 
+    /**
+     * Replenishes and shuffles deck tickets based on configured event weights.
+     */
     public void refillDeck() {
         deck.clear();
         MerryConfig config = ConfigManager.get();

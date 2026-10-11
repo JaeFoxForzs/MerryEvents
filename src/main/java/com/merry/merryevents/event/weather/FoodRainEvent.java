@@ -4,11 +4,14 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialTargeting;
 import com.merry.merryevents.util.WeatherUtil;
+import net.minecraft.component.DataComponentTypes;
 import net.minecraft.entity.ItemEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
+import net.minecraft.registry.Registries;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -16,26 +19,40 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Global aerial provision event belonging to EventCategory.WEATHER.
- * Precipitates rations with randomized frequency and area spread.
+ * Precipitates any valid food item registered in the game registry above
+ * sky-exposed players.
  */
 public final class FoodRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("food_rain");
     private static final String INTERVAL_KEY = "cadence_ticks";
     private static final String RADIUS_KEY = "dispersion_radius";
 
-    private static final Item[] EDIBLE_DROPS = new Item[] {
-            Items.APPLE,
-            Items.BREAD,
-            Items.COOKED_BEEF,
-            Items.CARROT
-    };
+    private static final Item[] ALL_FOOD_ITEMS;
+
+    static {
+        List<Item> foods = new ArrayList<>();
+        for (Item item : Registries.ITEM) {
+            if (item.getComponents().contains(DataComponentTypes.FOOD)) {
+                foods.add(item);
+            }
+        }
+
+        if (foods.isEmpty()) {
+            foods.add(Items.APPLE);
+            foods.add(Items.BREAD);
+        }
+
+        ALL_FOOD_ITEMS = foods.toArray(new Item[0]);
+    }
 
     @Override
     public Identifier getId() {
@@ -61,8 +78,9 @@ public final class FoodRainEvent implements ChaosEvent {
         context.set(INTERVAL_KEY, cadenceTicks);
         context.set(RADIUS_KEY, dispersionRadius);
 
-        MerryEvents.LOGGER.info("[FoodRainEvent] Stratospheric provision cascade initiated: interval={}t, radius={}",
-                cadenceTicks, String.format("%.1f", dispersionRadius));
+        MerryEvents.LOGGER.info(
+                "[FoodRainEvent] Stratospheric provision cascade initiated (Pool: {} foods): interval={}t, radius={}",
+                ALL_FOOD_ITEMS.length, cadenceTicks, String.format("%.1f", dispersionRadius));
     }
 
     @Override
@@ -76,7 +94,7 @@ public final class FoodRainEvent implements ChaosEvent {
         double radius = context.getDouble(RADIUS_KEY, 12.0);
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.isSpectator()) {
+            if (SpatialTargeting.isHazardImmune(player)) {
                 continue;
             }
 
@@ -87,30 +105,22 @@ public final class FoodRainEvent implements ChaosEvent {
                 continue;
             }
 
-            Random random = player.getRandom();
-            double offsetX = (random.nextDouble() - 0.5) * radius * 2.0;
-            double offsetZ = (random.nextDouble() - 0.5) * radius * 2.0;
+            BlockPos spawnPos = SpatialTargeting.findRandomSkyPosition(
+                    world, player, radius, Heightmap.Type.MOTION_BLOCKING, 18, 6);
 
-            double targetX = player.getX() + offsetX;
-            double targetZ = player.getZ() + offsetZ;
-
-            int chunkX = ChunkSectionPos.getSectionCoord((int) targetX);
-            int chunkZ = ChunkSectionPos.getSectionCoord((int) targetZ);
-            if (!world.isChunkLoaded(chunkX, chunkZ)) {
+            if (spawnPos == null) {
                 continue;
             }
 
-            int surfaceY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, (int) targetX, (int) targetZ);
-            double targetY = Math.min(world.getTopY() - 2,
-                    Math.max(player.getY() + 18.0, surfaceY + 14.0) + random.nextInt(6));
-
-            Item chosenItem = EDIBLE_DROPS[random.nextInt(EDIBLE_DROPS.length)];
-            ItemEntity drop = new ItemEntity(world, targetX, targetY, targetZ, new ItemStack(chosenItem));
+            Random random = player.getRandom();
+            Item chosenItem = ALL_FOOD_ITEMS[random.nextInt(ALL_FOOD_ITEMS.length)];
+            ItemEntity drop = new ItemEntity(world, spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5,
+                    new ItemStack(chosenItem));
             drop.setVelocity(0.0, -0.25, 0.0);
             world.spawnEntity(drop);
             context.trackEntity(drop.getUuid());
 
-            world.playSound(null, targetX, targetY, targetZ,
+            world.playSound(null, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(),
                     SoundEvents.ENTITY_ITEM_PICKUP, SoundCategory.WEATHER, 0.4F, 0.6F);
         }
     }

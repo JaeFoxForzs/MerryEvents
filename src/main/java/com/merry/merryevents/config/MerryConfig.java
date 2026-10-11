@@ -4,7 +4,7 @@ import java.util.LinkedHashMap;
 import java.util.Map;
 
 /**
- * Root configuration container serialized to merryevents.json.
+ * Root configuration container serialized to disk.
  */
 public final class MerryConfig {
     private boolean autoDirectorEnabled = true;
@@ -40,8 +40,13 @@ public final class MerryConfig {
         return events;
     }
 
+    /**
+     * Enforces valid minimum and maximum interval bounds.
+     */
     public void validate() {
-        if (minIntervalSeconds <= 10) minIntervalSeconds = 10;
-        if (maxIntervalSeconds < minIntervalSeconds) maxIntervalSeconds = minIntervalSeconds;
+        if (minIntervalSeconds <= 10)
+            minIntervalSeconds = 10;
+        if (maxIntervalSeconds < minIntervalSeconds)
+            maxIntervalSeconds = minIntervalSeconds;
     }
 }

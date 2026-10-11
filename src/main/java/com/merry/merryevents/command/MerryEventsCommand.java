@@ -153,8 +153,7 @@ public final class MerryEventsCommand {
                 .then(CommandManager.literal("reload")
                         .executes(ctx -> {
                             ConfigManager.load();
-                            ConfigManager.syncRegisteredEvents(
-                                    EventManager.getInstance().getActiveGlobalEvents().isEmpty() ? null : null);
+                            ConfigManager.syncRegisteredEvents(EventManager.getInstance().getRegistry());
                             ChaosDirector.getInstance().refillDeck();
                             ctx.getSource().sendMessage(Text.translatable("command.merryevents.reload.success")
                                     .formatted(Formatting.GREEN));

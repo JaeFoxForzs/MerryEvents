@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialTargeting;
 import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
@@ -16,9 +17,8 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Global meteorological corruption event belonging to EventCategory.WEATHER.
- * Induces an acidic downpour that erodes all exposed living entities across
- * active dimensions.
+ * Global meteorological corrosion event belonging to EventCategory.WEATHER.
+ * Forces an acidic storm that damages all sky-exposed living entities.
  */
 public final class AcidRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("acid_rain");
@@ -62,7 +62,7 @@ public final class AcidRainEvent implements ChaosEvent {
                     continue;
                 }
 
-                if (living instanceof PlayerEntity player && (player.isCreative() || player.isSpectator())) {
+                if (living instanceof PlayerEntity player && SpatialTargeting.isHazardImmune(player)) {
                     continue;
                 }
 

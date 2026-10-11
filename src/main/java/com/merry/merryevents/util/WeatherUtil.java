@@ -10,23 +10,19 @@ import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 
 /**
- * High-performance deterministic utility for spatial sky exposure and
- * precipitation checks.
- * Completely eliminates water and lava immersion roof occlusion exploits using
- * O(1) heightmap evaluation.
+ * Deterministic utility verifying sky exposure and active precipitation state.
  */
 public final class WeatherUtil {
     private WeatherUtil() {
     }
 
     /**
-     * Determines whether target coordinate is directly exposed to the sky.
-     * Prevents fluid surfaces (both water and lava) from acting as artificial
-     * roofs.
+     * Determines whether target coordinate is directly exposed to the sky without
+     * solid obstructions.
      *
      * @param world Active server world
      * @param pos   Target block position to test
-     * @return True if no solid obstruction blocks the vertical column to the sky
+     * @return True if no solid block obstructs the vertical column to the sky
      */
     public static boolean isExposedToSky(ServerWorld world, BlockPos pos) {
         if (!world.getDimension().hasSkyLight()) {
@@ -44,9 +40,8 @@ public final class WeatherUtil {
     }
 
     /**
-     * Determines whether an entity is directly exposed to active rainfall.
-     * Combines world storm state, biome precipitation type, and exploit-proof roof
-     * checks.
+     * Determines whether an entity is directly exposed to active rainfall in a
+     * rainy biome.
      *
      * @param world  Active server world
      * @param pos    Target position
@@ -62,8 +57,7 @@ public final class WeatherUtil {
     }
 
     /**
-     * Instantly forces storm weather and synchronizes client render gradients with
-     * zero transition delay.
+     * Forces rainfall weather and synchronizes client render gradients.
      *
      * @param server        Active Minecraft server instance
      * @param durationTicks Duration of forced rainfall in ticks
@@ -83,8 +77,8 @@ public final class WeatherUtil {
     }
 
     /**
-     * Instantly terminates storm weather and zeroes client rain opacity across all
-     * surface dimensions.
+     * Terminates storm weather and zeroes client rain opacity across surface
+     * dimensions.
      *
      * @param server Active Minecraft server instance
      */

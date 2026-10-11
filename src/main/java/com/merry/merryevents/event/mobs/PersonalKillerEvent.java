@@ -28,9 +28,8 @@ import org.jetbrains.annotations.Nullable;
 import java.util.UUID;
 
 /**
- * Player-specific assassination event belonging to EventCategory.MOBS.
- * Spawns an aggressive stalker (Vindicator or Killer Rabbit) targeting the
- * player until terminated.
+ * Player-specific stalker event belonging to EventCategory.MOBS.
+ * Spawns an aggressive persistent entity tracking the player until eliminated.
  */
 public final class PersonalKillerEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("personal_killer");

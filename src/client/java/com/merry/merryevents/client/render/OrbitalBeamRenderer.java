@@ -11,16 +11,15 @@ import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
 import org.joml.Matrix4f;
 
+import java.util.ArrayList;
 import java.util.List;
-import java.util.concurrent.CopyOnWriteArrayList;
 
 public final class OrbitalBeamRenderer {
-    private static final List<ActiveBeam> ACTIVE_BEAMS = new CopyOnWriteArrayList<>();
+    private static final List<ActiveBeam> ACTIVE_BEAMS = new ArrayList<>();
     private static final float HALF_PI = 1.57079632679F;
     private static boolean texturesInitialized = false;
 
     public static void init() {
-        // Регестрируем на стадии LAST: после завершения рендера мира и облаков!
         WorldRenderEvents.LAST.register(OrbitalBeamRenderer::render);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
@@ -60,34 +59,33 @@ public final class OrbitalBeamRenderer {
         matrices.translate(-camPos.x, -camPos.y, -camPos.z);
         Matrix4f mat = matrices.peek().getPositionMatrix();
 
-        // Включаем правильный тест глубины: объекты, которые ближе, будут перекрывать дальние
         RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(515); // GL11.GL_LEQUAL (честная проверка по расстоянию)
+        RenderSystem.depthFunc(515);
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
-        // 1. Отрисовка кругов на полу
         RenderLayer reticleLayer = RenderLayer.getBeaconBeam(OrbitalTextures.RETICLE_TEXTURE, true);
         VertexConsumer reticleConsumer = consumers.getBuffer(reticleLayer);
-        for (ActiveBeam beam : ACTIVE_BEAMS) {
-            drawReticle(reticleConsumer, mat, beam, tickDelta, time);
+        for (int i = 0; i < ACTIVE_BEAMS.size(); i++) {
+            drawReticle(reticleConsumer, mat, ACTIVE_BEAMS.get(i), tickDelta, time);
         }
 
-        // 2. Отрисовка лучей
         RenderLayer beamLayer = RenderLayer.getBeaconBeam(OrbitalTextures.BEAM_TEXTURE, true);
         VertexConsumer beamConsumer = consumers.getBuffer(beamLayer);
-        for (ActiveBeam beam : ACTIVE_BEAMS) {
-            drawBeam(beamConsumer, mat, beam, camPos, tickDelta, time);
+        for (int i = 0; i < ACTIVE_BEAMS.size(); i++) {
+            drawBeam(beamConsumer, mat, ACTIVE_BEAMS.get(i), camPos, tickDelta, time);
         }
 
         if (consumers instanceof VertexConsumerProvider.Immediate immediate) {
+            immediate.draw(reticleLayer);
             immediate.draw(beamLayer);
         }
 
         matrices.pop();
     }
 
-    private static void drawReticle(VertexConsumer consumer, Matrix4f mat, ActiveBeam beam, float tickDelta, long time) {
+    private static void drawReticle(VertexConsumer consumer, Matrix4f mat, ActiveBeam beam, float tickDelta,
+            long time) {
         float progress = beam.getProgress(tickDelta);
         float circleRadius = 1.7F;
         float circleT = MathHelper.clamp(progress / 0.12F, 0.0F, 1.0F);
@@ -101,13 +99,12 @@ public final class OrbitalBeamRenderer {
         float x = beam.pos.getX() + 0.5F;
         float y = beam.pos.getY();
         float z = beam.pos.getZ() + 0.5F;
-        float groundY = y + 0.04F; // Слегка приподнято над поверхностью блока
+        float groundY = y + 0.04F;
 
         float angle = (time % 100000) * 0.007F;
         float cos = MathHelper.cos(angle) * currentRadius;
         float sin = MathHelper.sin(angle) * currentRadius;
 
-        // Координаты 4-х вершин круга
         float x0 = x - cos + sin;
         float z0 = z - sin - cos;
 
@@ -120,20 +117,27 @@ public final class OrbitalBeamRenderer {
         float x3 = x + cos + sin;
         float z3 = z + sin - cos;
 
-        // 1. ЛИЦЕВАЯ СТОРОНА (смотрит ВВЕРХ на игрока, нормаль (0, 1, 0), обход CCW)
-        consumer.vertex(mat, x0, groundY, z0).color(255, 255, 255, 255).texture(0.0F, 0.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x1, groundY, z1).color(255, 255, 255, 255).texture(0.0F, 1.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x2, groundY, z2).color(255, 255, 255, 255).texture(1.0F, 1.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x3, groundY, z3).color(255, 255, 255, 255).texture(1.0F, 0.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x0, groundY, z0).color(255, 255, 255, 255).texture(0.0F, 0.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x1, groundY, z1).color(255, 255, 255, 255).texture(0.0F, 1.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x2, groundY, z2).color(255, 255, 255, 255).texture(1.0F, 1.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x3, groundY, z3).color(255, 255, 255, 255).texture(1.0F, 0.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
 
-        // 2. ОБРАТНАЯ СТОРОНА (двусторонний полигон для 100% видимости в любых шейдерах Iris)
-        consumer.vertex(mat, x3, groundY, z3).color(255, 255, 255, 255).texture(1.0F, 0.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
-        consumer.vertex(mat, x2, groundY, z2).color(255, 255, 255, 255).texture(1.0F, 1.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
-        consumer.vertex(mat, x1, groundY, z1).color(255, 255, 255, 255).texture(0.0F, 1.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
-        consumer.vertex(mat, x0, groundY, z0).color(255, 255, 255, 255).texture(0.0F, 0.0F).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+        consumer.vertex(mat, x3, groundY, z3).color(255, 255, 255, 255).texture(1.0F, 0.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+        consumer.vertex(mat, x2, groundY, z2).color(255, 255, 255, 255).texture(1.0F, 1.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+        consumer.vertex(mat, x1, groundY, z1).color(255, 255, 255, 255).texture(0.0F, 1.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+        consumer.vertex(mat, x0, groundY, z0).color(255, 255, 255, 255).texture(0.0F, 0.0F)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
     }
 
-    private static void drawBeam(VertexConsumer consumer, Matrix4f mat, ActiveBeam beam, Vec3d camPos, float tickDelta, long time) {
+    private static void drawBeam(VertexConsumer consumer, Matrix4f mat, ActiveBeam beam, Vec3d camPos, float tickDelta,
+            long time) {
         float progress = beam.getProgress(tickDelta);
         float appearT = MathHelper.clamp(progress / 0.12F, 0.0F, 1.0F);
         float beamExpand = MathHelper.sin(appearT * HALF_PI);
@@ -162,17 +166,23 @@ public final class OrbitalBeamRenderer {
         float vScroll = (time % 10000) * 0.003F;
         float vTop = wipeDown * 10.0F + vScroll;
 
-        // Лицевая сторона
-        consumer.vertex(mat, x - nx, y, z - nz).color(255, 255, 255, 255).texture(0.0F, vScroll).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x + nx, y, z + nz).color(255, 255, 255, 255).texture(1.0F, vScroll).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x + nx, y + fullHeight, z + nz).color(255, 255, 255, 255).texture(1.0F, vTop).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x - nx, y + fullHeight, z - nz).color(255, 255, 255, 255).texture(0.0F, vTop).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x - nx, y, z - nz).color(255, 255, 255, 255).texture(0.0F, vScroll)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x + nx, y, z + nz).color(255, 255, 255, 255).texture(1.0F, vScroll)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x + nx, y + fullHeight, z + nz).color(255, 255, 255, 255).texture(1.0F, vTop)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x - nx, y + fullHeight, z - nz).color(255, 255, 255, 255).texture(0.0F, vTop)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
 
-        // Обратная сторона
-        consumer.vertex(mat, x - nx, y + fullHeight, z - nz).color(255, 255, 255, 255).texture(0.0F, vTop).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x + nx, y + fullHeight, z + nz).color(255, 255, 255, 255).texture(1.0F, vTop).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x + nx, y, z + nz).color(255, 255, 255, 255).texture(1.0F, vScroll).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
-        consumer.vertex(mat, x - nx, y, z - nz).color(255, 255, 255, 255).texture(0.0F, vScroll).overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x - nx, y + fullHeight, z - nz).color(255, 255, 255, 255).texture(0.0F, vTop)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x + nx, y + fullHeight, z + nz).color(255, 255, 255, 255).texture(1.0F, vTop)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x + nx, y, z + nz).color(255, 255, 255, 255).texture(1.0F, vScroll)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+        consumer.vertex(mat, x - nx, y, z - nz).color(255, 255, 255, 255).texture(0.0F, vScroll)
+                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
     }
 
     private static class ActiveBeam {

@@ -13,8 +13,7 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Global gravitational anomaly belonging to EventCategory.PHYSICS.
- * Applies a randomized jump multiplier (2x to 4x) paired with slow falling to
- * simulate lunar kinematics.
+ * Applies Jump Boost paired with Slow Falling to simulate lunar kinematics.
  */
 public final class MoonGravityEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("moon_gravity");

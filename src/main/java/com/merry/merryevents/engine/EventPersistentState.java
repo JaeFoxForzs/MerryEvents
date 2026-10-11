@@ -15,7 +15,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * World-level persistence layer for active chaos events and director scheduler.
+ * World-level persistence layer saving active events and director state across
+ * server restarts.
  */
 public final class EventPersistentState extends PersistentState {
     public static final String KEY = "merryevents_state";
@@ -33,6 +34,13 @@ public final class EventPersistentState extends PersistentState {
     public EventPersistentState() {
     }
 
+    /**
+     * Deserializes active chaos events and director deck from NBT storage.
+     *
+     * @param nbt        Source NbtCompound
+     * @param registries Registry wrapper lookup
+     * @return Deserialized state instance
+     */
     public static EventPersistentState readNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         EventPersistentState state = new EventPersistentState();
 
@@ -72,6 +80,13 @@ public final class EventPersistentState extends PersistentState {
         return state;
     }
 
+    /**
+     * Serializes active events and director state into target NBT storage.
+     *
+     * @param nbt        Destination NbtCompound
+     * @param registries Registry wrapper lookup
+     * @return Populated NbtCompound
+     */
     @Override
     public NbtCompound writeNbt(NbtCompound nbt, RegistryWrapper.WrapperLookup registries) {
         EventManager manager = EventManager.getInstance();

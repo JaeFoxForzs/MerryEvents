@@ -4,11 +4,16 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialTargeting;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
+/**
+ * Global fluid corruption event belonging to EventCategory.WORLD.
+ * Causes water contact to ignite and burn submerged players.
+ */
 public final class FalseWaterEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("false_water");
 
@@ -40,7 +45,7 @@ public final class FalseWaterEvent implements ChaosEvent {
         }
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (player.isCreative() || player.isSpectator() || player.isInvulnerable()) {
+            if (SpatialTargeting.isHazardImmune(player)) {
                 continue;
             }
 

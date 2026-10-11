@@ -83,6 +83,10 @@ public final class EventManager {
                 event.getCategory());
     }
 
+    public Map<Identifier, ChaosEvent> getRegistry() {
+        return Collections.unmodifiableMap(registry);
+    }
+
     public @Nullable ChaosEvent getEvent(Identifier id) {
         return registry.get(id);
     }

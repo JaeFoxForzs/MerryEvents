@@ -12,9 +12,9 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Player-specific sensory occlusion event belonging to EventCategory.STATUS.
- * Compresses effective visual range to baseline proximity using combined
- * Darkness and Blindness.
+ * Player-specific visual occlusion event belonging to EventCategory.STATUS.
+ * Compresses effective sight range using combined Darkness and Blindness status
+ * effects.
  */
 public final class DenseDarknessEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("dense_darkness");

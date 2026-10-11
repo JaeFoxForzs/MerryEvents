@@ -7,24 +7,34 @@ import net.minecraft.network.codec.PacketCodecs;
 import net.minecraft.network.packet.CustomPayload;
 import net.minecraft.util.Identifier;
 
+/**
+ * Bidirectional network payload synchronizing active chaos event lifecycle
+ * states between server and clients.
+ *
+ * @param eventId       Unique identifier of the target event
+ * @param categoryName  Architectural category identifier name
+ * @param durationTicks Total remaining lifetime in server ticks
+ * @param active        Activation flag signaling whether the event started or
+ *                      terminated
+ * @param isGlobal      True if the event applies globally, false if bound to
+ *                      the receiving player
+ */
 public record EventSyncPayload(
-    Identifier eventId,
-    String categoryName,
-    int durationTicks,
-    boolean active,
-    boolean isGlobal
-) implements CustomPayload {
+        Identifier eventId,
+        String categoryName,
+        int durationTicks,
+        boolean active,
+        boolean isGlobal) implements CustomPayload {
 
     public static final CustomPayload.Id<EventSyncPayload> ID = new CustomPayload.Id<>(MerryEvents.id("event_sync"));
 
     public static final PacketCodec<RegistryByteBuf, EventSyncPayload> CODEC = PacketCodec.tuple(
-        Identifier.PACKET_CODEC, EventSyncPayload::eventId,
-        PacketCodecs.STRING, EventSyncPayload::categoryName,
-        PacketCodecs.VAR_INT, EventSyncPayload::durationTicks,
-        PacketCodecs.BOOL, EventSyncPayload::active,
-        PacketCodecs.BOOL, EventSyncPayload::isGlobal,
-        EventSyncPayload::new
-    );
+            Identifier.PACKET_CODEC, EventSyncPayload::eventId,
+            PacketCodecs.STRING, EventSyncPayload::categoryName,
+            PacketCodecs.VAR_INT, EventSyncPayload::durationTicks,
+            PacketCodecs.BOOL, EventSyncPayload::active,
+            PacketCodecs.BOOL, EventSyncPayload::isGlobal,
+            EventSyncPayload::new);
 
     @Override
     public CustomPayload.Id<? extends CustomPayload> getId() {

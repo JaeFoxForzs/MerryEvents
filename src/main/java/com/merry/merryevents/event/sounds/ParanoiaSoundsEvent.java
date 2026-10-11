@@ -18,6 +18,12 @@ import org.jetbrains.annotations.Nullable;
 
 import java.util.Optional;
 
+/**
+ * Player-specific auditory hallucination event belonging to
+ * EventCategory.SOUNDS.
+ * Periodically dispatches random positional sound packets directly behind the
+ * target player.
+ */
 public final class ParanoiaSoundsEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("paranoia_sounds");
 

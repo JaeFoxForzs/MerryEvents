@@ -42,10 +42,8 @@ public class MerryEventsClient implements ClientModInitializer {
             });
         });
 
-        // Инициализация рендерера шейдерного луча
         OrbitalBeamRenderer.init();
 
-        // Получение координат удара от сервера
         ClientPlayNetworking.registerGlobalReceiver(OrbitalStrikeSpawnPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 OrbitalBeamRenderer.addBeam(payload.pos(), payload.warmupTicks());

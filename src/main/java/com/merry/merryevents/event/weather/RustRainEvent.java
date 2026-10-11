@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialTargeting;
 import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
@@ -25,9 +26,8 @@ import java.util.function.Consumer;
 
 /**
  * Global atmospheric corrosion event belonging to EventCategory.WEATHER.
- * Corrodes item durability for all exposed living entities in active rainfall.
- * Inspects full inventory for players while checking only worn equipment on
- * mobs.
+ * Gradually degrades equipped and inventory item durability for rain-exposed
+ * entities.
  */
 public final class RustRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("rust_rain");
@@ -81,7 +81,7 @@ public final class RustRainEvent implements ChaosEvent {
                 }
 
                 if (living instanceof ServerPlayerEntity player) {
-                    if (player.isCreative() || player.isSpectator()) {
+                    if (SpatialTargeting.isHazardImmune(player)) {
                         continue;
                     }
                     corrodePlayerInventory(world, player);

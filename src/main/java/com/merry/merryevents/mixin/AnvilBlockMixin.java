@@ -14,20 +14,20 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Mixin intercepting anvil landing physics during AnvilRainEvent to break
- * underlying blocks and shatter upon impact.
+ * Intercepts anvil landing dynamics during active AnvilRainEvents to pulverize
+ * terrain and shatter the entity.
  */
 @Mixin(AnvilBlock.class)
 public abstract class AnvilBlockMixin {
     /**
-     * Smashes the block beneath the landing anvil and obliterates the placed anvil
-     * block during active anvil showers.
+     * Pulverizes the block directly beneath the landing anvil and obliterates the
+     * newly placed anvil.
      *
-     * @param world              Active world instance
-     * @param pos                Position where the anvil attempted to solidify
-     * @param fallingBlockState  State of the falling anvil
-     * @param currentStateInPos  Replaced state at landing position
-     * @param fallingBlockEntity Falling entity instance
+     * @param world              Target world instance
+     * @param pos                Position where the anvil solidified
+     * @param fallingBlockState  BlockState of the falling anvil
+     * @param currentStateInPos  BlockState currently present at target coordinate
+     * @param fallingBlockEntity FallingBlockEntity executing the landing
      * @param ci                 Callback info
      */
     @Inject(method = "onLanding", at = @At("TAIL"))
@@ -46,14 +46,12 @@ public abstract class AnvilBlockMixin {
     }
 
     /**
-     * Destroys the surface block directly impacted by the shattered falling anvil
-     * during AnvilRainEvent.
-     * Evaluates collision shapes to accurately target solid supporting surfaces
-     * across bounding transitions.
+     * Pulverizes the supporting surface block when a high-velocity anvil is
+     * destroyed on landing.
      *
-     * @param world              Active world instance
-     * @param pos                Landing destruction coordinate
-     * @param fallingBlockEntity Falling entity instance
+     * @param world              Target world instance
+     * @param pos                Impact coordinate
+     * @param fallingBlockEntity Shattered entity instance
      * @param ci                 Callback info
      */
     @Inject(method = "onDestroyedOnLanding", at = @At("TAIL"))

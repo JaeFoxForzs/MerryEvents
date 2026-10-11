@@ -46,7 +46,9 @@ public abstract class FlowableFluidMixin {
                         w.setBlockState(pos, Blocks.STONE.getDefaultState(), Block.NOTIFY_ALL);
                     }
                     w.syncWorldEvent(WorldEvents.LAVA_EXTINGUISHED, pos, 0);
-                    ci.cancel();
+                    if (ci.isCancellable()) {
+                        ci.cancel();
+                    }
                 }
             }
         }

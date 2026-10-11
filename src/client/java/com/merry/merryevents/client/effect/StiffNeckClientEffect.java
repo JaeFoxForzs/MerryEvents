@@ -3,16 +3,18 @@ package com.merry.merryevents.client.effect;
 import com.merry.merryevents.client.api.ClientChaosEffect;
 import net.minecraft.client.MinecraftClient;
 
-import java.util.Random;
+import java.util.concurrent.ThreadLocalRandom;
 
+/**
+ * Client effect handler randomly locking either yaw or pitch camera rotation.
+ */
 public final class StiffNeckClientEffect implements ClientChaosEffect {
-    private final Random random = new Random();
     private boolean lockYaw = false;
     private boolean lockPitch = false;
 
     @Override
     public void onStart(MinecraftClient client, int initialRemainingTicks) {
-        if (random.nextBoolean()) {
+        if (ThreadLocalRandom.current().nextBoolean()) {
             this.lockYaw = true;
             this.lockPitch = false;
         } else {
