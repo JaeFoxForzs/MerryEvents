@@ -35,10 +35,16 @@ import java.util.List;
 public final class OrbitalStrikeEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("orbital_strike");
     private static final String STRIKES_KEY = "pending_strikes";
+    private static final String REMAINING_STRIKES_KEY = "remaining_strikes";
     private static final String RADIUS_KEY = "dispersion_radius";
+    private static final int MIN_STRIKES = 16;
+    private static final int MAX_STRIKES = 64;
+    private static final int MAX_STRIKES_PER_TICK = 4;
     private static final int WARMUP_TICKS = 35;
     private static final float LETHAL_EXPLOSION_POWER = 5.5F;
     private static final double DAMAGE_RADIUS = 7.5;
+    private static final double MIN_DISPERSION_RADIUS = 28.0;
+    private static final double MAX_DISPERSION_RADIUS = 48.0;
 
     @Override
     public Identifier getId() {
@@ -58,14 +64,17 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         Random random = server.getOverworld().getRandom();
-        double dispersionRadius = 28.0 + (random.nextDouble() * 20.0);
+        int strikeQuota = MIN_STRIKES + random.nextInt(MAX_STRIKES - MIN_STRIKES + 1);
+        double dispersionRadius = MIN_DISPERSION_RADIUS
+                + random.nextDouble() * (MAX_DISPERSION_RADIUS - MIN_DISPERSION_RADIUS);
 
         context.set(STRIKES_KEY, new ArrayList<StrikeTarget>());
+        context.set(REMAINING_STRIKES_KEY, strikeQuota);
         context.set(RADIUS_KEY, dispersionRadius);
 
         MerryEvents.LOGGER.info(
-                "[OrbitalStrikeEvent] Orbital targeting satellite calibrated (dispersion radius={}). Bombardment initiated.",
-                String.format("%.1f", dispersionRadius));
+                "[OrbitalStrikeEvent] Orbital targeting satellite calibrated (quota={} strikes, dispersion radius={}). Bombardment initiated.",
+                strikeQuota, String.format("%.1f", dispersionRadius));
     }
 
     @Override
@@ -77,17 +86,32 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
             context.set(STRIKES_KEY, strikes);
         }
 
-        double radius = context.getDouble(RADIUS_KEY, 36.0);
+        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
+        int remainingStrikes = context.getInt(REMAINING_STRIKES_KEY, 0);
+        int strikeWindowTicks = remainingTicks - WARMUP_TICKS;
 
-        if (remainingTicks % 20 == 0) {
+        if (remainingStrikes > 0 && strikeWindowTicks > 0) {
+            List<ServerPlayerEntity> eligiblePlayers = new ArrayList<>();
             for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                if (SpatialTargeting.isHazardImmune(player)) {
-                    continue;
+                if (!SpatialTargeting.isHazardImmune(player)) {
+                    eligiblePlayers.add(player);
                 }
+            }
 
-                ServerWorld world = player.getServerWorld();
+            if (!eligiblePlayers.isEmpty()) {
+                double expectedStrikesThisTick = (double) remainingStrikes / strikeWindowTicks;
+                int strikesThisTick = (int) expectedStrikesThisTick;
+                if (server.getOverworld().getRandom().nextDouble()
+                        < expectedStrikesThisTick - strikesThisTick) {
+                    strikesThisTick++;
+                }
+                strikesThisTick = Math.min(strikesThisTick, MAX_STRIKES_PER_TICK);
 
-                for (int i = 0; i < 2; i++) {
+                int spawnedStrikes = 0;
+                for (int i = 0; i < strikesThisTick; i++) {
+                    ServerPlayerEntity player = eligiblePlayers.get(
+                            server.getOverworld().getRandom().nextInt(eligiblePlayers.size()));
+                    ServerWorld world = player.getServerWorld();
                     BlockPos randomStrikePos = SpatialTargeting.findRandomSurfacePosition(
                             world, player, radius, Heightmap.Type.MOTION_BLOCKING);
 
@@ -99,7 +123,12 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
                         for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
                             ServerPlayNetworking.send(p, payload);
                         }
+                        spawnedStrikes++;
                     }
+                }
+
+                if (spawnedStrikes > 0) {
+                    context.set(REMAINING_STRIKES_KEY, remainingStrikes - spawnedStrikes);
                 }
             }
         }

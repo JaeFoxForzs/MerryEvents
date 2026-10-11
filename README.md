@@ -2,7 +2,7 @@
 
 A modern, high-performance, event-driven chaos engine for **Minecraft 1.21.1 (Fabric)**.
 
-The mod orchestrates timed, randomized game-altering phenomena split into **Global** (server-wide) and **Unique** (per-player) events. Built from the ground up on modern Minecraft 1.21.1 architectural paradigms: **Data Components**, **Typed Payload Networking**, and zero-allocation tick loops.
+The mod orchestrates timed, randomized game-altering phenomena split into **Global** (server-wide) and **Personal** (targeting one player) events. Built from the ground up on modern Minecraft 1.21.1 architectural paradigms: **Data Components**, **Typed Payload Networking**, and server-authoritative event logic.
 
 ---
 
@@ -13,25 +13,32 @@ The mod orchestrates timed, randomized game-altering phenomena split into **Glob
 - **Strict Logical Isolation**: Enforced via `splitEnvironmentSourceSets()`:
   - `src/main`: Common & Server-Authoritative domain (Event scheduler, anti-conflict matrix, ticking state machines, network transmitters).
   - `src/client`: Client-only domain (Custom post-processing shaders, camera manipulation mixins, dynamic skybox hooks, HUD occlusion controllers).
-- **Deterministic Anti-Conflict Matrix**: Events belong to 8 strict categories. The state manager guarantees that concurrent events cannot claim the same architectural domain, preventing game-breaking rendering/gameplay softlocks.
-- **Zero-Allocation Hot Paths**: Server tick listeners (`ServerTickEvents.END_SERVER_TICK`) and entity damage hooks are strictly free of stream pipelines, closure captures, and object allocation overhead.
+- **Deterministic Anti-Conflict Matrix**: Events belong to 9 categories. The state manager prevents events in the same category from running together in the same scope.
+- **Weighted Event Director**: Automatic events are selected from a shuffled, weighted queue. Event weights affect how often an event appears; events whose category is occupied wait for a later opportunity.
 
 ---
 
 ## 🏷 Event Categories
 
-Both Global and Unique events are partitioned across 8 universal categories:
+Global and Personal events use the same 9 categories:
 
-| Category    | Domain                          | Example Mechanics                                               |
-| :---------- | :------------------------------ | :-------------------------------------------------------------- |
-| `WEATHER`   | Atmosphere & Falling Hazards    | Acid Rain, Anvil Showers, Fire Storm, Orbital Strikes           |
-| `PHYSICS`   | Kinematics & Spatial Movement   | Moon Gravity, Slime Bounce, Axis-Locked Camera, Auto-Jump       |
-| `WORLD`     | Environmental Mutation & Blocks | False Water (acts as Lava), Boiled Fluids, X-Ray Vision         |
-| `MOBS`      | Spawning, Scaling & Entity AI   | Baby Horde, Creeper Death Spawns, Personal Stalker Bunny        |
-| `STATUS`    | Player Attributes & Needs       | Fragility (3 HP cap), Fall Multiplier, Hydrophile (Water Diet)  |
-| `INVENTORY` | Economies, Crafts & Drops       | Resource Deflation (x4 Craft Cost), Leaky Pockets, Diamond Rush |
-| `VISUAL`    | Post-Processing & Rendering     | Ghost Interface (Hidden GUI), Cucumber Clouds, Inverted Shaders |
-| `SOUNDS`    | Auditory Overrides & Illusions  | Phantom Creeper Hiss, Anvil Drops, Pitch Shift, Auditory Horror |
+| Category    | Domain                       | Example Events                                     |
+| :---------- | :--------------------------- | :------------------------------------------------- |
+| `CAMERA`    | Camera movement and view     | Stiff Neck                                         |
+| `INVENTORY` | Items and inventory          | Diamond Rush                                       |
+| `MOBS`      | Mob behavior and encounters  | Exploding Mobs, Personal Killer                    |
+| `PHYSICS`   | Movement and forces          | Moon Gravity                                       |
+| `SOUNDS`    | Unexpected sounds            | Paranoia Sounds                                    |
+| `STATUS`    | Player status and effects    | Fragility, Dense Darkness                          |
+| `VISUAL`    | Visual effects and interface | Ghost GUI                                          |
+| `WEATHER`   | Weather and aerial hazards   | Acid Rain, Anvil Rain, Fire Storms, Orbital Strike |
+| `WORLD`     | Blocks and the environment   | False Water, Floor Hole, Wandering Blocks          |
+
+### Event Director
+
+The director starts events automatically at randomized intervals. It selects from a shuffled queue whose entries are weighted by each event's configuration; the queue count is the number of remaining weighted entries, so an event may appear more than once. The `/merry director status` command shows whether automatic starts are enabled, the time until the next event, and how many entries remain in the current queue. If an event's category is already occupied, that event is skipped for now and remains eligible later.
+
+The weather events include several distinct bombardments: **Fire Storm** launches small fireballs, **Ghast Fire Storm** sends explosive ghast fireballs from high above, and **Orbital Strike** calls down warned strikes. Their projectiles or strikes are limited by randomized per-event quotas.
 
 ---
 
@@ -40,11 +47,13 @@ Both Global and Unique events are partitioned across 8 universal categories:
 The mod includes permission-level 2 operator commands equipped with Brigadier autocompletion:
 
 - `/merry start <eventId> [durationSeconds] [targetPlayer]`  
-  Starts an event. Global events target the entire server; unique events target the sender (or specified player). Default duration: `30` seconds.
+  Starts an event. Global events target the entire server; Personal events target the sender (or specified player). Default duration: `30` seconds.
 - `/merry stop <eventId>`  
   Stops an active global or personal event and safely triggers state rollback.
 - `/merry status`  
-  Displays active server events and current category bitmasks.
+  Displays active global and personal events, their remaining duration, occupied categories, and the director queue status.
+- `/merry director status`
+  Displays automatic event scheduling status, the next-event countdown, and the number of entries left in the queue.
 
 ---
 

@@ -14,6 +14,11 @@ import org.jetbrains.annotations.Nullable;
  * coordinates within loaded chunks.
  */
 public final class SpatialTargeting {
+    private static final double RANDOM_OFFSET_CENTER = 0.5;
+    private static final double RADIUS_SPAN_MULTIPLIER = 2.0;
+    private static final int SKY_SURFACE_CLEARANCE = 4;
+    private static final int WORLD_TOP_CLEARANCE = 2;
+
     private SpatialTargeting() {
     }
 
@@ -43,8 +48,8 @@ public final class SpatialTargeting {
     public static BlockPos findRandomSurfacePosition(ServerWorld world, PlayerEntity player, double radius,
             Heightmap.Type heightmap) {
         Random random = player.getRandom();
-        double offsetX = (random.nextDouble() - 0.5) * radius * 2.0;
-        double offsetZ = (random.nextDouble() - 0.5) * radius * 2.0;
+        double offsetX = (random.nextDouble() - RANDOM_OFFSET_CENTER) * radius * RADIUS_SPAN_MULTIPLIER;
+        double offsetZ = (random.nextDouble() - RANDOM_OFFSET_CENTER) * radius * RADIUS_SPAN_MULTIPLIER;
 
         int targetX = MathHelper.floor(player.getX() + offsetX);
         int targetZ = MathHelper.floor(player.getZ() + offsetZ);
@@ -77,8 +82,8 @@ public final class SpatialTargeting {
             Heightmap.Type heightmap, int minHeightAbovePlayer,
             int extraHeightVariation) {
         Random random = player.getRandom();
-        double offsetX = (random.nextDouble() - 0.5) * radius * 2.0;
-        double offsetZ = (random.nextDouble() - 0.5) * radius * 2.0;
+        double offsetX = (random.nextDouble() - RANDOM_OFFSET_CENTER) * radius * RADIUS_SPAN_MULTIPLIER;
+        double offsetZ = (random.nextDouble() - RANDOM_OFFSET_CENTER) * radius * RADIUS_SPAN_MULTIPLIER;
 
         int targetX = MathHelper.floor(player.getX() + offsetX);
         int targetZ = MathHelper.floor(player.getZ() + offsetZ);
@@ -91,8 +96,9 @@ public final class SpatialTargeting {
         }
 
         int surfaceY = world.getTopY(heightmap, targetX, targetZ);
-        int spawnY = Math.min(world.getTopY() - 2,
-                Math.max(player.getBlockY() + minHeightAbovePlayer, surfaceY + minHeightAbovePlayer - 4)
+        int spawnY = Math.min(world.getTopY() - WORLD_TOP_CLEARANCE,
+                Math.max(player.getBlockY() + minHeightAbovePlayer,
+                        surfaceY + minHeightAbovePlayer - SKY_SURFACE_CLEARANCE)
                         + (extraHeightVariation > 0 ? random.nextInt(extraHeightVariation) : 0));
 
         return new BlockPos(targetX, spawnY, targetZ);

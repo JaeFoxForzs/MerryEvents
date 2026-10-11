@@ -15,20 +15,38 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Global meteorological incendiary event belonging to EventCategory.WEATHER.
- * Rains non-explosive small fireballs with randomized interval and dispersion
- * radius.
+ * Releases a randomized event-wide quota of non-explosive small fireballs over
+ * the event duration.
  */
 public final class FireStormEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("fire_storm");
-    private static final String INTERVAL_KEY = "cadence_ticks";
+    private static final String REMAINING_FIREBALLS_KEY = "remaining_fireballs";
     private static final String RADIUS_KEY = "dispersion_radius";
+
+    private static final int MIN_FIREBALLS = 128;
+    private static final int MAX_FIREBALLS = 1024;
+    private static final int MAX_FIREBALLS_PER_TICK = 16;
+    private static final double MIN_DISPERSION_RADIUS = 10.0;
+    private static final double MAX_DISPERSION_RADIUS = 24.0;
+    private static final Heightmap.Type SPAWN_HEIGHTMAP = Heightmap.Type.MOTION_BLOCKING;
+    private static final int MIN_HEIGHT_ABOVE_PLAYER = 64;
+    private static final int EXTRA_HEIGHT_VARIATION = 64;
+    private static final double MIN_HORIZONTAL_SPEED = -0.12;
+    private static final double MAX_HORIZONTAL_SPEED = 0.12;
+    private static final double MIN_DOWNWARD_SPEED = 0.8;
+    private static final double MAX_DOWNWARD_SPEED = 1.6;
+    private static final float SPAWN_SOUND_VOLUME = 0.7F;
+    private static final float MIN_SOUND_PITCH = 0.65F;
+    private static final float MAX_SOUND_PITCH = 1.15F;
 
     @Override
     public Identifier getId() {
@@ -48,56 +66,81 @@ public final class FireStormEvent implements ChaosEvent {
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         Random random = server.getOverworld().getRandom();
-        int cadenceTicks = 12 + random.nextInt(18);
-        double dispersionRadius = 10.0 + (random.nextDouble() * 14.0);
+        int fireballQuota = MIN_FIREBALLS + random.nextInt(MAX_FIREBALLS - MIN_FIREBALLS + 1);
+        double dispersionRadius = MIN_DISPERSION_RADIUS
+                + random.nextDouble() * (MAX_DISPERSION_RADIUS - MIN_DISPERSION_RADIUS);
 
-        context.set(INTERVAL_KEY, cadenceTicks);
+        context.set(REMAINING_FIREBALLS_KEY, fireballQuota);
         context.set(RADIUS_KEY, dispersionRadius);
 
-        MerryEvents.LOGGER.info("[FireStormEvent] Incendiary storm ignited: interval={}t, radius={}",
-                cadenceTicks, String.format("%.1f", dispersionRadius));
+        MerryEvents.LOGGER.info("[FireStormEvent] Incendiary storm ignited: quota={} fireballs, radius={}",
+                fireballQuota, String.format("%.1f", dispersionRadius));
     }
 
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
-        int cadence = context.getInt(INTERVAL_KEY, 20);
-        if (remainingTicks % cadence != 0) {
+        int remainingFireballs = context.getInt(REMAINING_FIREBALLS_KEY, 0);
+        if (remainingFireballs <= 0 || remainingTicks <= 0) {
             return;
         }
 
-        double radius = context.getDouble(RADIUS_KEY, 16.0);
-
+        List<ServerPlayerEntity> eligiblePlayers = new ArrayList<>();
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (SpatialTargeting.isHazardImmune(player)) {
-                continue;
+            if (!SpatialTargeting.isHazardImmune(player)
+                    && WeatherUtil.isExposedToSky(player.getServerWorld(), player.getBlockPos())) {
+                eligiblePlayers.add(player);
             }
+        }
 
+        if (eligiblePlayers.isEmpty()) {
+            return;
+        }
+
+        Random random = server.getOverworld().getRandom();
+        double expectedFireballsThisTick = (double) remainingFireballs / remainingTicks;
+        int fireballsThisTick = (int) expectedFireballsThisTick;
+        if (random.nextDouble() < expectedFireballsThisTick - fireballsThisTick) {
+            fireballsThisTick++;
+        }
+        fireballsThisTick = Math.min(fireballsThisTick, MAX_FIREBALLS_PER_TICK);
+
+        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
+        int spawnedFireballs = 0;
+        for (int i = 0; i < fireballsThisTick; i++) {
+            ServerPlayerEntity player = eligiblePlayers.get(random.nextInt(eligiblePlayers.size()));
             ServerWorld world = player.getServerWorld();
-            BlockPos playerPos = player.getBlockPos();
-
-            if (!WeatherUtil.isExposedToSky(world, playerPos)) {
-                continue;
-            }
-
             BlockPos spawnPos = SpatialTargeting.findRandomSkyPosition(
-                    world, player, radius, Heightmap.Type.MOTION_BLOCKING, 18, 6);
-
+                    world, player, radius, SPAWN_HEIGHTMAP, MIN_HEIGHT_ABOVE_PLAYER, EXTRA_HEIGHT_VARIATION);
             if (spawnPos == null) {
                 continue;
             }
 
             SmallFireballEntity fireball = EntityType.SMALL_FIREBALL.create(world);
-            if (fireball != null) {
-                fireball.refreshPositionAndAngles(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, 0.0F,
-                        90.0F);
-                fireball.setVelocity(new Vec3d(0.0, -1.2, 0.0));
-                world.spawnEntity(fireball);
-                context.trackEntity(fireball.getUuid());
-
-                world.playSound(null, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(),
-                        SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.WEATHER, 0.7F, 0.8F);
+            if (fireball == null) {
+                continue;
             }
+
+            fireball.refreshPositionAndAngles(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, 0.0F,
+                    90.0F);
+            fireball.setVelocity(
+                    MIN_HORIZONTAL_SPEED + random.nextDouble() * (MAX_HORIZONTAL_SPEED - MIN_HORIZONTAL_SPEED),
+                    -(MIN_DOWNWARD_SPEED + random.nextDouble() * (MAX_DOWNWARD_SPEED - MIN_DOWNWARD_SPEED)),
+                    MIN_HORIZONTAL_SPEED + random.nextDouble() * (MAX_HORIZONTAL_SPEED - MIN_HORIZONTAL_SPEED));
+            if (!world.spawnEntity(fireball)) {
+                continue;
+            }
+
+            context.trackEntity(fireball.getUuid());
+            spawnedFireballs++;
+            float soundPitch = (float) (MIN_SOUND_PITCH
+                    + random.nextDouble() * (MAX_SOUND_PITCH - MIN_SOUND_PITCH));
+            world.playSound(null, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(),
+                    SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.WEATHER, SPAWN_SOUND_VOLUME, soundPitch);
+        }
+
+        if (spawnedFireballs > 0) {
+            context.set(REMAINING_FIREBALLS_KEY, remainingFireballs - spawnedFireballs);
         }
     }
 

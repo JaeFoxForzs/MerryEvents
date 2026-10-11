@@ -61,6 +61,7 @@ public final class EventManager {
         register(new RustRainEvent());
         register(new FoodRainEvent());
         register(new FireStormEvent());
+        register(new GhastFireStormEvent());
         register(new StiffNeckEvent());
         register(new SolarVerdictEvent());
         register(new OrbitalStrikeEvent());
