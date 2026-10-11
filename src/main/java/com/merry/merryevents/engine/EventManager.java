@@ -68,6 +68,7 @@ public final class EventManager {
         register(new DontStepOnEvent());
         register(new FloorHoleEvent());
         register(new CrumblingFloorEvent());
+        register(new WanderingBlocksEvent());
     }
 
     public static EventManager getInstance() {
