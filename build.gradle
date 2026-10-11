@@ -50,7 +50,7 @@ loom {
 }
 
 def lowMemoryClientOptions = [
-	renderDistance: "2",
+	renderDistance: "5",
 	simulationDistance: "5",
 	graphicsMode: "0",
 	clouds: "0",
@@ -59,7 +59,7 @@ def lowMemoryClientOptions = [
 	entityDistanceScaling: "0.5",
 	biomeBlendRadius: "0",
 	mipmapLevels: "0",
-	maxFps: "30",
+	maxFps: "60",
 	vsync: "false"
 ]
 

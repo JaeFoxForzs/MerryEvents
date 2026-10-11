@@ -53,7 +53,11 @@
   "event.merryevents.adhd": "СДВГ",
   "event.merryevents.ant_man": "Человек-муравей",
   "event.merryevents.anvil_rain": "Дождь из наковален",
+<<<<<<< Updated upstream
   "event.merryevents.butterfingers": "Руки-крюки",
+=======
+  "event.merryevents.bouncing_hamster": "Прыгучий хомяк",
+>>>>>>> Stashed changes
   "event.merryevents.closed_inventory": "Закрытый инвентарь",
   "event.merryevents.closed_inventory.blocked": "Инвентарь заклинило! Нельзя открыть.",
   "event.merryevents.cobweb_nightmare": "Паучий кошмар",
@@ -66,6 +70,7 @@
   "event.merryevents.disco": "Дискотека",
   "event.merryevents.dont_step_on": "Не наступай!",
   "event.merryevents.dont_step_on.warning": "Осторожно! Памятка хаоса подскажет, какие блоки лучше обходить. Открой инвентарь или нажми ПКМ по воздуху.",
+  "event.merryevents.epilepsy": "Эпилепсия",
   "event.merryevents.exploding_mobs": "Взрывные мобы",
   "event.merryevents.false_water": "Обжигающая вода",
   "event.merryevents.fire_storm": "Огненный шторм",
@@ -84,6 +89,7 @@
   "event.merryevents.moon_gravity": "Лунная гравитация",
   "event.merryevents.myopia": "Близорукость",
   "event.merryevents.orbital_strike": "Орбитальный удар",
+  "event.merryevents.ore_mutation": "Рудная мутация",
   "event.merryevents.paranoia_sounds": "Странные звуки за спиной",
   "event.merryevents.perfect_ice": "Идеальный гололёд",
   "event.merryevents.personal_killer": "Личный преследователь",
@@ -95,6 +101,7 @@
   "event.merryevents.sticky_fingers": "Липкие пальцы",
   "event.merryevents.sticky_fingers.blocked": "Пальцы слиплись! Нельзя выбросить предмет.",
   "event.merryevents.stiff_neck": "Затекшая шея",
+  "event.merryevents.uncontrolled_run": "Самовольный бег",
   "event.merryevents.upside_down": "Вверх тормашками",
   "event.merryevents.wandering_blocks": "Блуждающие блоки",
   "event.merryevents.water_drinker": "Водохлёб",

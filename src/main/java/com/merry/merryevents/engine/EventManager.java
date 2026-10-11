@@ -89,10 +89,17 @@ public final class EventManager {
         this.register(new LobotomyEvent());
         this.register(new RubberWorldEvent());
         this.register(new ClosedInventoryEvent());
+<<<<<<< Updated upstream
         this.register(new CreeperRevengeEvent());
         this.register(new AntManEvent());
         this.register(new ButterfingersEvent());
         this.register(new AdhdEvent());
+=======
+        this.register(new EpilepsyEvent());
+        this.register(new BouncingHamsterEvent());
+        this.register(new UncontrolledRunEvent());
+        this.register(new OreMutationEvent());
+>>>>>>> Stashed changes
     }
 
     public static EventManager getInstance() {

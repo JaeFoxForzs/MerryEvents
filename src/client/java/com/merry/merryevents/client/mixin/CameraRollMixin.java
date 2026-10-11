@@ -1,5 +1,6 @@
 package com.merry.merryevents.client.mixin;
 
+import com.merry.merryevents.client.effect.EpilepsyClientEffect;
 import com.merry.merryevents.client.effect.UpsideDownClientEffect;
 import net.minecraft.client.render.Camera;
 import net.minecraft.entity.Entity;
@@ -13,8 +14,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Mixin intercepting camera orientation updates to apply roll inversion during
- * active UpsideDown events.
+ * Mixin intercepting camera orientation updates to apply roll inversion and
+ * elastic epilepsy spasms.
  */
 @Mixin(Camera.class)
 public abstract class CameraRollMixin {
@@ -23,8 +24,8 @@ public abstract class CameraRollMixin {
     private Quaternionf rotation;
 
     /**
-     * Intercepts camera rotation updates to apply a 180-degree Z-axis roll
-     * transformation.
+     * Intercepts camera rotation updates to apply 180-degree roll inversion and
+     * elastic epilepsy spasms along the Z-axis.
      *
      * @param area          World block view
      * @param focusedEntity Camera focus entity
@@ -34,10 +35,17 @@ public abstract class CameraRollMixin {
      * @param ci            Callback info
      */
     @Inject(method = "update", at = @At("TAIL"))
-    private void merryevents$flipCameraRoll(BlockView area, Entity focusedEntity, boolean thirdPerson,
+    private void merryevents$applyCameraRollTransformations(BlockView area, Entity focusedEntity, boolean thirdPerson,
             boolean inverseView, float tickDelta, CallbackInfo ci) {
         if (UpsideDownClientEffect.isActive()) {
             this.rotation.rotateZ((float) Math.PI);
+        }
+
+        if (EpilepsyClientEffect.isActive()) {
+            float roll = EpilepsyClientEffect.getCameraRoll(tickDelta);
+            if (roll != 0.0F) {
+                this.rotation.rotateZ(roll * (float) (Math.PI / 180.0));
+            }
         }
     }
 }

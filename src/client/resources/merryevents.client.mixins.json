@@ -5,9 +5,12 @@
   "client": [
     "CameraEntityMixin",
     "CameraRollMixin",
+    "ClientPlayerEntityMovementMixin",
     "GameRendererAccessor",
+    "GameRendererMixin",
     "HandledScreenMixin",
     "InGameHudMixin",
+    "KeyboardInputMixin",
     "LivingEntityRendererMixin",
     "PostEffectProcessorAccessor",
     "ScreenMixin",

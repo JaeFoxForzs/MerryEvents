@@ -8,6 +8,7 @@ import com.merry.merryevents.event.sounds.RubberWorldEvent;
 import com.merry.merryevents.event.ui.ClosedInventoryEvent;
 import com.merry.merryevents.network.*;
 import com.merry.merryevents.client.render.*;
+import com.merry.merryevents.event.camera.EpilepsyEvent;
 import com.merry.merryevents.event.mobs.*;
 import com.merry.merryevents.event.physics.*;
 import com.merry.merryevents.event.status.*;
@@ -87,6 +88,11 @@ public class MerryEventsClient implements ClientModInitializer {
         // Auditory and UI lockdown effects
         ClientEventManager.registerEffect(RubberWorldEvent.ID, new RubberWorldClientEffect());
         ClientEventManager.registerEffect(ClosedInventoryEvent.ID, new ClosedInventoryClientEffect());
+        ClientEventManager.registerEffect(EpilepsyEvent.ID, new EpilepsyClientEffect());
+        EpilepsyClientEffect.init();
+        ClientEventManager.registerEffect(BouncingHamsterEvent.ID, new BouncingHamsterClientEffect());
+        ClientEventManager.registerEffect(UncontrolledRunEvent.ID, new UncontrolledRunClientEffect());
+        UncontrolledRunClientEffect.init();
 
         // Global state condition providers
         ClientEventManager.registerEffect(WaterDrinkerEvent.ID, new ClientChaosEffect() {
