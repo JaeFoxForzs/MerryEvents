@@ -8,9 +8,8 @@
     "GameRendererAccessor",
     "InGameHudMixin",
     "LivingEntityRendererMixin",
+    "PostEffectProcessorAccessor",
     "ScreenMixin"
-    "LivingEntityRendererMixin",
-    "PostEffectProcessorAccessor"
   ],
   "injectors": {
     "defaultRequire": 1
