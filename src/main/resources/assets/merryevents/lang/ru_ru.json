@@ -39,11 +39,16 @@
 
   "event.merryevents.acid_rain": "Кислотный дождь",
   "event.merryevents.anvil_rain": "Дождь из наковален",
+  "event.merryevents.cobweb_nightmare": "Паучий кошмар",
+  "event.merryevents.crumbling_floor": "Пол уходит из-под ног",
   "event.merryevents.dense_darkness": "Густая тьма",
   "event.merryevents.diamond_rush": "Алмазная лихорадка",
+  "event.merryevents.dont_step_on": "Не наступай на",
+  "event.merryevents.dont_step_on.warning": "Внимание! Вы получили Памятку хаоса. ПКМ по воздуху или откройте инвентарь, чтобы увидеть запрещенные блоки!",
   "event.merryevents.exploding_mobs": "Взрывные мобы",
   "event.merryevents.false_water": "Фальшивая вода",
   "event.merryevents.fire_storm": "Огненный шторм",
+  "event.merryevents.floor_hole": "Дыра в полу",
   "event.merryevents.food_rain": "Дождь из еды",
   "event.merryevents.fragility": "Слабость здоровья",
   "event.merryevents.ghost_gui": "Призрачный интерфейс",
@@ -58,5 +63,14 @@
   "event.merryevents.stiff_neck": "Заклинившая шея",
 
   "gui.no": "Выключен",
-  "gui.yes": "Включен"
+  "gui.yes": "Включен",
+
+  "item.merryevents.chaos_memo.named": "Памятка #%s",
+
+  "ui.merryevents.dont_step_on.status.active": "АКТИВНО",
+  "ui.merryevents.dont_step_on.status.inactive": "НЕ АКТИВНО",
+  "ui.merryevents.dont_step_on.status_label": "Статус: ",
+  "ui.merryevents.dont_step_on.target": "Кому: %s",
+  "ui.merryevents.dont_step_on.target_unknown": "Неизвестно",
+  "ui.merryevents.dont_step_on.title": "НЕ НАСТУПАЙ НА:"
 }

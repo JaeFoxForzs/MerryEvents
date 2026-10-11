@@ -64,6 +64,10 @@ public final class EventManager {
         register(new StiffNeckEvent());
         register(new SolarVerdictEvent());
         register(new OrbitalStrikeEvent());
+        register(new CobwebNightmareEvent());
+        register(new DontStepOnEvent());
+        register(new FloorHoleEvent());
+        register(new CrumblingFloorEvent());
     }
 
     public static EventManager getInstance() {
@@ -359,6 +363,19 @@ public final class EventManager {
                 ActiveEventInstance inst = entry.getValue();
                 ServerPlayNetworking.send(player, new EventSyncPayload(entry.getKey(), inst.event.getCategory().name(),
                         inst.remainingTicks, true, false));
+            }
+        }
+
+        MinecraftServer server = player.getServer();
+        if (server != null) {
+            for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> pEntry : activePlayerEvents.entrySet()) {
+                if (pEntry.getValue().containsKey(DontStepOnEvent.ID)) {
+                    ServerPlayerEntity target = server.getPlayerManager().getPlayer(pEntry.getKey());
+                    if (target != null) {
+                        ServerPlayNetworking.send(player,
+                                new ForbiddenBlocksPayload(target.getGameProfile().getName(), true));
+                    }
+                }
             }
         }
     }

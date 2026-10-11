@@ -39,11 +39,16 @@
 
   "event.merryevents.acid_rain": "Acid Rain",
   "event.merryevents.anvil_rain": "Anvil Rain",
+  "event.merryevents.cobweb_nightmare": "Cobweb Nightmare",
+  "event.merryevents.crumbling_floor": "Crumbling Floor",
   "event.merryevents.dense_darkness": "Dense Darkness",
   "event.merryevents.diamond_rush": "Diamond Rush",
+  "event.merryevents.dont_step_on": "Don't Step On",
+  "event.merryevents.dont_step_on.warning": "Beware! You received a Chaos Memo. Right-click in air or open inventory to view forbidden blocks!",
   "event.merryevents.exploding_mobs": "Exploding Mobs",
   "event.merryevents.false_water": "False Water",
   "event.merryevents.fire_storm": "Fire Storm",
+  "event.merryevents.floor_hole": "Floor Hole",
   "event.merryevents.food_rain": "Food Rain",
   "event.merryevents.fragility": "Fragility",
   "event.merryevents.ghost_gui": "Ghost GUI",
@@ -58,5 +63,14 @@
   "event.merryevents.stiff_neck": "Stiff Neck",
 
   "gui.no": "Disabled",
-  "gui.yes": "Enabled"
+  "gui.yes": "Enabled",
+
+  "item.merryevents.chaos_memo.named": "Chaos Memo #%s",
+
+  "ui.merryevents.dont_step_on.status.active": "ACTIVE",
+  "ui.merryevents.dont_step_on.status.inactive": "INACTIVE",
+  "ui.merryevents.dont_step_on.status_label": "Status: ",
+  "ui.merryevents.dont_step_on.target": "Target: %s",
+  "ui.merryevents.dont_step_on.target_unknown": "Unknown",
+  "ui.merryevents.dont_step_on.title": "DO NOT STEP ON:"
 }

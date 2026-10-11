@@ -1,11 +1,13 @@
 package com.merry.merryevents.client;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.client.effect.DontStepOnClientEffect;
 import com.merry.merryevents.client.effect.GhostGuiVisualEffect;
 import com.merry.merryevents.client.effect.OrbitalStrikeClientEffect;
 import com.merry.merryevents.client.effect.StiffNeckClientEffect;
 import com.merry.merryevents.client.render.OrbitalBeamRenderer;
 import com.merry.merryevents.network.EventSyncPayload;
+import com.merry.merryevents.network.ForbiddenBlocksPayload;
 import com.merry.merryevents.network.OrbitalStrikeSpawnPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
@@ -19,6 +21,8 @@ public class MerryEventsClient implements ClientModInitializer {
         ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());
         ClientEventManager.registerEffect(MerryEvents.id("stiff_neck"), new StiffNeckClientEffect());
         ClientEventManager.registerEffect(MerryEvents.id("orbital_strike"), new OrbitalStrikeClientEffect());
+        ClientEventManager.registerEffect(com.merry.merryevents.event.world.DontStepOnEvent.ID,
+                new DontStepOnClientEffect());
 
         ClientEventManager.registerEffect(com.merry.merryevents.event.world.LavaWaterSwapEvent.ID,
                 new com.merry.merryevents.client.api.ClientChaosEffect() {
@@ -33,6 +37,8 @@ public class MerryEventsClient implements ClientModInitializer {
         com.merry.merryevents.event.world.LavaWaterSwapEvent.clientActiveSupplier = () -> ClientEventManager
                 .isEventActive(com.merry.merryevents.event.world.LavaWaterSwapEvent.ID);
 
+        DontStepOnClientEffect.init();
+
         ClientPlayNetworking.registerGlobalReceiver(EventSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 MerryEvents.LOGGER.info("[MerryEvents-Client] Sync: id={}, active={}, ticks={}", payload.eventId(),
@@ -44,12 +50,22 @@ public class MerryEventsClient implements ClientModInitializer {
 
         OrbitalBeamRenderer.init();
 
+        ClientPlayNetworking.registerGlobalReceiver(ForbiddenBlocksPayload.ID,
+                (payload, context) -> {
+                    context.client().execute(() -> {
+                        DontStepOnClientEffect.setPlayerRestrictionStatus(payload.targetPlayerName(), payload.active());
+                    });
+                });
+
         ClientPlayNetworking.registerGlobalReceiver(OrbitalStrikeSpawnPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 OrbitalBeamRenderer.addBeam(payload.pos(), payload.warmupTicks());
             });
         });
 
-        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> ClientEventManager.reset(client));
+        ClientPlayConnectionEvents.DISCONNECT.register((handler, client) -> {
+            ClientEventManager.reset(client);
+            DontStepOnClientEffect.reset();
+        });
     }
 }

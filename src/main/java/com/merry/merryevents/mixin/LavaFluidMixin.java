@@ -2,6 +2,7 @@ package com.merry.merryevents.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.llamalad7.mixinextras.sugar.Local;
 import com.merry.merryevents.event.world.LavaWaterSwapEvent;
 import net.minecraft.fluid.Fluid;
 import net.minecraft.fluid.FluidState;
@@ -64,21 +65,19 @@ public abstract class LavaFluidMixin {
     }
 
     /**
-     * Safely wraps fluid tag checks during downward flow to suppress stone
-     * formation when lava falls onto water.
-     * Evaluates active fluid inversion status to bypass stone conversion and
-     * maintain fluid mechanics.
+     * Wraps fluid tag checks during downward flow to suppress stone formation when
+     * lava falls into water during fluid swap events.
      *
-     * @param instance Target fluid state being tested
-     * @param tag      Fluid tag checked by vanilla logic
+     * @param instance Target fluid state tested
+     * @param tag      Fluid tag checked by caller
      * @param original Original operation wrapper
-     * @param world    World access instance
-     * @return False if fluid swap event is active to bypass stone formation,
-     *         otherwise original result
+     * @param world    Local world access parameter from enclosing flow method
+     * @return False when swap is active to prevent stone solidification, otherwise
+     *         vanilla check result
      */
     @WrapOperation(method = "flow", at = @At(value = "INVOKE", target = "Lnet/minecraft/fluid/FluidState;isIn(Lnet/minecraft/registry/tag/TagKey;)Z"))
     private boolean merryevents$wrapLavaDownWaterCheck(FluidState instance, TagKey<Fluid> tag,
-            Operation<Boolean> original, WorldAccess world) {
+            Operation<Boolean> original, @Local(argsOnly = true) WorldAccess world) {
         if (world instanceof World w && LavaWaterSwapEvent.isActive(w)) {
             return false;
         }

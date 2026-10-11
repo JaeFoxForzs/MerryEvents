@@ -119,6 +119,10 @@ public final class ConfigManager {
             case "food_rain" -> EventConfigEntry.ofDefault(30, 90);
             case "fire_storm" -> EventConfigEntry.ofDefault(30, 90);
             case "lava_water_swap" -> EventConfigEntry.ofDefault(60, 180);
+            case "cobweb_nightmare" -> EventConfigEntry.ofDefault(120, 300);
+            case "dont_step_on" -> EventConfigEntry.ofDefault(120, 300);
+            case "floor_hole" -> EventConfigEntry.ofDefault(60, 240);
+            case "crumbling_floor" -> EventConfigEntry.ofDefault(60, 240);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

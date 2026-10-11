@@ -3,6 +3,7 @@
   "package": "com.merry.merryevents.client.mixin",
   "compatibilityLevel": "JAVA_21",
   "client": [
+    "CameraEntityMixin",
     "GameRendererAccessor",
     "InGameHudMixin"
   ],
@@ -11,8 +12,5 @@
   },
   "overwrites": {
     "requireAnnotations": true
-  },
-  "mixins": [
-    "CameraEntityMixin"
-  ]
+  }
 }
