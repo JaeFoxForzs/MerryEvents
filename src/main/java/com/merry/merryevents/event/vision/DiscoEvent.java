@@ -43,7 +43,7 @@ public final class DiscoEvent implements ChaosEvent {
 
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
-            int remainingTicks) {
+                             int remainingTicks) {
     }
 
     @Override

@@ -86,6 +86,7 @@ public final class EventManager {
         this.register(new MyopiaEvent());
         this.register(new UpsideDownEvent());
         this.register(new ColorblindnessEvent());
+        this.register(new LobotomyEvent());
         this.register(new RubberWorldEvent());
         this.register(new ClosedInventoryEvent());
     }

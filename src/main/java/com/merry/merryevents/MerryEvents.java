@@ -23,6 +23,7 @@ import net.minecraft.registry.Registries;
 import net.minecraft.registry.Registry;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
+import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
 import org.slf4j.*;
@@ -36,6 +37,13 @@ import java.util.List;
 public class MerryEvents implements ModInitializer {
         public static final String MOD_ID = "merryevents";
         public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+
+        public static final Identifier LOBOTOMY_SOUND_ID = id("lobotomy");
+        public static final SoundEvent LOBOTOMY_SOUND = Registry.register(
+                Registries.SOUND_EVENT,
+                LOBOTOMY_SOUND_ID,
+                SoundEvent.of(LOBOTOMY_SOUND_ID)
+        );
 
         public static final ComponentType<List<Identifier>> FORBIDDEN_BLOCKS_COMPONENT = Registry.register(
                         Registries.DATA_COMPONENT_TYPE,

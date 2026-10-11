@@ -3,13 +3,13 @@ package com.merry.merryevents.client;
 import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.client.api.*;
 import com.merry.merryevents.client.effect.*;
+import com.merry.merryevents.event.sounds.RubberWorldEvent;
+import com.merry.merryevents.event.ui.ClosedInventoryEvent;
 import com.merry.merryevents.network.*;
 import com.merry.merryevents.client.render.*;
 import com.merry.merryevents.event.mobs.*;
 import com.merry.merryevents.event.physics.*;
-import com.merry.merryevents.event.sounds.*;
 import com.merry.merryevents.event.status.*;
-import com.merry.merryevents.event.ui.*;
 import com.merry.merryevents.event.vision.*;
 import com.merry.merryevents.event.visual.*;
 import com.merry.merryevents.event.world.*;
@@ -22,6 +22,9 @@ public class MerryEventsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         MerryEvents.LOGGER.info("[MerryEvents-Client] Binding client payload receivers...");
+
+        ClientEventManager.registerEffect(LobotomyEvent.ID, new LobotomyClientEffect());
+        LobotomyClientEffect.init();
 
         // Core visual effects
         ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());

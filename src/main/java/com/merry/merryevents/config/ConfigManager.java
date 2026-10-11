@@ -138,9 +138,10 @@ public final class ConfigManager {
             case "leaky_pockets" -> EventConfigEntry.ofDefault(60, 240);
             case "sticky_fingers" -> EventConfigEntry.ofDefault(60, 180);
             case "kinetic_recoil" -> EventConfigEntry.ofDefault(60, 180);
+            case "scrambled_buttons" -> EventConfigEntry.ofDefault(60, 300);
+            case "lobotomy" -> EventConfigEntry.ofDefault(120, 480);
             case "rubber_world" -> EventConfigEntry.ofDefault(120, 480);
             case "closed_inventory" -> EventConfigEntry.ofDefault(60, 180);
-            case "scrambled_buttons" -> EventConfigEntry.ofDefault(120, 480);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

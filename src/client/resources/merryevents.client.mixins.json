@@ -11,7 +11,8 @@
     "LivingEntityRendererMixin",
     "PostEffectProcessorAccessor",
     "ScreenMixin",
-    "SoundSystemMixin"
+    "SoundSystemMixin",
+    "SourceMixin"
   ],
   "injectors": {
     "defaultRequire": 1
