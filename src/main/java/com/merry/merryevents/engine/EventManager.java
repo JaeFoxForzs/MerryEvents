@@ -12,6 +12,7 @@ import com.merry.merryevents.event.sounds.*;
 import com.merry.merryevents.event.status.*;
 import com.merry.merryevents.event.ui.*;
 import com.merry.merryevents.event.vision.*;
+import com.merry.merryevents.event.visual.*;
 import com.merry.merryevents.event.weather.*;
 import com.merry.merryevents.event.world.*;
 import com.merry.merryevents.event.camera.*;
@@ -47,83 +48,84 @@ public final class EventManager {
     private EventPersistentState persistentState;
 
     private EventManager() {
-        register(new AcidRainEvent());
-        register(new MoonGravityEvent());
-        register(new FalseWaterEvent());
-        register(new LavaWaterSwapEvent());
-        register(new ExplodingMobsEvent());
-        register(new FragilityEvent());
-        register(new DiamondRushEvent());
-        register(new GhostGuiEvent());
-        register(new ParanoiaSoundsEvent());
-        register(new PersonalKillerEvent());
-        register(new AnvilRainEvent());
-        register(new DenseDarknessEvent());
-        register(new RustRainEvent());
-        register(new FoodRainEvent());
-        register(new FireStormEvent());
-        register(new GhastFireStormEvent());
-        register(new StiffNeckEvent());
-        register(new SolarVerdictEvent());
-        register(new OrbitalStrikeEvent());
-        register(new CobwebNightmareEvent());
-        register(new DontStepOnEvent());
-        register(new FloorHoleEvent());
-        register(new CrumblingFloorEvent());
-        register(new WanderingBlocksEvent());
+        this.register(new AcidRainEvent());
+        this.register(new MoonGravityEvent());
+        this.register(new FalseWaterEvent());
+        this.register(new LavaWaterSwapEvent());
+        this.register(new ExplodingMobsEvent());
+        this.register(new FragilityEvent());
+        this.register(new DiamondRushEvent());
+        this.register(new GhostGuiEvent());
+        this.register(new ParanoiaSoundsEvent());
+        this.register(new PersonalKillerEvent());
+        this.register(new AnvilRainEvent());
+        this.register(new DenseDarknessEvent());
+        this.register(new RustRainEvent());
+        this.register(new FoodRainEvent());
+        this.register(new FireStormEvent());
+        this.register(new GhastFireStormEvent());
+        this.register(new StiffNeckEvent());
+        this.register(new SolarVerdictEvent());
+        this.register(new OrbitalStrikeEvent());
+        this.register(new CobwebNightmareEvent());
+        this.register(new DontStepOnEvent());
+        this.register(new FloorHoleEvent());
+        this.register(new CrumblingFloorEvent());
+        this.register(new WanderingBlocksEvent());
+        this.register(new FlatMobsEvent());
     }
 
     public static EventManager getInstance() {
-        return INSTANCE;
+        return EventManager.INSTANCE;
     }
 
     public void setGlobalRemainingTicks(Identifier eventId, int ticks) {
-        ActiveEventInstance instance = activeGlobalEvents.get(eventId);
+        ActiveEventInstance instance = this.activeGlobalEvents.get(eventId);
         if (instance != null) {
             instance.remainingTicks = ticks;
         }
     }
 
     public void register(ChaosEvent event) {
-        registry.put(event.getId(), event);
+        this.registry.put(event.getId(), event);
         MerryEvents.LOGGER.info("[EventManager] Registered chaos event '{}' in category {}", event.getId(),
                 event.getCategory());
     }
 
     public Map<Identifier, ChaosEvent> getRegistry() {
-        return Collections.unmodifiableMap(registry);
+        return Collections.unmodifiableMap(this.registry);
     }
 
     public @Nullable ChaosEvent getEvent(Identifier id) {
-        return registry.get(id);
+        return this.registry.get(id);
     }
 
     public java.util.Set<Identifier> getRegisteredEventIds() {
-        return registry.keySet();
+        return this.registry.keySet();
     }
 
     public java.util.Set<Identifier> getActiveGlobalEventIds() {
-        return activeGlobalEvents.keySet();
+        return this.activeGlobalEvents.keySet();
     }
 
     public Map<Identifier, ActiveEventInstance> getActiveGlobalEvents() {
-        return Collections.unmodifiableMap(activeGlobalEvents);
+        return Collections.unmodifiableMap(this.activeGlobalEvents);
     }
 
     public Map<UUID, Map<Identifier, ActiveEventInstance>> getActivePlayerEvents() {
-        return Collections.unmodifiableMap(activePlayerEvents);
+        return Collections.unmodifiableMap(this.activePlayerEvents);
     }
 
     public int getGlobalCategoryMask() {
         int mask = 0;
-        for (ActiveEventInstance instance : activeGlobalEvents.values()) {
+        for (ActiveEventInstance instance : this.activeGlobalEvents.values()) {
             mask |= instance.event.getCategory().getMask();
         }
         return mask;
     }
 
     public int getPlayerCategoryMask(UUID uuid) {
-        Map<Identifier, ActiveEventInstance> map = activePlayerEvents.get(uuid);
+        Map<Identifier, ActiveEventInstance> map = this.activePlayerEvents.get(uuid);
         if (map == null || map.isEmpty()) {
             return 0;
         }
@@ -135,24 +137,24 @@ public final class EventManager {
     }
 
     public boolean isCategoryOccupiedGlobally(EventCategory category) {
-        return (getGlobalCategoryMask() & category.getMask()) != 0;
+        return (this.getGlobalCategoryMask() & category.getMask()) != 0;
     }
 
     public boolean isCategoryOccupiedForPlayer(UUID uuid, EventCategory category) {
-        return (getPlayerCategoryMask(uuid) & category.getMask()) != 0;
+        return (this.getPlayerCategoryMask(uuid) & category.getMask()) != 0;
     }
 
     public boolean isGlobalEventActive(Identifier eventId) {
-        return activeGlobalEvents.containsKey(eventId);
+        return this.activeGlobalEvents.containsKey(eventId);
     }
 
     public boolean isPlayerEventActive(UUID playerUuid, Identifier eventId) {
-        Map<Identifier, ActiveEventInstance> map = activePlayerEvents.get(playerUuid);
+        Map<Identifier, ActiveEventInstance> map = this.activePlayerEvents.get(playerUuid);
         return map != null && map.containsKey(eventId);
     }
 
     public @Nullable EventContext getPlayerEventContext(UUID playerUuid, Identifier eventId) {
-        Map<Identifier, ActiveEventInstance> map = activePlayerEvents.get(playerUuid);
+        Map<Identifier, ActiveEventInstance> map = this.activePlayerEvents.get(playerUuid);
         if (map != null) {
             ActiveEventInstance inst = map.get(eventId);
             if (inst != null) {
@@ -164,22 +166,22 @@ public final class EventManager {
 
     public void initPersistentState(MinecraftServer server, EventPersistentState state) {
         this.persistentState = state;
-        ConfigManager.syncRegisteredEvents(registry);
+        ConfigManager.syncRegisteredEvents(this.registry);
 
-        activeGlobalEvents.clear();
+        this.activeGlobalEvents.clear();
 
         for (Map.Entry<Identifier, EventPersistentState.SavedEventData> entry : state.globalEvents.entrySet()) {
-            ChaosEvent event = registry.get(entry.getKey());
+            ChaosEvent event = this.registry.get(entry.getKey());
             if (event != null && event.isGlobal()) {
                 ActiveEventInstance instance = new ActiveEventInstance(event, entry.getValue().remainingTicks());
-                activeGlobalEvents.put(entry.getKey(), instance);
+                this.activeGlobalEvents.put(entry.getKey(), instance);
                 instance.event.onStartServer(server, null, instance.context);
                 MerryEvents.LOGGER.info("[EventManager] Resumed global event '{}' ({} ticks remaining)", entry.getKey(),
                         instance.remainingTicks);
             }
         }
 
-        activePlayerEvents.clear();
+        this.activePlayerEvents.clear();
 
         for (Map.Entry<UUID, Map<Identifier, EventPersistentState.SavedEventData>> pEntry : state.playerEvents
                 .entrySet()) {
@@ -187,7 +189,7 @@ public final class EventManager {
             Map<Identifier, ActiveEventInstance> map = new ConcurrentHashMap<>();
 
             for (Map.Entry<Identifier, EventPersistentState.SavedEventData> eEntry : pEntry.getValue().entrySet()) {
-                ChaosEvent event = registry.get(eEntry.getKey());
+                ChaosEvent event = this.registry.get(eEntry.getKey());
                 if (event != null && !event.isGlobal()) {
                     ActiveEventInstance instance = new ActiveEventInstance(event, eEntry.getValue().remainingTicks());
                     map.put(eEntry.getKey(), instance);
@@ -195,7 +197,7 @@ public final class EventManager {
             }
 
             if (!map.isEmpty()) {
-                activePlayerEvents.put(uuid, map);
+                this.activePlayerEvents.put(uuid, map);
             }
         }
 
@@ -217,24 +219,24 @@ public final class EventManager {
     }
 
     public boolean startGlobalEvent(MinecraftServer server, Identifier eventId, int durationTicks) {
-        ChaosEvent event = registry.get(eventId);
+        ChaosEvent event = this.registry.get(eventId);
         if (event == null || !event.isGlobal()) {
             MerryEvents.LOGGER.warn("[EventManager] Invalid global event target: {}", eventId);
             return false;
         }
 
-        if (isCategoryOccupiedGlobally(event.getCategory())) {
+        if (this.isCategoryOccupiedGlobally(event.getCategory())) {
             MerryEvents.LOGGER.warn("[EventManager] Conflict: category {} already occupied globally",
                     event.getCategory());
             return false;
         }
 
         ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks);
-        activeGlobalEvents.put(eventId, instance);
+        this.activeGlobalEvents.put(eventId, instance);
         event.onStartServer(server, null, instance.context);
 
-        if (persistentState != null) {
-            persistentState.markDirty();
+        if (this.persistentState != null) {
+            this.persistentState.markDirty();
         }
 
         EventSyncPayload payload = new EventSyncPayload(eventId, event.getCategory().name(), durationTicks, true, true);
@@ -248,25 +250,25 @@ public final class EventManager {
 
     public boolean startPlayerEvent(MinecraftServer server, ServerPlayerEntity player, Identifier eventId,
             int durationTicks) {
-        ChaosEvent event = registry.get(eventId);
+        ChaosEvent event = this.registry.get(eventId);
         if (event == null || event.isGlobal()) {
             MerryEvents.LOGGER.warn("[EventManager] Invalid player event target: {}", eventId);
             return false;
         }
 
         UUID uuid = player.getUuid();
-        if (isCategoryOccupiedForPlayer(uuid, event.getCategory())) {
+        if (this.isCategoryOccupiedForPlayer(uuid, event.getCategory())) {
             MerryEvents.LOGGER.warn("[EventManager] Conflict: category {} active for {}", event.getCategory(),
                     player.getName().getString());
             return false;
         }
 
         ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks);
-        activePlayerEvents.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(eventId, instance);
+        this.activePlayerEvents.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(eventId, instance);
         event.onStartServer(server, player, instance.context);
 
-        if (persistentState != null) {
-            persistentState.markDirty();
+        if (this.persistentState != null) {
+            this.persistentState.markDirty();
         }
 
         EventSyncPayload payload = new EventSyncPayload(eventId, event.getCategory().name(), durationTicks, true,
@@ -279,14 +281,14 @@ public final class EventManager {
     }
 
     public boolean stopGlobalEvent(MinecraftServer server, Identifier eventId) {
-        ActiveEventInstance instance = activeGlobalEvents.remove(eventId);
+        ActiveEventInstance instance = this.activeGlobalEvents.remove(eventId);
         if (instance != null) {
             instance.event.onStopServer(server, null, instance.context);
             instance.context.discardTrackedEntities(server);
             instance.context.clear();
 
-            if (persistentState != null) {
-                persistentState.markDirty();
+            if (this.persistentState != null) {
+                this.persistentState.markDirty();
             }
 
             EventSyncPayload payload = new EventSyncPayload(eventId, instance.event.getCategory().name(), 0, false,
@@ -303,7 +305,7 @@ public final class EventManager {
 
     public boolean stopPlayerEvent(MinecraftServer server, ServerPlayerEntity player, Identifier eventId) {
         UUID uuid = player.getUuid();
-        Map<Identifier, ActiveEventInstance> events = activePlayerEvents.get(uuid);
+        Map<Identifier, ActiveEventInstance> events = this.activePlayerEvents.get(uuid);
         if (events != null) {
             ActiveEventInstance instance = events.remove(eventId);
             if (instance != null) {
@@ -312,11 +314,11 @@ public final class EventManager {
                 instance.context.clear();
 
                 if (events.isEmpty()) {
-                    activePlayerEvents.remove(uuid);
+                    this.activePlayerEvents.remove(uuid);
                 }
 
-                if (persistentState != null) {
-                    persistentState.markDirty();
+                if (this.persistentState != null) {
+                    this.persistentState.markDirty();
                 }
 
                 EventSyncPayload payload = new EventSyncPayload(eventId, instance.event.getCategory().name(), 0, false,
@@ -332,16 +334,16 @@ public final class EventManager {
     }
 
     public void onServerStopping(MinecraftServer server) {
-        if (persistentState != null) {
-            persistentState.markDirty();
+        if (this.persistentState != null) {
+            this.persistentState.markDirty();
         }
 
-        for (ActiveEventInstance instance : activeGlobalEvents.values()) {
+        for (ActiveEventInstance instance : this.activeGlobalEvents.values()) {
             instance.event.onStopServer(server, null, instance.context);
             instance.context.discardTrackedEntities(server);
         }
 
-        for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> entry : activePlayerEvents.entrySet()) {
+        for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> entry : this.activePlayerEvents.entrySet()) {
             ServerPlayerEntity player = server.getPlayerManager().getPlayer(entry.getKey());
             for (ActiveEventInstance instance : entry.getValue().values()) {
                 instance.event.onStopServer(server, player, instance.context);
@@ -354,13 +356,13 @@ public final class EventManager {
     }
 
     public void syncAllToPlayer(ServerPlayerEntity player) {
-        for (Map.Entry<Identifier, ActiveEventInstance> entry : activeGlobalEvents.entrySet()) {
+        for (Map.Entry<Identifier, ActiveEventInstance> entry : this.activeGlobalEvents.entrySet()) {
             ActiveEventInstance inst = entry.getValue();
             ServerPlayNetworking.send(player, new EventSyncPayload(entry.getKey(), inst.event.getCategory().name(),
                     inst.remainingTicks, true, true));
         }
 
-        Map<Identifier, ActiveEventInstance> pEvents = activePlayerEvents.get(player.getUuid());
+        Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
         if (pEvents != null) {
             for (Map.Entry<Identifier, ActiveEventInstance> entry : pEvents.entrySet()) {
                 ActiveEventInstance inst = entry.getValue();
@@ -371,7 +373,7 @@ public final class EventManager {
 
         MinecraftServer server = player.getServer();
         if (server != null) {
-            for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> pEntry : activePlayerEvents.entrySet()) {
+            for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> pEntry : this.activePlayerEvents.entrySet()) {
                 if (pEntry.getValue().containsKey(DontStepOnEvent.ID)) {
                     ServerPlayerEntity target = server.getPlayerManager().getPlayer(pEntry.getKey());
                     if (target != null) {
@@ -384,80 +386,80 @@ public final class EventManager {
     }
 
     public void onPlayerJoin(MinecraftServer server, ServerPlayerEntity player) {
-        Map<Identifier, ActiveEventInstance> pEvents = activePlayerEvents.get(player.getUuid());
+        Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
         if (pEvents != null) {
             for (ActiveEventInstance inst : pEvents.values()) {
                 inst.event.onStartServer(server, player, inst.context);
             }
         }
-        syncAllToPlayer(player);
+        this.syncAllToPlayer(player);
     }
 
     public void onPlayerDisconnect(MinecraftServer server, ServerPlayerEntity player) {
-        Map<Identifier, ActiveEventInstance> pEvents = activePlayerEvents.get(player.getUuid());
+        Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
         if (pEvents != null) {
             for (ActiveEventInstance instance : pEvents.values()) {
                 instance.event.onStopServer(server, player, instance.context);
                 instance.context.discardTrackedEntities(server);
             }
         }
-        if (persistentState != null) {
-            persistentState.markDirty();
+        if (this.persistentState != null) {
+            this.persistentState.markDirty();
         }
     }
 
     public void onPlayerRespawn(MinecraftServer server, ServerPlayerEntity oldPlayer, ServerPlayerEntity newPlayer) {
         UUID uuid = newPlayer.getUuid();
-        Map<Identifier, ActiveEventInstance> pEvents = activePlayerEvents.get(uuid);
+        Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(uuid);
         if (pEvents != null) {
             for (ActiveEventInstance inst : pEvents.values()) {
                 inst.event.onPlayerRespawn(server, oldPlayer, newPlayer, inst.context);
             }
-            syncAllToPlayer(newPlayer);
+            this.syncAllToPlayer(newPlayer);
         }
     }
 
     public void tick(MinecraftServer server) {
         ChaosDirector.getInstance().tick(server);
 
-        globalRemovalQueue.clear();
-        for (Map.Entry<Identifier, ActiveEventInstance> entry : activeGlobalEvents.entrySet()) {
+        this.globalRemovalQueue.clear();
+        for (Map.Entry<Identifier, ActiveEventInstance> entry : this.activeGlobalEvents.entrySet()) {
             ActiveEventInstance instance = entry.getValue();
             instance.event.onTickServer(server, null, instance.context, instance.remainingTicks);
 
             if (--instance.remainingTicks <= 0) {
-                globalRemovalQueue.add(entry.getKey());
+                this.globalRemovalQueue.add(entry.getKey());
             }
         }
 
-        for (int i = 0; i < globalRemovalQueue.size(); i++) {
-            stopGlobalEvent(server, globalRemovalQueue.get(i));
+        for (int i = 0; i < this.globalRemovalQueue.size(); i++) {
+            this.stopGlobalEvent(server, this.globalRemovalQueue.get(i));
         }
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            Map<Identifier, ActiveEventInstance> pEvents = activePlayerEvents.get(player.getUuid());
+            Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
             if (pEvents == null || pEvents.isEmpty()) {
                 continue;
             }
 
-            playerRemovalQueue.clear();
+            this.playerRemovalQueue.clear();
             for (Map.Entry<Identifier, ActiveEventInstance> entry : pEvents.entrySet()) {
                 ActiveEventInstance instance = entry.getValue();
                 instance.event.onTickServer(server, player, instance.context, instance.remainingTicks);
 
                 if (--instance.remainingTicks <= 0) {
-                    playerRemovalQueue.add(entry.getKey());
+                    this.playerRemovalQueue.add(entry.getKey());
                 }
             }
 
-            for (int i = 0; i < playerRemovalQueue.size(); i++) {
-                stopPlayerEvent(server, player, playerRemovalQueue.get(i));
+            for (int i = 0; i < this.playerRemovalQueue.size(); i++) {
+                this.stopPlayerEvent(server, player, this.playerRemovalQueue.get(i));
             }
         }
 
-        if (server.getTicks() % 100 == 0 && persistentState != null
-                && (!activeGlobalEvents.isEmpty() || !activePlayerEvents.isEmpty())) {
-            persistentState.markDirty();
+        if (server.getTicks() % 100 == 0 && this.persistentState != null
+                && (!this.activeGlobalEvents.isEmpty() || !this.activePlayerEvents.isEmpty())) {
+            this.persistentState.markDirty();
         }
     }
 
@@ -478,7 +480,7 @@ public final class EventManager {
          * @return ChaosEvent instance
          */
         public ChaosEvent getEvent() {
-            return event;
+            return this.event;
         }
 
         /**
@@ -487,7 +489,7 @@ public final class EventManager {
          * @return EventContext instance
          */
         public EventContext getContext() {
-            return context;
+            return this.context;
         }
 
         /**
@@ -496,7 +498,7 @@ public final class EventManager {
          * @return Remaining ticks count
          */
         public int getRemainingTicks() {
-            return remainingTicks;
+            return this.remainingTicks;
         }
     }
 }

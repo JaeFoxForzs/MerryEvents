@@ -5,7 +5,8 @@
   "client": [
     "CameraEntityMixin",
     "GameRendererAccessor",
-    "InGameHudMixin"
+    "InGameHudMixin",
+    "LivingEntityRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

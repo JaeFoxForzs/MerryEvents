@@ -1,14 +1,9 @@
 package com.merry.merryevents.client;
 
 import com.merry.merryevents.MerryEvents;
-import com.merry.merryevents.client.effect.DontStepOnClientEffect;
-import com.merry.merryevents.client.effect.GhostGuiVisualEffect;
-import com.merry.merryevents.client.effect.OrbitalStrikeClientEffect;
-import com.merry.merryevents.client.effect.StiffNeckClientEffect;
-import com.merry.merryevents.client.render.OrbitalBeamRenderer;
-import com.merry.merryevents.network.EventSyncPayload;
-import com.merry.merryevents.network.ForbiddenBlocksPayload;
-import com.merry.merryevents.network.OrbitalStrikeSpawnPayload;
+import com.merry.merryevents.client.effect.*;
+import com.merry.merryevents.network.*;
+import com.merry.merryevents.client.render.*;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
@@ -21,6 +16,8 @@ public class MerryEventsClient implements ClientModInitializer {
         ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());
         ClientEventManager.registerEffect(MerryEvents.id("stiff_neck"), new StiffNeckClientEffect());
         ClientEventManager.registerEffect(MerryEvents.id("orbital_strike"), new OrbitalStrikeClientEffect());
+        ClientEventManager.registerEffect(com.merry.merryevents.event.visual.FlatMobsEvent.ID,
+                new FlatMobsClientEffect());
         ClientEventManager.registerEffect(com.merry.merryevents.event.world.DontStepOnEvent.ID,
                 new DontStepOnClientEffect());
 

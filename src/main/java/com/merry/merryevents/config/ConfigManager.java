@@ -32,28 +32,28 @@ public final class ConfigManager {
      * @return Active configuration
      */
     public static MerryConfig get() {
-        return currentConfig;
+        return ConfigManager.currentConfig;
     }
 
     /**
      * Loads the configuration from disk, creating default schema if missing.
      */
     public static synchronized void load() {
-        if (Files.exists(CONFIG_PATH)) {
-            try (BufferedReader reader = Files.newBufferedReader(CONFIG_PATH)) {
-                MerryConfig loaded = GSON.fromJson(reader, MerryConfig.class);
+        if (Files.exists(ConfigManager.CONFIG_PATH)) {
+            try (BufferedReader reader = Files.newBufferedReader(ConfigManager.CONFIG_PATH)) {
+                MerryConfig loaded = ConfigManager.GSON.fromJson(reader, MerryConfig.class);
                 if (loaded != null) {
                     loaded.validate();
-                    currentConfig = loaded;
+                    ConfigManager.currentConfig = loaded;
                     MerryEvents.LOGGER.info("[ConfigManager] Configuration loaded successfully.");
                 }
             } catch (Exception e) {
                 MerryEvents.LOGGER.error("[ConfigManager] Failed to read config file, falling back to defaults", e);
-                currentConfig = new MerryConfig();
+                ConfigManager.currentConfig = new MerryConfig();
             }
         } else {
-            currentConfig = new MerryConfig();
-            save();
+            ConfigManager.currentConfig = new MerryConfig();
+            ConfigManager.save();
         }
     }
 
@@ -69,19 +69,19 @@ public final class ConfigManager {
         }
 
         boolean changed = false;
-        Map<String, EventConfigEntry> eventMap = currentConfig.getEvents();
+        Map<String, EventConfigEntry> eventMap = ConfigManager.currentConfig.getEvents();
 
         for (net.minecraft.util.Identifier id : events.keySet()) {
             String path = id.toString();
             if (!eventMap.containsKey(path)) {
-                EventConfigEntry entry = getDefaultEntryFor(id.getPath());
+                EventConfigEntry entry = ConfigManager.getDefaultEntryFor(id.getPath());
                 eventMap.put(path, entry);
                 changed = true;
             }
         }
 
         if (changed) {
-            save();
+            ConfigManager.save();
         }
     }
 
@@ -90,9 +90,9 @@ public final class ConfigManager {
      */
     public static synchronized void save() {
         try {
-            Files.createDirectories(CONFIG_PATH.getParent());
-            try (BufferedWriter writer = Files.newBufferedWriter(CONFIG_PATH)) {
-                GSON.toJson(currentConfig, writer);
+            Files.createDirectories(ConfigManager.CONFIG_PATH.getParent());
+            try (BufferedWriter writer = Files.newBufferedWriter(ConfigManager.CONFIG_PATH)) {
+                ConfigManager.GSON.toJson(ConfigManager.currentConfig, writer);
             }
         } catch (IOException e) {
             MerryEvents.LOGGER.error("[ConfigManager] Failed to persist config to disk", e);
@@ -125,6 +125,7 @@ public final class ConfigManager {
             case "floor_hole" -> EventConfigEntry.ofDefault(60, 240);
             case "crumbling_floor" -> EventConfigEntry.ofDefault(60, 240);
             case "wandering_blocks" -> EventConfigEntry.ofDefault(60, 240);
+            case "flat_mobs" -> EventConfigEntry.ofDefault(120, 480);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }
