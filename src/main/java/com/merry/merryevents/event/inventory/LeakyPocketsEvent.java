@@ -20,8 +20,9 @@ import org.jetbrains.annotations.Nullable;
 /**
  * Player-specific inventory disruption event belonging to
  * EventCategory.INVENTORY.
- * Distributes a randomized quota of hotbar item drop events smoothly across the
- * event lifetime.
+ * Distributes randomized drop quotas smoothly across all main inventory and
+ * offhand slots
+ * while strictly preserving equipped armor pieces.
  */
 public final class LeakyPocketsEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("leaky_pockets");
@@ -29,6 +30,15 @@ public final class LeakyPocketsEvent implements ChaosEvent {
     private static final String REMAINING_QUOTA_KEY = "remaining_quota";
     private static final int MIN_QUOTA = 16;
     private static final int MAX_QUOTA = 64;
+
+    private static final int[] ELIGIBLE_SLOTS = new int[37];
+
+    static {
+        for (int i = 0; i < 36; i++) {
+            LeakyPocketsEvent.ELIGIBLE_SLOTS[i] = i;
+        }
+        LeakyPocketsEvent.ELIGIBLE_SLOTS[36] = 40;
+    }
 
     @Override
     public Identifier getId() {
@@ -52,7 +62,8 @@ public final class LeakyPocketsEvent implements ChaosEvent {
         }
 
         Random random = targetPlayer.getRandom();
-        int quota = LeakyPocketsEvent.MIN_QUOTA + random.nextInt(LeakyPocketsEvent.MAX_QUOTA - LeakyPocketsEvent.MIN_QUOTA + 1);
+        int quota = LeakyPocketsEvent.MIN_QUOTA
+                + random.nextInt(LeakyPocketsEvent.MAX_QUOTA - LeakyPocketsEvent.MIN_QUOTA + 1);
         context.set(LeakyPocketsEvent.REMAINING_QUOTA_KEY, quota);
 
         MerryEvents.LOGGER.info("[LeakyPocketsEvent] Active for {} with drop quota of {} items",
@@ -84,7 +95,7 @@ public final class LeakyPocketsEvent implements ChaosEvent {
 
         int successfullyDropped = 0;
         for (int i = 0; i < dropsThisTick && remainingQuota > 0; i++) {
-            if (LeakyPocketsEvent.ejectRandomHotbarItem(targetPlayer, random)) {
+            if (LeakyPocketsEvent.ejectRandomInventoryItem(targetPlayer, random)) {
                 successfullyDropped++;
                 remainingQuota--;
             }
@@ -102,13 +113,13 @@ public final class LeakyPocketsEvent implements ChaosEvent {
         }
     }
 
-    private static boolean ejectRandomHotbarItem(ServerPlayerEntity player, Random random) {
+    private static boolean ejectRandomInventoryItem(ServerPlayerEntity player, Random random) {
         PlayerInventory inventory = player.getInventory();
-        int hotbarSize = PlayerInventory.getHotbarSize();
 
         int occupiedCount = 0;
-        for (int i = 0; i < hotbarSize; i++) {
-            if (!inventory.getStack(i).isEmpty()) {
+        for (int i = 0; i < LeakyPocketsEvent.ELIGIBLE_SLOTS.length; i++) {
+            int slot = LeakyPocketsEvent.ELIGIBLE_SLOTS[i];
+            if (!inventory.getStack(slot).isEmpty()) {
                 occupiedCount++;
             }
         }
@@ -121,10 +132,11 @@ public final class LeakyPocketsEvent implements ChaosEvent {
         int currentIndex = 0;
         int chosenSlot = -1;
 
-        for (int i = 0; i < hotbarSize; i++) {
-            if (!inventory.getStack(i).isEmpty()) {
+        for (int i = 0; i < LeakyPocketsEvent.ELIGIBLE_SLOTS.length; i++) {
+            int slot = LeakyPocketsEvent.ELIGIBLE_SLOTS[i];
+            if (!inventory.getStack(slot).isEmpty()) {
                 if (currentIndex == targetIndex) {
-                    chosenSlot = i;
+                    chosenSlot = slot;
                     break;
                 }
                 currentIndex++;

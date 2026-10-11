@@ -12,8 +12,8 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Player-specific interface restriction event belonging to EventCategory.UI.
- * Suppresses client survival inventory screen inspection for the event
- * duration.
+ * Suppresses client survival inventory and all external container screens for
+ * the event duration.
  */
 public final class ClosedInventoryEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("closed_inventory");
@@ -55,6 +55,9 @@ public final class ClosedInventoryEvent implements ChaosEvent {
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
+        if (targetPlayer != null && targetPlayer.currentScreenHandler != targetPlayer.playerScreenHandler) {
+            targetPlayer.closeHandledScreen();
+        }
     }
 
     @Override

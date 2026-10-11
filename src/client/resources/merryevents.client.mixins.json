@@ -5,13 +5,13 @@
   "client": [
     "CameraEntityMixin",
     "CameraRollMixin",
-    "ClientPlayerSoundMixin",
     "GameRendererAccessor",
+    "HandledScreenMixin",
     "InGameHudMixin",
-    "InventoryScreenMixin",
     "LivingEntityRendererMixin",
     "PostEffectProcessorAccessor",
-    "ScreenMixin"
+    "ScreenMixin",
+    "SoundSystemMixin"
   ],
   "injectors": {
     "defaultRequire": 1

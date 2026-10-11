@@ -2,20 +2,21 @@ package com.merry.merryevents.client.effect;
 
 import com.merry.merryevents.client.api.ClientChaosEffect;
 import net.minecraft.client.MinecraftClient;
-import net.minecraft.client.gui.screen.ingame.InventoryScreen;
+import net.minecraft.client.gui.screen.ingame.HandledScreen;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 
 /**
- * Client effect handler suppressing inventory screen instantiation and
- * playback.
+ * Client effect handler suppressing all container and inventory screen
+ * instantiations.
  */
 public final class ClosedInventoryClientEffect implements ClientChaosEffect {
     private static volatile boolean active = false;
 
     /**
-     * Evaluates whether client inventory screens are forbidden from opening.
+     * Evaluates whether client inventory and container screens are forbidden from
+     * opening.
      *
      * @return True if inventory lockout is active
      */
@@ -41,7 +42,7 @@ public final class ClosedInventoryClientEffect implements ClientChaosEffect {
     @Override
     public void onStart(MinecraftClient client, int initialRemainingTicks) {
         ClosedInventoryClientEffect.active = true;
-        if (client.currentScreen instanceof InventoryScreen) {
+        if (client.currentScreen instanceof HandledScreen<?>) {
             client.setScreen(null);
             ClosedInventoryClientEffect.notifyLockout(client);
         }
