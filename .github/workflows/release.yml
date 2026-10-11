@@ -1,0 +1,50 @@
+name: release
+
+on:
+  push:
+    tags:
+      - 'v*'
+
+permissions:
+  contents: write
+
+jobs:
+  release:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: validate release tag
+        id: version
+        shell: bash
+        run: |
+          VERSION="$(sed -n 's/^version=//p' gradle.properties | head -n 1)"
+          TAG_VERSION="${GITHUB_REF_NAME#v}"
+          if [[ -z "$VERSION" || "$TAG_VERSION" != "$VERSION" ]]; then
+            echo "Release tag $GITHUB_REF_NAME must match project version v$VERSION." >&2
+            exit 1
+          fi
+          echo "version=$VERSION" >> "$GITHUB_OUTPUT"
+      - name: build release jars
+        run: ./gradlew build
+      - name: publish GitHub release
+        uses: softprops/action-gh-release@v2
+        with:
+          name: MerryEvents ${{ github.ref_name }}
+          body: |
+            ## Downloads
+
+            - **Server** (dedicated server): [Download the server JAR](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/merryevents-${{ steps.version.outputs.version }}-server.jar)
+            - **Client**: [Download the client JAR](https://github.com/${{ github.repository }}/releases/download/${{ github.ref_name }}/merryevents-${{ steps.version.outputs.version }}-client.jar)
+          files: |
+            build/libs/merryevents-${{ steps.version.outputs.version }}-server.jar
+            build/libs/merryevents-${{ steps.version.outputs.version }}-client.jar

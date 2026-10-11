@@ -5,11 +5,14 @@ tasks.register("validateAndFormatLocalization") {
 	group = "verification"
 	description = "Validates localization JSON and Java translation usage, then formats locale files."
 
-	def projectRootPath = layout.projectDirectory.asFile.absolutePath
-	def langDir = layout.projectDirectory.dir("src/main/resources/assets/merryevents/lang")
+	def localizationRoot = providers.gradleProperty("localizationRoot")
+			.map { file(it) }
+			.getOrElse(layout.projectDirectory.asFile)
+	def projectRootPath = localizationRoot.absolutePath
+	def langDir = new File(localizationRoot, "src/main/resources/assets/merryevents/lang")
 	def sourceDirs = [
-		layout.projectDirectory.dir("src/main/java"),
-		layout.projectDirectory.dir("src/client/java")
+		new File(localizationRoot, "src/main/java"),
+		new File(localizationRoot, "src/client/java")
 	]
 
 	inputs.dir(langDir)
@@ -26,8 +29,8 @@ tasks.register("validateAndFormatLocalization") {
 
 		def javaFiles = []
 		sourceDirs.each { dir ->
-			if (dir.asFile.exists()) {
-				dir.asFile.eachFileRecurse(groovy.io.FileType.FILES) { File file ->
+			if (dir.exists()) {
+				dir.eachFileRecurse(groovy.io.FileType.FILES) { File file ->
 					if (file.name.endsWith(".java")) {
 						javaFiles.add(file)
 					}
@@ -222,9 +225,9 @@ tasks.register("validateAndFormatLocalization") {
 			duplicates.unique()
 		}
 
-		def langFiles = langDir.asFile.listFiles({ File file -> file.name.endsWith(".json") } as FileFilter)
+		def langFiles = langDir.listFiles({ File file -> file.name.endsWith(".json") } as FileFilter)
 		if (langFiles == null || langFiles.length == 0) {
-			throw new GradleException("No localization JSON files found in ${langDir.asFile.path}.")
+			throw new GradleException("No localization JSON files found in ${langDir.path}.")
 		}
 
 		Map<String, Map<String, String>> localeMaps = [:]

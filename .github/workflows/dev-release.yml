@@ -1,0 +1,93 @@
+name: dev-release
+
+on:
+  push:
+    branches:
+      - master
+
+concurrency:
+  group: dev-release
+  cancel-in-progress: false
+
+permissions:
+  contents: write
+
+jobs:
+  publish:
+    runs-on: ubuntu-24.04
+    steps:
+      - name: checkout repository
+        uses: actions/checkout@v6
+      - name: validate gradle wrapper
+        uses: gradle/actions/wrapper-validation@v6
+      - name: setup jdk
+        uses: actions/setup-java@v5
+        with:
+          java-version: '25'
+          distribution: 'microsoft'
+      - name: make gradle wrapper executable
+        run: chmod +x ./gradlew
+      - name: build release jars
+        run: ./gradlew build
+      - name: stage changed development jars
+        id: assets
+        shell: bash
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: |
+          VERSION="$(sed -n 's/^version=//p' gradle.properties | head -n 1)"
+          if [[ -z "$VERSION" ]]; then
+            echo "Could not read project version from gradle.properties." >&2
+            exit 1
+          fi
+          DOWNLOAD_DIR="build/dev-release/download"
+          UPLOAD_DIR="build/dev-release/upload"
+          mkdir -p "$DOWNLOAD_DIR" "$UPLOAD_DIR"
+
+          RELEASE_EXISTS=false
+          if gh release view dev --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
+            RELEASE_EXISTS=true
+          fi
+
+          for component in server client; do
+            source="build/libs/merryevents-${VERSION}-${component}.jar"
+            asset="merryevents-${component}.jar"
+
+            if [[ "$RELEASE_EXISTS" == true ]] &&
+              gh release download dev --repo "$GITHUB_REPOSITORY" \
+                --pattern "$asset" --dir "$DOWNLOAD_DIR" --clobber >/dev/null 2>&1; then
+              local_hash="$(sha256sum "$source" | cut -d ' ' -f 1)"
+              remote_hash="$(sha256sum "$DOWNLOAD_DIR/$asset" | cut -d ' ' -f 1)"
+              if [[ "$local_hash" == "$remote_hash" ]]; then
+                echo "$asset is unchanged; keeping the existing release asset."
+                continue
+              fi
+            fi
+
+            cp "$source" "$UPLOAD_DIR/$asset"
+          done
+
+          if compgen -G "$UPLOAD_DIR/*.jar" > /dev/null; then
+            echo "changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "changed=false" >> "$GITHUB_OUTPUT"
+          fi
+      - name: update development release
+        if: steps.assets.outputs.changed == 'true'
+        uses: softprops/action-gh-release@v2
+        with:
+          tag_name: dev
+          target_commitish: ${{ github.sha }}
+          name: MerryEvents Development Build
+          prerelease: true
+          make_latest: false
+          overwrite_files: true
+          body: |
+            Latest development build from the `master` branch.
+
+            - **Server**: [Download the server JAR](https://github.com/${{ github.repository }}/releases/download/dev/merryevents-server.jar)
+            - **Client**: [Download the client JAR](https://github.com/${{ github.repository }}/releases/download/dev/merryevents-client.jar)
+
+            The stable asset filenames are replaced only when their JAR contents change.
+          files: |
+            build/dev-release/upload/*.jar

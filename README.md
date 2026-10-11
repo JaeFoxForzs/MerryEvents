@@ -1,95 +1,99 @@
 # MerryEvents
 
-A modern, high-performance, event-driven chaos engine for **Minecraft 1.21.1 (Fabric)**.
+MerryEvents is a Fabric mod for **Minecraft 1.21.1**. It adds timed, randomized events that change gameplay for the whole server or for individual players.
 
-The mod orchestrates timed, randomized game-altering phenomena split into **Global** (server-wide) and **Personal** (targeting one player) events. Built from the ground up on modern Minecraft 1.21.1 architectural paradigms: **Data Components**, **Typed Payload Networking**, and server-authoritative event logic.
+## Downloads
 
----
+Choose the JAR for the environment where you are installing the mod:
 
-## ⚡ Architectural Advantages (Why 1.21.1?)
+| File                               | Install on        | Contents                                                  |
+| ---------------------------------- | ----------------- | --------------------------------------------------------- |
+| `merryevents-<version>-client.jar` | Minecraft clients | Common mod code and client effects, rendering, and mixins |
+| `merryevents-<version>-server.jar` | Dedicated servers | Common and server code; no client-only classes            |
 
-- **Immutable Data Components**: Fully migrated from legacy NBT compound tags to modern `DataComponentType` APIs (`DataComponents.DAMAGE`, custom item modifiers). Zero arbitrary string-tag lookups, guaranteed type-safety, and seamless integration with modern 3D model predicates.
-- **Modern Payload Networking**: Uses Minecraft 1.21's `CustomPayload` architecture paired with modern Java 21 `record` declarations and zero-boilerplate `PacketCodec` serialization. No raw byte stream desyncs.
-- **Strict Logical Isolation**: Enforced via `splitEnvironmentSourceSets()`:
-  - `src/main`: Common & Server-Authoritative domain (Event scheduler, anti-conflict matrix, ticking state machines, network transmitters).
-  - `src/client`: Client-only domain (Custom post-processing shaders, camera manipulation mixins, dynamic skybox hooks, HUD occlusion controllers).
-- **Deterministic Anti-Conflict Matrix**: The state manager prevents events in the same category from running together in the same scope.
-- **Weighted Event Director**: Automatic events are selected from a shuffled, weighted queue. Event weights affect how often an event appears; events whose category is occupied wait for a later opportunity.
+Both files are Fabric mod JARs. Install the matching JAR in the instance's `mods` folder. The server JAR is intended for a dedicated server; clients joining that server should install the client JAR. Install Fabric Loader and Fabric API as well.
 
----
+### Development build
 
-## 🏷 Event Categories
+The [`dev` prerelease](https://github.com/JaeFoxForzs/MerryEvents/releases/tag/dev) contains the latest build from the `master` branch. Download `merryevents-client.jar` or `merryevents-server.jar` there. Each asset is uploaded only when its contents change; unchanged JARs are left in place. Development builds may be unstable.
 
-Global and Personal events use the same 12 categories:
+### Stable release
 
-| Category    | Domain                                           | Example Events                                |
-| :---------- | :----------------------------------------------- | :-------------------------------------------- |
-| `WEATHER`   | Weather, precipitation, and weather hazards      | Acid Rain, Rust Rain, Anvil Rain, Fire Storms |
-| `SKY`       | Sun, moon, clouds, and sky appearance            | —                                             |
-| `PHYSICS`   | Movement, gravity, speed, and collisions         | Moon Gravity                                  |
-| `WORLD`     | Blocks, water, and lava mechanics                | False Water, Floor Hole, Wandering Blocks     |
-| `MOBS`      | Mob spawning and behavior                        | Exploding Mobs, Personal Killer               |
-| `STATUS`    | Health, hunger, effects, and entity states       | Fragility                                     |
-| `INVENTORY` | Items, recipes, experience, slots, and trading   | Diamond Rush                                  |
-| `VISION`    | Player perception, darkness, and screen filters  | Dense Darkness                                |
-| `VISUAL`    | World and object textures, models, and rendering | —                                             |
-| `UI`        | HUD, menus, and GUI elements                     | Ghost GUI                                     |
-| `SOUNDS`    | Sound effects                                    | Paranoia Sounds                               |
-| `CAMERA`    | Camera direction and position                    | Stiff Neck                                    |
+Stable releases are published from version tags, for example `v1.0.0`. Each release includes both JARs and English download links in its description.
 
-### Event Director
+## Features
 
-The director starts events automatically at randomized intervals. It selects from a shuffled queue whose entries are weighted by each event's configuration; the queue count is the number of remaining weighted entries, so an event may appear more than once. The `/merry director status` command shows whether automatic starts are enabled, the time until the next event, and how many entries remain in the current queue. If an event's category is already occupied, that event is skipped for now and remains eligible later.
+- Global events affect the whole server; personal events target one player.
+- Events are organized into 12 categories: weather, sky, physics, world, mobs, status, inventory, vision, visual, UI, sounds, and camera.
+- An automatic event director selects events from a shuffled, weighted queue. Events whose category is already occupied remain eligible for a later opportunity.
+- The event manager prevents events in the same category from running together in the same scope.
+- Server-authoritative event logic uses Minecraft 1.21.1 data components and typed payload networking.
 
-The weather events include several distinct bombardments: **Fire Storm** launches small fireballs, **Ghast Fire Storm** sends explosive ghast fireballs from high above, and **Orbital Strike** calls down warned strikes. Their projectiles or strikes are limited by randomized per-event quotas.
+Weather events include Fire Storm, Ghast Fire Storm, and Orbital Strike. Their projectiles and strikes are limited by randomized per-event quotas.
 
----
+## Commands
 
-## 💻 In-Game Commands (CLI)
+Commands require permission level 2 (operator):
 
-The mod includes permission-level 2 operator commands equipped with Brigadier autocompletion:
+| Command                                                   | Description                                                                                                                                |
+| --------------------------------------------------------- | ------------------------------------------------------------------------------------------------------------------------------------------ |
+| `/merry start <eventId> [durationSeconds] [targetPlayer]` | Start an event. Global events affect the server; personal events target the sender or selected player. The default duration is 30 seconds. |
+| `/merry stop <eventId>`                                   | Stop an active event and restore its affected state.                                                                                       |
+| `/merry status`                                           | Show active events, available categories, and director status.                                                                             |
+| `/merry events`                                           | List registered events, their categories, scope, and automatic-start setting.                                                              |
+| `/merry director status`                                  | Show whether automatic starts are enabled, the next-event countdown, and remaining queue entries.                                          |
 
-- `/merry start <eventId> [durationSeconds] [targetPlayer]`  
-  Starts an event. Global events target the entire server; Personal events target the sender (or specified player). Default duration: `30` seconds.
-- `/merry stop <eventId>`  
-  Stops an active global or personal event and safely triggers state rollback.
-- `/merry status`  
-  Displays active global and personal events, category availability per scope, and the director queue status.
-- `/merry events`
-  Lists all registered events with their IDs, categories, scope, and auto-start setting.
-- `/merry director status`
-  Displays automatic event scheduling status, the next-event countdown, and the number of entries left in the queue.
+## Build and run from source
 
----
+### Requirements
 
-## 🛠 Prerequisites & Toolchain
+- JDK 25 to run the Gradle/Loom build.
+- Java 21 or newer to run Minecraft and the compiled mod.
+- Minecraft 1.21.1.
 
-- **Build Tooling Environment**: **JDK 25** (Required by Fabric Loom 1.18+ / Gradle 9+ FFM native runtime).
-- **Target Bytecode**: **Java 21** (`it.options.release = 21`).
-- **Minecraft**: `1.21.1`
-- **Mappings**: Yarn Mappings (`net.fabricmc:yarn:1.21.1+build.3:v2`).
+### Build JARs
 
-### Building & Running
+On Windows, use `gradlew.bat`; on Linux and macOS, use `./gradlew`.
 
-```bash
-# Build production artifact (build/libs/merryevents-1.0.0.jar)
+```sh
 ./gradlew build
+```
 
-# Launch client development instance
+The release JARs are written to `build/libs/`. To build just one:
+
+```sh
+./gradlew clientJar
+./gradlew serverJar
+```
+
+Run a development client or dedicated server with:
+
+```sh
 ./gradlew runClient
-
-# Launch dedicated server development instance
 ./gradlew runServer
 ```
 
----
+## Development checks
 
-## 📜 Engineering Hygiene
+Run the localization regression tests and the Gradle verification/build:
 
-1. **Dedicated Server Purity**: Never reference client classes (`net.minecraft.client.*`) outside `src/client`. Dedicated server crashes due to client class leaks are completely prohibited.
-2. **Mixin Restraint**: Prefer `@Inject` and `@WrapOperation` over destructive `@Redirect` or `@Overwrite`. Always encapsulate synthetic mixin members with `@Unique`.
-3. **Idempotent Teardown**: Every active event must implement an explicit, failure-proof `onStop()` hook to guarantee world/player states revert seamlessly upon expiration.
+```sh
+python -m unittest discover -s tests -v
+./gradlew build
+```
 
-### Localization Validation
+The localization validator is also available on its own:
 
-`./gradlew validateAndFormatLocalization` (also run by `check` and `processResources`) validates locale JSON, duplicate and missing/extra keys, unused translation keys, missing keys referenced by Java, hardcoded text passed to `Text.literal`/`Text.of`, and mismatched format placeholders. It also recognizes event and category keys generated by the APIs.
+```sh
+./gradlew validateAndFormatLocalization
+```
+
+It checks locale JSON syntax and duplicate keys, matching keys across locales, unused keys, keys referenced from Java, hardcoded text passed to `Text.literal`/`Text.of`, and format placeholders. It also recognizes event and category translation keys generated by the APIs. The validation task formats locale files after parsing them.
+
+## Project layout
+
+- `src/main`: shared and server-authoritative code.
+- `src/client`: client-only effects, renderers, and mixins.
+- `src/main/resources/assets/merryevents/lang`: English and Russian translations.
+
+Keep client classes out of `src/main` so dedicated servers do not load client-only Minecraft classes. Prefer `@Inject` and `@WrapOperation` to destructive mixin redirects or overwrites, and ensure every event restores its changes when stopped.
