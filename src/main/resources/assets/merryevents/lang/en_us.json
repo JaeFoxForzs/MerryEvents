@@ -53,11 +53,8 @@
   "event.merryevents.adhd": "ADHD",
   "event.merryevents.ant_man": "Ant-Man",
   "event.merryevents.anvil_rain": "Anvil Rain",
-<<<<<<< Updated upstream
-  "event.merryevents.butterfingers": "Butterfingers",
-=======
   "event.merryevents.bouncing_hamster": "Bouncing Hamster",
->>>>>>> Stashed changes
+  "event.merryevents.butterfingers": "Butterfingers",
   "event.merryevents.closed_inventory": "Closed Inventory",
   "event.merryevents.closed_inventory.blocked": "Your inventory is locked shut!",
   "event.merryevents.cobweb_nightmare": "Cobweb Nightmare",

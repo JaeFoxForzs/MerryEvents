@@ -53,11 +53,8 @@
   "event.merryevents.adhd": "СДВГ",
   "event.merryevents.ant_man": "Человек-муравей",
   "event.merryevents.anvil_rain": "Дождь из наковален",
-<<<<<<< Updated upstream
-  "event.merryevents.butterfingers": "Руки-крюки",
-=======
   "event.merryevents.bouncing_hamster": "Прыгучий хомяк",
->>>>>>> Stashed changes
+  "event.merryevents.butterfingers": "Руки-крюки",
   "event.merryevents.closed_inventory": "Закрытый инвентарь",
   "event.merryevents.closed_inventory.blocked": "Инвентарь заклинило! Нельзя открыть.",
   "event.merryevents.cobweb_nightmare": "Паучий кошмар",
