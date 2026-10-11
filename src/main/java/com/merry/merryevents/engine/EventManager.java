@@ -77,6 +77,10 @@ public final class EventManager {
         this.register(new WaterDrinkerEvent());
         this.register(new KindergartenEvent());
         this.register(new PerfectIceEvent());
+        this.register(new LeakyPocketsEvent());
+        this.register(new StickyFingersEvent());
+        this.register(new KineticRecoilEvent());
+        this.register(new ScrambledButtonsEvent());
     }
 
     public static EventManager getInstance() {

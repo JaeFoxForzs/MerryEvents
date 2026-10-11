@@ -26,6 +26,17 @@ public class MerryEventsClient implements ClientModInitializer {
         ClientEventManager.registerEffect(FlatMobsEvent.ID,
                 new FlatMobsClientEffect());
 
+        ClientEventManager.registerEffect(MerryEvents.id("scrambled_buttons"), new ScrambledButtonsClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("sticky_fingers"), new ClientChaosEffect() {
+            @Override
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
+            @Override
+            public void onStop(MinecraftClient client) {
+            }
+        });
+
         ClientEventManager.registerEffect(WaterDrinkerEvent.ID,
                 new ClientChaosEffect() {
                     @Override

@@ -5,7 +5,6 @@ import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.util.SpatialTargeting;
-import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.FireballEntity;
 import net.minecraft.server.MinecraftServer;
@@ -50,7 +49,7 @@ public final class GhastFireStormEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return GhastFireStormEvent.ID;
     }
 
     @Override
@@ -66,12 +65,12 @@ public final class GhastFireStormEvent implements ChaosEvent {
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         Random random = server.getOverworld().getRandom();
-        int fireballQuota = MIN_FIREBALLS + random.nextInt(MAX_FIREBALLS - MIN_FIREBALLS + 1);
-        double dispersionRadius = MIN_DISPERSION_RADIUS
-                + random.nextDouble() * (MAX_DISPERSION_RADIUS - MIN_DISPERSION_RADIUS);
+        int fireballQuota = GhastFireStormEvent.MIN_FIREBALLS + random.nextInt(GhastFireStormEvent.MAX_FIREBALLS - GhastFireStormEvent.MIN_FIREBALLS + 1);
+        double dispersionRadius = GhastFireStormEvent.MIN_DISPERSION_RADIUS
+                + random.nextDouble() * (GhastFireStormEvent.MAX_DISPERSION_RADIUS - GhastFireStormEvent.MIN_DISPERSION_RADIUS);
 
-        context.set(REMAINING_FIREBALLS_KEY, fireballQuota);
-        context.set(RADIUS_KEY, dispersionRadius);
+        context.set(GhastFireStormEvent.REMAINING_FIREBALLS_KEY, fireballQuota);
+        context.set(GhastFireStormEvent.RADIUS_KEY, dispersionRadius);
         MerryEvents.LOGGER.info(
                 "[GhastFireStormEvent] High-altitude ghast bombardment ignited: quota={} fireballs, radius={}",
                 fireballQuota, String.format("%.1f", dispersionRadius));
@@ -80,16 +79,15 @@ public final class GhastFireStormEvent implements ChaosEvent {
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
-        int remainingFireballs = context.getInt(REMAINING_FIREBALLS_KEY, 0);
-        int firingWindowTicks = remainingTicks - MAX_FLIGHT_TICKS;
+        int remainingFireballs = context.getInt(GhastFireStormEvent.REMAINING_FIREBALLS_KEY, 0);
+        int firingWindowTicks = remainingTicks - GhastFireStormEvent.MAX_FLIGHT_TICKS;
         if (remainingFireballs <= 0 || firingWindowTicks <= 0) {
             return;
         }
 
         List<ServerPlayerEntity> eligiblePlayers = new ArrayList<>();
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (!SpatialTargeting.isHazardImmune(player)
-                    && WeatherUtil.isExposedToSky(player.getServerWorld(), player.getBlockPos())) {
+            if (!SpatialTargeting.isHazardImmune(player)) {
                 eligiblePlayers.add(player);
             }
         }
@@ -103,15 +101,15 @@ public final class GhastFireStormEvent implements ChaosEvent {
         if (random.nextDouble() < expectedFireballsThisTick - fireballsThisTick) {
             fireballsThisTick++;
         }
-        fireballsThisTick = Math.min(fireballsThisTick, MAX_FIREBALLS_PER_TICK);
+        fireballsThisTick = Math.min(fireballsThisTick, GhastFireStormEvent.MAX_FIREBALLS_PER_TICK);
 
-        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
+        double radius = context.getDouble(GhastFireStormEvent.RADIUS_KEY, GhastFireStormEvent.MIN_DISPERSION_RADIUS);
         int spawnedFireballs = 0;
         for (int i = 0; i < fireballsThisTick; i++) {
             ServerPlayerEntity player = eligiblePlayers.get(random.nextInt(eligiblePlayers.size()));
             ServerWorld world = player.getServerWorld();
             BlockPos spawnPos = SpatialTargeting.findRandomSkyPosition(
-                    world, player, radius, SPAWN_HEIGHTMAP, MIN_HEIGHT_ABOVE_PLAYER, EXTRA_HEIGHT_VARIATION);
+                    world, player, radius, GhastFireStormEvent.SPAWN_HEIGHTMAP, GhastFireStormEvent.MIN_HEIGHT_ABOVE_PLAYER, GhastFireStormEvent.EXTRA_HEIGHT_VARIATION);
             if (spawnPos == null) {
                 continue;
             }
@@ -125,27 +123,27 @@ public final class GhastFireStormEvent implements ChaosEvent {
             double spawnY = spawnPos.getY();
             double spawnZ = spawnPos.getZ() + 0.5;
             Vec3d targetDirection = new Vec3d(
-                    player.getX() + (random.nextDouble() - 0.5) * TARGET_SPREAD - spawnX,
+                    player.getX() + (random.nextDouble() - 0.5) * GhastFireStormEvent.TARGET_SPREAD - spawnX,
                     player.getY() + player.getHeight() * 0.5 - spawnY,
-                    player.getZ() + (random.nextDouble() - 0.5) * TARGET_SPREAD - spawnZ).normalize();
+                    player.getZ() + (random.nextDouble() - 0.5) * GhastFireStormEvent.TARGET_SPREAD - spawnZ).normalize();
 
             fireball.refreshPositionAndAngles(spawnX, spawnY, spawnZ, 0.0F, 0.0F);
-            fireball.accelerationPower = ACCELERATION_POWER;
-            fireball.setVelocity(targetDirection.multiply(INITIAL_SPEED));
+            fireball.accelerationPower = GhastFireStormEvent.ACCELERATION_POWER;
+            fireball.setVelocity(targetDirection.multiply(GhastFireStormEvent.INITIAL_SPEED));
             if (!world.spawnEntity(fireball)) {
                 continue;
             }
 
             context.trackEntity(fireball.getUuid());
             spawnedFireballs++;
-            float soundPitch = (float) (MIN_SOUND_PITCH
-                    + random.nextDouble() * (MAX_SOUND_PITCH - MIN_SOUND_PITCH));
+            float soundPitch = (float) (GhastFireStormEvent.MIN_SOUND_PITCH
+                    + random.nextDouble() * (GhastFireStormEvent.MAX_SOUND_PITCH - GhastFireStormEvent.MIN_SOUND_PITCH));
             world.playSound(null, spawnPos, SoundEvents.ENTITY_GHAST_SHOOT, SoundCategory.WEATHER,
-                    SPAWN_SOUND_VOLUME, soundPitch);
+                    GhastFireStormEvent.SPAWN_SOUND_VOLUME, soundPitch);
         }
 
         if (spawnedFireballs > 0) {
-            context.set(REMAINING_FIREBALLS_KEY, remainingFireballs - spawnedFireballs);
+            context.set(GhastFireStormEvent.REMAINING_FIREBALLS_KEY, remainingFireballs - spawnedFireballs);
         }
     }
 

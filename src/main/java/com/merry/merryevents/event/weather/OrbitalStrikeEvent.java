@@ -48,7 +48,7 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return OrbitalStrikeEvent.ID;
     }
 
     @Override
@@ -64,13 +64,13 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         Random random = server.getOverworld().getRandom();
-        int strikeQuota = MIN_STRIKES + random.nextInt(MAX_STRIKES - MIN_STRIKES + 1);
-        double dispersionRadius = MIN_DISPERSION_RADIUS
-                + random.nextDouble() * (MAX_DISPERSION_RADIUS - MIN_DISPERSION_RADIUS);
+        int strikeQuota = OrbitalStrikeEvent.MIN_STRIKES + random.nextInt(OrbitalStrikeEvent.MAX_STRIKES - OrbitalStrikeEvent.MIN_STRIKES + 1);
+        double dispersionRadius = OrbitalStrikeEvent.MIN_DISPERSION_RADIUS
+                + random.nextDouble() * (OrbitalStrikeEvent.MAX_DISPERSION_RADIUS - OrbitalStrikeEvent.MIN_DISPERSION_RADIUS);
 
-        context.set(STRIKES_KEY, new ArrayList<StrikeTarget>());
-        context.set(REMAINING_STRIKES_KEY, strikeQuota);
-        context.set(RADIUS_KEY, dispersionRadius);
+        context.set(OrbitalStrikeEvent.STRIKES_KEY, new ArrayList<StrikeTarget>());
+        context.set(OrbitalStrikeEvent.REMAINING_STRIKES_KEY, strikeQuota);
+        context.set(OrbitalStrikeEvent.RADIUS_KEY, dispersionRadius);
 
         MerryEvents.LOGGER.info(
                 "[OrbitalStrikeEvent] Orbital targeting satellite calibrated (quota={} strikes, dispersion radius={}). Bombardment initiated.",
@@ -80,15 +80,15 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
-        List<StrikeTarget> strikes = context.getOrDefault(STRIKES_KEY, null);
+        List<StrikeTarget> strikes = context.getOrDefault(OrbitalStrikeEvent.STRIKES_KEY, null);
         if (strikes == null) {
             strikes = new ArrayList<>();
-            context.set(STRIKES_KEY, strikes);
+            context.set(OrbitalStrikeEvent.STRIKES_KEY, strikes);
         }
 
-        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
-        int remainingStrikes = context.getInt(REMAINING_STRIKES_KEY, 0);
-        int strikeWindowTicks = remainingTicks - WARMUP_TICKS;
+        double radius = context.getDouble(OrbitalStrikeEvent.RADIUS_KEY, OrbitalStrikeEvent.MIN_DISPERSION_RADIUS);
+        int remainingStrikes = context.getInt(OrbitalStrikeEvent.REMAINING_STRIKES_KEY, 0);
+        int strikeWindowTicks = remainingTicks - OrbitalStrikeEvent.WARMUP_TICKS;
 
         if (remainingStrikes > 0 && strikeWindowTicks > 0) {
             List<ServerPlayerEntity> eligiblePlayers = new ArrayList<>();
@@ -101,11 +101,10 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
             if (!eligiblePlayers.isEmpty()) {
                 double expectedStrikesThisTick = (double) remainingStrikes / strikeWindowTicks;
                 int strikesThisTick = (int) expectedStrikesThisTick;
-                if (server.getOverworld().getRandom().nextDouble()
-                        < expectedStrikesThisTick - strikesThisTick) {
+                if (server.getOverworld().getRandom().nextDouble() < expectedStrikesThisTick - strikesThisTick) {
                     strikesThisTick++;
                 }
-                strikesThisTick = Math.min(strikesThisTick, MAX_STRIKES_PER_TICK);
+                strikesThisTick = Math.min(strikesThisTick, OrbitalStrikeEvent.MAX_STRIKES_PER_TICK);
 
                 int spawnedStrikes = 0;
                 for (int i = 0; i < strikesThisTick; i++) {
@@ -116,10 +115,10 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
                             world, player, radius, Heightmap.Type.MOTION_BLOCKING);
 
                     if (randomStrikePos != null) {
-                        strikes.add(new StrikeTarget(world, randomStrikePos, WARMUP_TICKS));
+                        strikes.add(new StrikeTarget(world, randomStrikePos, OrbitalStrikeEvent.WARMUP_TICKS));
 
                         OrbitalStrikeSpawnPayload payload = new OrbitalStrikeSpawnPayload(randomStrikePos,
-                                WARMUP_TICKS);
+                                OrbitalStrikeEvent.WARMUP_TICKS);
                         for (ServerPlayerEntity p : server.getPlayerManager().getPlayerList()) {
                             ServerPlayNetworking.send(p, payload);
                         }
@@ -128,7 +127,7 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
                 }
 
                 if (spawnedStrikes > 0) {
-                    context.set(REMAINING_STRIKES_KEY, remainingStrikes - spawnedStrikes);
+                    context.set(OrbitalStrikeEvent.REMAINING_STRIKES_KEY, remainingStrikes - spawnedStrikes);
                 }
             }
         }
@@ -151,8 +150,8 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
             double centerZ = pos.getZ() + 0.5;
 
             Box lethalZone = new Box(
-                    centerX - DAMAGE_RADIUS, centerY - 4.0, centerZ - DAMAGE_RADIUS,
-                    centerX + DAMAGE_RADIUS, centerY + 16.0, centerZ + DAMAGE_RADIUS);
+                    centerX - OrbitalStrikeEvent.DAMAGE_RADIUS, centerY - 4.0, centerZ - OrbitalStrikeEvent.DAMAGE_RADIUS,
+                    centerX + OrbitalStrikeEvent.DAMAGE_RADIUS, centerY + 16.0, centerZ + OrbitalStrikeEvent.DAMAGE_RADIUS);
 
             List<LivingEntity> victims = world.getEntitiesByClass(LivingEntity.class, lethalZone,
                     LivingEntity::isAlive);
@@ -163,9 +162,9 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
                 }
 
                 double distSq = victim.squaredDistanceTo(centerX, victim.getY(), centerZ);
-                if (distSq <= DAMAGE_RADIUS * DAMAGE_RADIUS) {
+                if (distSq <= OrbitalStrikeEvent.DAMAGE_RADIUS * OrbitalStrikeEvent.DAMAGE_RADIUS) {
                     double dist = Math.sqrt(distSq);
-                    float damageMultiplier = (float) Math.max(0.15, 1.0 - (dist / DAMAGE_RADIUS));
+                    float damageMultiplier = (float) Math.max(0.15, 1.0 - (dist / OrbitalStrikeEvent.DAMAGE_RADIUS));
                     float finalDamage = Math.max(16.0F, 50.0F * damageMultiplier);
 
                     victim.timeUntilRegen = 0;
@@ -187,7 +186,7 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
             world.playSound(null, pos, SoundEvents.ENTITY_GENERIC_EXPLODE.value(), SoundCategory.WEATHER, 5.0F, 0.6F);
             world.playSound(null, pos, SoundEvents.ENTITY_LIGHTNING_BOLT_THUNDER, SoundCategory.WEATHER, 3.0F, 0.9F);
 
-            world.createExplosion(null, centerX, centerY + 0.5, centerZ, LETHAL_EXPLOSION_POWER,
+            world.createExplosion(null, centerX, centerY + 0.5, centerZ, OrbitalStrikeEvent.LETHAL_EXPLOSION_POWER,
                     World.ExplosionSourceType.MOB);
 
             return true;
@@ -196,7 +195,7 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
 
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        List<StrikeTarget> strikes = context.getOrDefault(STRIKES_KEY, null);
+        List<StrikeTarget> strikes = context.getOrDefault(OrbitalStrikeEvent.STRIKES_KEY, null);
         if (strikes != null) {
             strikes.clear();
         }

@@ -6,7 +6,8 @@
     "CameraEntityMixin",
     "GameRendererAccessor",
     "InGameHudMixin",
-    "LivingEntityRendererMixin"
+    "LivingEntityRendererMixin",
+    "ScreenMixin"
   ],
   "injectors": {
     "defaultRequire": 1

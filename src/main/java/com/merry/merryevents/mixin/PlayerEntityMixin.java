@@ -2,9 +2,11 @@ package com.merry.merryevents.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
 import com.llamalad7.mixinextras.injector.wrapoperation.WrapOperation;
+import com.merry.merryevents.event.physics.KineticRecoilEvent;
 import com.merry.merryevents.event.status.DelayedDamageEvent;
 import com.merry.merryevents.event.status.WaterDrinkerEvent;
 import net.minecraft.component.type.FoodComponent;
+import net.minecraft.entity.Entity;
 import net.minecraft.entity.damage.DamageSource;
 import net.minecraft.entity.player.HungerManager;
 import net.minecraft.entity.player.PlayerEntity;
@@ -106,5 +108,26 @@ public abstract class PlayerEntityMixin {
             }
         }
         original.call(player, newHealth);
+    }
+
+    /**
+     * Intercepts entity damage in player attacks to trigger kinetic recoil impulses
+     * backwards.
+     *
+     * @param target   Attacked entity
+     * @param source   Damage source
+     * @param amount   Calculated attack damage amount
+     * @param original Original damage invocation wrapper
+     * @return True if damage was successfully dealt to the target
+     */
+    @WrapOperation(method = "attack", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"))
+    private boolean merryevents$applyKineticRecoil(Entity target, DamageSource source, float amount,
+            Operation<Boolean> original) {
+        boolean damaged = original.call(target, source, amount);
+        if (damaged && (Object) this instanceof ServerPlayerEntity player
+                && KineticRecoilEvent.isPlayerActive(player)) {
+            KineticRecoilEvent.onAttackEntity(player, target, amount);
+        }
+        return damaged;
     }
 }

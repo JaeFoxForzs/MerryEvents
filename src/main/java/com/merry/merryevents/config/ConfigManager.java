@@ -130,6 +130,10 @@ public final class ConfigManager {
             case "water_drinker" -> EventConfigEntry.ofDefault(120, 600);
             case "kindergarten" -> EventConfigEntry.ofDefault(180, 480);
             case "perfect_ice" -> EventConfigEntry.ofDefault(120, 240);
+            case "leaky_pockets" -> EventConfigEntry.ofDefault(120, 360);
+            case "sticky_fingers" -> EventConfigEntry.ofDefault(60, 180);
+            case "kinetic_recoil" -> EventConfigEntry.ofDefault(60, 180);
+            case "scrambled_buttons" -> EventConfigEntry.ofDefault(60, 300);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

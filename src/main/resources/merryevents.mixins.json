@@ -12,6 +12,7 @@
     "LivingEntityChildMixin",
     "PlayerEntityMixin",
     "PotionItemMixin",
+    "ServerPlayNetworkHandlerMixin",
     "WaterFluidMixin"
   ],
   "injectors": {

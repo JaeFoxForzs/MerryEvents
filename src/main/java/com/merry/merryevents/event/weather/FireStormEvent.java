@@ -5,7 +5,6 @@ import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.util.SpatialTargeting;
-import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.projectile.SmallFireballEntity;
 import net.minecraft.server.MinecraftServer;
@@ -50,7 +49,7 @@ public final class FireStormEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return FireStormEvent.ID;
     }
 
     @Override
@@ -66,12 +65,12 @@ public final class FireStormEvent implements ChaosEvent {
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         Random random = server.getOverworld().getRandom();
-        int fireballQuota = MIN_FIREBALLS + random.nextInt(MAX_FIREBALLS - MIN_FIREBALLS + 1);
-        double dispersionRadius = MIN_DISPERSION_RADIUS
-                + random.nextDouble() * (MAX_DISPERSION_RADIUS - MIN_DISPERSION_RADIUS);
+        int fireballQuota = FireStormEvent.MIN_FIREBALLS + random.nextInt(FireStormEvent.MAX_FIREBALLS - FireStormEvent.MIN_FIREBALLS + 1);
+        double dispersionRadius = FireStormEvent.MIN_DISPERSION_RADIUS
+                + random.nextDouble() * (FireStormEvent.MAX_DISPERSION_RADIUS - FireStormEvent.MIN_DISPERSION_RADIUS);
 
-        context.set(REMAINING_FIREBALLS_KEY, fireballQuota);
-        context.set(RADIUS_KEY, dispersionRadius);
+        context.set(FireStormEvent.REMAINING_FIREBALLS_KEY, fireballQuota);
+        context.set(FireStormEvent.RADIUS_KEY, dispersionRadius);
 
         MerryEvents.LOGGER.info("[FireStormEvent] Incendiary storm ignited: quota={} fireballs, radius={}",
                 fireballQuota, String.format("%.1f", dispersionRadius));
@@ -80,15 +79,14 @@ public final class FireStormEvent implements ChaosEvent {
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
-        int remainingFireballs = context.getInt(REMAINING_FIREBALLS_KEY, 0);
+        int remainingFireballs = context.getInt(FireStormEvent.REMAINING_FIREBALLS_KEY, 0);
         if (remainingFireballs <= 0 || remainingTicks <= 0) {
             return;
         }
 
         List<ServerPlayerEntity> eligiblePlayers = new ArrayList<>();
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (!SpatialTargeting.isHazardImmune(player)
-                    && WeatherUtil.isExposedToSky(player.getServerWorld(), player.getBlockPos())) {
+            if (!SpatialTargeting.isHazardImmune(player)) {
                 eligiblePlayers.add(player);
             }
         }
@@ -103,15 +101,15 @@ public final class FireStormEvent implements ChaosEvent {
         if (random.nextDouble() < expectedFireballsThisTick - fireballsThisTick) {
             fireballsThisTick++;
         }
-        fireballsThisTick = Math.min(fireballsThisTick, MAX_FIREBALLS_PER_TICK);
+        fireballsThisTick = Math.min(fireballsThisTick, FireStormEvent.MAX_FIREBALLS_PER_TICK);
 
-        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
+        double radius = context.getDouble(FireStormEvent.RADIUS_KEY, FireStormEvent.MIN_DISPERSION_RADIUS);
         int spawnedFireballs = 0;
         for (int i = 0; i < fireballsThisTick; i++) {
             ServerPlayerEntity player = eligiblePlayers.get(random.nextInt(eligiblePlayers.size()));
             ServerWorld world = player.getServerWorld();
             BlockPos spawnPos = SpatialTargeting.findRandomSkyPosition(
-                    world, player, radius, SPAWN_HEIGHTMAP, MIN_HEIGHT_ABOVE_PLAYER, EXTRA_HEIGHT_VARIATION);
+                    world, player, radius, FireStormEvent.SPAWN_HEIGHTMAP, FireStormEvent.MIN_HEIGHT_ABOVE_PLAYER, FireStormEvent.EXTRA_HEIGHT_VARIATION);
             if (spawnPos == null) {
                 continue;
             }
@@ -124,23 +122,23 @@ public final class FireStormEvent implements ChaosEvent {
             fireball.refreshPositionAndAngles(spawnPos.getX() + 0.5, spawnPos.getY(), spawnPos.getZ() + 0.5, 0.0F,
                     90.0F);
             fireball.setVelocity(
-                    MIN_HORIZONTAL_SPEED + random.nextDouble() * (MAX_HORIZONTAL_SPEED - MIN_HORIZONTAL_SPEED),
-                    -(MIN_DOWNWARD_SPEED + random.nextDouble() * (MAX_DOWNWARD_SPEED - MIN_DOWNWARD_SPEED)),
-                    MIN_HORIZONTAL_SPEED + random.nextDouble() * (MAX_HORIZONTAL_SPEED - MIN_HORIZONTAL_SPEED));
+                    FireStormEvent.MIN_HORIZONTAL_SPEED + random.nextDouble() * (FireStormEvent.MAX_HORIZONTAL_SPEED - FireStormEvent.MIN_HORIZONTAL_SPEED),
+                    -(FireStormEvent.MIN_DOWNWARD_SPEED + random.nextDouble() * (FireStormEvent.MAX_DOWNWARD_SPEED - FireStormEvent.MIN_DOWNWARD_SPEED)),
+                    FireStormEvent.MIN_HORIZONTAL_SPEED + random.nextDouble() * (FireStormEvent.MAX_HORIZONTAL_SPEED - FireStormEvent.MIN_HORIZONTAL_SPEED));
             if (!world.spawnEntity(fireball)) {
                 continue;
             }
 
             context.trackEntity(fireball.getUuid());
             spawnedFireballs++;
-            float soundPitch = (float) (MIN_SOUND_PITCH
-                    + random.nextDouble() * (MAX_SOUND_PITCH - MIN_SOUND_PITCH));
+            float soundPitch = (float) (FireStormEvent.MIN_SOUND_PITCH
+                    + random.nextDouble() * (FireStormEvent.MAX_SOUND_PITCH - FireStormEvent.MIN_SOUND_PITCH));
             world.playSound(null, spawnPos.getX(), spawnPos.getY(), spawnPos.getZ(),
-                    SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.WEATHER, SPAWN_SOUND_VOLUME, soundPitch);
+                    SoundEvents.ITEM_FIRECHARGE_USE, SoundCategory.WEATHER, FireStormEvent.SPAWN_SOUND_VOLUME, soundPitch);
         }
 
         if (spawnedFireballs > 0) {
-            context.set(REMAINING_FIREBALLS_KEY, remainingFireballs - spawnedFireballs);
+            context.set(FireStormEvent.REMAINING_FIREBALLS_KEY, remainingFireballs - spawnedFireballs);
         }
     }
 
