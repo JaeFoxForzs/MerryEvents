@@ -12,14 +12,15 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Глобальное визуальное событие: экран плавно циклирует цвета в стиле дискотеки.
+ * Global visual environment event belonging to EventCategory.VISION.
+ * Cycles rhythmic full-screen color overlays using smooth cosine transitions.
  */
 public final class DiscoEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("disco");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return DiscoEvent.ID;
     }
 
     @Override
@@ -41,7 +42,8 @@ public final class DiscoEvent implements ChaosEvent {
     }
 
     @Override
-    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context, int remainingTicks) {
+    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int remainingTicks) {
     }
 
     @Override

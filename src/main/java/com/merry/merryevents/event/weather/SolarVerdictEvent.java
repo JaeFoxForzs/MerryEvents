@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialEntityScanner;
 import com.merry.merryevents.util.SpatialTargeting;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
@@ -16,13 +17,7 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.Box;
 import org.jetbrains.annotations.Nullable;
-
-import java.util.HashSet;
-import java.util.List;
-import java.util.Set;
-import java.util.UUID;
 
 /**
  * Global astronomical corruption event belonging to EventCategory.WEATHER.
@@ -38,8 +33,7 @@ public final class SolarVerdictEvent implements ChaosEvent {
     private static final int DAMAGE_INTERVAL_TICKS = 20;
     private static final int MAX_TARGETS_PER_TICK = 128;
     private static final double PLAYER_SEARCH_RADIUS = 96.0;
-    private static final double PLAYER_SEARCH_RADIUS_SQUARED = SolarVerdictEvent.PLAYER_SEARCH_RADIUS
-            * SolarVerdictEvent.PLAYER_SEARCH_RADIUS;
+
     private static final int HELMET_DAMAGE = 1;
     private static final float HELMET_FIRE_DAMAGE = 1.0F;
     private static final float EXPOSED_FIRE_DAMAGE = 4.0F;
@@ -123,88 +117,61 @@ public final class SolarVerdictEvent implements ChaosEvent {
             return;
         }
 
-        List<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
-        if (players.isEmpty()) {
-            return;
-        }
-
-        int startPlayerIndex = Math.floorMod(context.getInt(SolarVerdictEvent.NEXT_PLAYER_INDEX_KEY, 0),
-                players.size());
-        context.set(SolarVerdictEvent.NEXT_PLAYER_INDEX_KEY, (startPlayerIndex + 1) % players.size());
-
-        int processedTargets = 0;
-        Set<UUID> processedEntityIds = new HashSet<>();
-        for (int playerOffset = 0; playerOffset < players.size()
-                && processedTargets < SolarVerdictEvent.MAX_TARGETS_PER_TICK; playerOffset++) {
-            ServerPlayerEntity player = players.get((startPlayerIndex + playerOffset) % players.size());
-            if (SpatialTargeting.isHazardImmune(player)) {
-                continue;
-            }
-
-            ServerWorld world = player.getServerWorld();
-            if (!world.getDimension().hasSkyLight() || !world.isDay() || world.isRaining()) {
-                continue;
-            }
-
-            Box searchArea = player.getBoundingBox().expand(SolarVerdictEvent.PLAYER_SEARCH_RADIUS);
-            List<LivingEntity> nearbyTargets = world.getEntitiesByClass(LivingEntity.class, searchArea,
-                    living -> living.isAlive()
-                            && !living.isInvulnerable()
-                            && !living.isFireImmune()
-                            && (!(living instanceof ServerPlayerEntity candidatePlayer)
-                                    || !SpatialTargeting.isHazardImmune(candidatePlayer))
-                            && living.squaredDistanceTo(player.getX(), living.getY(),
-                                    player.getZ()) <= SolarVerdictEvent.PLAYER_SEARCH_RADIUS_SQUARED);
-
-            for (LivingEntity living : nearbyTargets) {
-                if (processedTargets >= SolarVerdictEvent.MAX_TARGETS_PER_TICK) {
-                    break;
-                }
-
-                if (!processedEntityIds.add(living.getUuid())) {
-                    continue;
-                }
-
-                processedTargets++;
-                BlockPos eyePos = BlockPos.ofFloored(living.getX(), living.getEyeY(), living.getZ());
-                if (!world.isSkyVisible(eyePos) || living.isTouchingWater() || living.isWet() || living.inPowderSnow) {
-                    continue;
-                }
-
-                ItemStack helmet = living.getEquippedStack(EquipmentSlot.HEAD);
-                if (!helmet.isEmpty()) {
-                    if (helmet.isDamageable()) {
-                        helmet.damage(SolarVerdictEvent.HELMET_DAMAGE, living, EquipmentSlot.HEAD);
+        SpatialEntityScanner.scanAndProcess(
+                server,
+                context,
+                SolarVerdictEvent.NEXT_PLAYER_INDEX_KEY,
+                LivingEntity.class,
+                SolarVerdictEvent.PLAYER_SEARCH_RADIUS,
+                SolarVerdictEvent.MAX_TARGETS_PER_TICK,
+                world -> world.getDimension().hasSkyLight() && world.isDay() && !world.isRaining(),
+                living -> living.isAlive()
+                        && !living.isInvulnerable()
+                        && !living.isFireImmune()
+                        && (!(living instanceof ServerPlayerEntity candidatePlayer)
+                                || !SpatialTargeting.isHazardImmune(candidatePlayer)),
+                (world, player, living) -> {
+                    BlockPos eyePos = BlockPos.ofFloored(living.getX(), living.getEyeY(), living.getZ());
+                    if (!world.isSkyVisible(eyePos) || living.isTouchingWater() || living.isWet()
+                            || living.inPowderSnow) {
+                        return;
                     }
 
-                    living.damage(world.getDamageSources().onFire(), SolarVerdictEvent.HELMET_FIRE_DAMAGE);
-                    world.spawnParticles(ParticleTypes.SMOKE, living.getX(), living.getY() + living.getHeight(),
-                            living.getZ(), SolarVerdictEvent.HELMET_SMOKE_PARTICLE_COUNT,
-                            SolarVerdictEvent.HELMET_SMOKE_SPREAD, SolarVerdictEvent.HELMET_SMOKE_SPREAD,
-                            SolarVerdictEvent.HELMET_SMOKE_SPREAD, SolarVerdictEvent.HELMET_SMOKE_SPEED);
+                    ItemStack helmet = living.getEquippedStack(EquipmentSlot.HEAD);
+                    if (!helmet.isEmpty()) {
+                        if (helmet.isDamageable()) {
+                            helmet.damage(SolarVerdictEvent.HELMET_DAMAGE, living, EquipmentSlot.HEAD);
+                        }
 
-                    if (living instanceof ServerPlayerEntity scorchedPlayer
-                            && currentTick % (SolarVerdictEvent.DAMAGE_INTERVAL_TICKS * 2) == 0) {
-                        scorchedPlayer.playSoundToPlayer(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS, 0.8F,
-                                1.6F);
+                        living.damage(world.getDamageSources().onFire(), SolarVerdictEvent.HELMET_FIRE_DAMAGE);
+                        world.spawnParticles(ParticleTypes.SMOKE, living.getX(), living.getY() + living.getHeight(),
+                                living.getZ(), SolarVerdictEvent.HELMET_SMOKE_PARTICLE_COUNT,
+                                SolarVerdictEvent.HELMET_SMOKE_SPREAD, SolarVerdictEvent.HELMET_SMOKE_SPREAD,
+                                SolarVerdictEvent.HELMET_SMOKE_SPREAD, SolarVerdictEvent.HELMET_SMOKE_SPEED);
+
+                        if (living instanceof ServerPlayerEntity scorchedPlayer
+                                && currentTick % (SolarVerdictEvent.DAMAGE_INTERVAL_TICKS * 2) == 0) {
+                            scorchedPlayer.playSoundToPlayer(SoundEvents.BLOCK_FIRE_EXTINGUISH, SoundCategory.PLAYERS,
+                                    0.8F,
+                                    1.6F);
+                        }
+                    } else {
+                        living.setOnFireFor(SolarVerdictEvent.EXPOSED_FIRE_DURATION_SECONDS);
+                        living.damage(world.getDamageSources().onFire(), SolarVerdictEvent.EXPOSED_FIRE_DAMAGE);
+
+                        world.spawnParticles(ParticleTypes.FLAME,
+                                living.getX(), living.getY() + living.getHeight() * 0.5, living.getZ(),
+                                SolarVerdictEvent.EXPOSED_FLAME_PARTICLE_COUNT, SolarVerdictEvent.EXPOSED_FLAME_SPREAD,
+                                SolarVerdictEvent.EXPOSED_FLAME_SPREAD,
+                                SolarVerdictEvent.EXPOSED_FLAME_SPREAD, SolarVerdictEvent.EXPOSED_FLAME_SPEED);
+
+                        if (living instanceof ServerPlayerEntity scorchedPlayer) {
+                            scorchedPlayer.playSoundToPlayer(SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.PLAYERS,
+                                    0.9F,
+                                    1.0F);
+                        }
                     }
-                } else {
-                    living.setOnFireFor(SolarVerdictEvent.EXPOSED_FIRE_DURATION_SECONDS);
-                    living.damage(world.getDamageSources().onFire(), SolarVerdictEvent.EXPOSED_FIRE_DAMAGE);
-
-                    world.spawnParticles(ParticleTypes.FLAME,
-                            living.getX(), living.getY() + living.getHeight() * 0.5, living.getZ(),
-                            SolarVerdictEvent.EXPOSED_FLAME_PARTICLE_COUNT, SolarVerdictEvent.EXPOSED_FLAME_SPREAD,
-                            SolarVerdictEvent.EXPOSED_FLAME_SPREAD,
-                            SolarVerdictEvent.EXPOSED_FLAME_SPREAD, SolarVerdictEvent.EXPOSED_FLAME_SPEED);
-
-                    if (living instanceof ServerPlayerEntity scorchedPlayer) {
-                        scorchedPlayer.playSoundToPlayer(SoundEvents.ENTITY_GENERIC_BURN, SoundCategory.PLAYERS, 0.9F,
-                                1.0F);
-                    }
-                }
-            }
-        }
+                });
     }
 
     @Override

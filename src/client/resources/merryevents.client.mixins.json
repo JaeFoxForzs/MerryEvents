@@ -5,8 +5,10 @@
   "client": [
     "CameraEntityMixin",
     "CameraRollMixin",
+    "ClientPlayerSoundMixin",
     "GameRendererAccessor",
     "InGameHudMixin",
+    "InventoryScreenMixin",
     "LivingEntityRendererMixin",
     "PostEffectProcessorAccessor",
     "ScreenMixin"

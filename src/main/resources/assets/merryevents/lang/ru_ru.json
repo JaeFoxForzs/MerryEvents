@@ -50,6 +50,8 @@
 
   "event.merryevents.acid_rain": "Кислотный дождь",
   "event.merryevents.anvil_rain": "Дождь из наковален",
+  "event.merryevents.closed_inventory": "Закрытый инвентарь",
+  "event.merryevents.closed_inventory.blocked": "Инвентарь заклинило! Нельзя открыть.",
   "event.merryevents.cobweb_nightmare": "Паучий кошмар",
   "event.merryevents.colorblindness": "Дальтоник",
   "event.merryevents.crumbling_floor": "Пол уходит из-под ног",
@@ -80,6 +82,7 @@
   "event.merryevents.perfect_ice": "Идеальный гололёд",
   "event.merryevents.personal_killer": "Личный преследователь",
   "event.merryevents.personal_killer.mob_name_target": "Преследователь ➔ %s",
+  "event.merryevents.rubber_world": "Резиновый мир",
   "event.merryevents.rust_rain": "Ржавый дождь",
   "event.merryevents.scrambled_buttons": "Перепутанные кнопки",
   "event.merryevents.solar_verdict": "Гнев солнца",

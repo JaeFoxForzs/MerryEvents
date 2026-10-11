@@ -31,15 +31,15 @@ public final class ChaosDirector {
     }
 
     public static ChaosDirector getInstance() {
-        return INSTANCE;
+        return ChaosDirector.INSTANCE;
     }
 
     public int getTicksUntilNextEvent() {
-        return ticksUntilNextEvent;
+        return this.ticksUntilNextEvent;
     }
 
     public Deque<Identifier> getDeck() {
-        return deck;
+        return this.deck;
     }
 
     public void setCountdown(int ticks) {
@@ -52,10 +52,9 @@ public final class ChaosDirector {
      */
     public void initializeCountdown() {
         MerryConfig config = ConfigManager.get();
-        int minTicks = config.getMinIntervalSeconds() * 20;
-        int maxTicks = config.getMaxIntervalSeconds() * 20;
-        int delta = Math.max(1, maxTicks - minTicks);
-        this.ticksUntilNextEvent = minTicks + random.nextInt(delta);
+        int minSeconds = config.getMinIntervalSeconds();
+        int maxSeconds = Math.max(minSeconds, config.getMaxIntervalSeconds());
+        this.ticksUntilNextEvent = (minSeconds + this.random.nextInt(maxSeconds - minSeconds + 1)) * 20;
     }
 
     /**
@@ -68,14 +67,14 @@ public final class ChaosDirector {
             return;
         }
 
-        if (ticksUntilNextEvent <= 0) {
-            initializeCountdown();
+        if (this.ticksUntilNextEvent <= 0) {
+            this.initializeCountdown();
             return;
         }
 
-        if (--ticksUntilNextEvent <= 0) {
-            dispatchNextEvent(server);
-            initializeCountdown();
+        if (--this.ticksUntilNextEvent <= 0) {
+            this.dispatchNextEvent(server);
+            this.initializeCountdown();
         }
     }
 
@@ -86,22 +85,26 @@ public final class ChaosDirector {
      * @return True if an event successfully ignited
      */
     public boolean dispatchNextEvent(MinecraftServer server) {
-        if (deck.isEmpty()) {
-            refillDeck();
+        if (this.deck.isEmpty()) {
+            this.refillDeck();
         }
 
-        if (dispatchFromDeck(server)) {
+        if (this.dispatchFromDeck(server)) {
             return true;
         }
 
-        refillDeck();
-        return dispatchFromDeck(server);
+        if (!this.deck.isEmpty()) {
+            return false;
+        }
+
+        this.refillDeck();
+        return this.dispatchFromDeck(server);
     }
 
     private boolean dispatchFromDeck(MinecraftServer server) {
-        int attempts = deck.size();
+        int attempts = this.deck.size();
         for (int i = 0; i < attempts; i++) {
-            Identifier candidateId = deck.pollFirst();
+            Identifier candidateId = this.deck.pollFirst();
             if (candidateId == null) {
                 break;
             }
@@ -115,7 +118,7 @@ public final class ChaosDirector {
 
             int categoryMask = event.getCategory().getMask();
             if ((EventManager.getInstance().getGlobalCategoryMask() & categoryMask) != 0) {
-                deck.addLast(candidateId);
+                this.deck.addLast(candidateId);
                 continue;
             }
 
@@ -126,7 +129,7 @@ public final class ChaosDirector {
             } else {
                 int minSec = entry != null ? entry.minDurationSeconds() : 30;
                 int maxSec = entry != null ? entry.maxDurationSeconds() : 60;
-                durationTicks = (minSec + random.nextInt(Math.max(1, maxSec - minSec + 1))) * 20;
+                durationTicks = (minSec + this.random.nextInt(Math.max(1, maxSec - minSec + 1))) * 20;
             }
 
             if (event.isGlobal()) {
@@ -139,7 +142,7 @@ public final class ChaosDirector {
             } else {
                 List<ServerPlayerEntity> players = server.getPlayerManager().getPlayerList();
                 if (!players.isEmpty()) {
-                    ServerPlayerEntity target = players.get(random.nextInt(players.size()));
+                    ServerPlayerEntity target = players.get(this.random.nextInt(players.size()));
                     boolean started = EventManager.getInstance().startPlayerEvent(server, target, candidateId,
                             durationTicks);
                     if (started) {
@@ -147,11 +150,14 @@ public final class ChaosDirector {
                                 candidateId, target.getName().getString(), durationTicks);
                         return true;
                     }
+                } else {
+                    this.deck.addLast(candidateId);
+                    continue;
                 }
             }
 
             if (EventManager.getInstance().isCategoryOccupiedGlobally(event.getCategory())) {
-                deck.addLast(candidateId);
+                this.deck.addLast(candidateId);
                 continue;
             }
         }
@@ -163,7 +169,7 @@ public final class ChaosDirector {
      * Replenishes and shuffles deck tickets based on configured event weights.
      */
     public void refillDeck() {
-        deck.clear();
+        this.deck.clear();
         MerryConfig config = ConfigManager.get();
         List<Identifier> pool = new ArrayList<>();
 
@@ -178,7 +184,7 @@ public final class ChaosDirector {
         }
 
         Collections.shuffle(pool);
-        deck.addAll(pool);
-        MerryEvents.LOGGER.info("[ChaosDirector] Shuffle bag replenished with {} event tickets.", deck.size());
+        this.deck.addAll(pool);
+        MerryEvents.LOGGER.info("[ChaosDirector] Shuffle bag replenished with {} event tickets.", this.deck.size());
     }
 }

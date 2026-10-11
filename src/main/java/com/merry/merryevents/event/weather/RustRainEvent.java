@@ -4,9 +4,9 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialEntityScanner;
 import com.merry.merryevents.util.SpatialTargeting;
 import com.merry.merryevents.util.WeatherUtil;
-import net.minecraft.entity.Entity;
 import net.minecraft.entity.EquipmentSlot;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.player.PlayerInventory;
@@ -27,10 +27,13 @@ import java.util.function.Consumer;
 /**
  * Global atmospheric corrosion event belonging to EventCategory.WEATHER.
  * Gradually degrades equipped and inventory item durability for rain-exposed
- * entities.
+ * entities within localized player volumes.
  */
 public final class RustRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("rust_rain");
+    private static final String PLAYER_INDEX_KEY = "rust_rain_player_idx";
+    private static final double SEARCH_RADIUS = 64.0;
+    private static final int MAX_TARGETS_PER_TICK = 128;
 
     private static final EquipmentSlot[] EQUIPMENT_SLOTS = EquipmentSlot.values();
     private static final Consumer<Item> NO_OP_BREAK_CALLBACK = item -> {
@@ -38,7 +41,7 @@ public final class RustRainEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return RustRainEvent.ID;
     }
 
     @Override
@@ -65,31 +68,30 @@ public final class RustRainEvent implements ChaosEvent {
             return;
         }
 
-        for (ServerWorld world : server.getWorlds()) {
-            if (!world.getDimension().hasSkyLight() || !world.isRaining()) {
-                continue;
-            }
-
-            for (Entity entity : world.iterateEntities()) {
-                if (!(entity instanceof LivingEntity living) || !living.isAlive() || living.isInvulnerable()) {
-                    continue;
-                }
-
-                BlockPos pos = living.getBlockPos();
-                if (!WeatherUtil.isExposedToRain(world, pos, living)) {
-                    continue;
-                }
-
-                if (living instanceof ServerPlayerEntity player) {
-                    if (SpatialTargeting.isHazardImmune(player)) {
-                        continue;
+        SpatialEntityScanner.scanAndProcess(
+                server,
+                context,
+                RustRainEvent.PLAYER_INDEX_KEY,
+                LivingEntity.class,
+                RustRainEvent.SEARCH_RADIUS,
+                RustRainEvent.MAX_TARGETS_PER_TICK,
+                world -> world.getDimension().hasSkyLight() && world.isRaining(),
+                living -> living.isAlive() && !living.isInvulnerable(),
+                (world, player, living) -> {
+                    BlockPos pos = living.getBlockPos();
+                    if (!WeatherUtil.isExposedToRain(world, pos, living)) {
+                        return;
                     }
-                    corrodePlayerInventory(world, player);
-                } else {
-                    corrodeMobEquipment(world, living);
-                }
-            }
-        }
+
+                    if (living instanceof ServerPlayerEntity serverPlayer) {
+                        if (SpatialTargeting.isHazardImmune(serverPlayer)) {
+                            return;
+                        }
+                        this.corrodePlayerInventory(world, serverPlayer);
+                    } else {
+                        this.corrodeMobEquipment(world, living);
+                    }
+                });
     }
 
     private void corrodePlayerInventory(ServerWorld world, ServerPlayerEntity player) {
@@ -116,7 +118,7 @@ public final class RustRainEvent implements ChaosEvent {
             ItemStack stack = inventory.getStack(i);
             if (!stack.isEmpty() && stack.isDamageable()) {
                 if (currentIndex == targetIndex) {
-                    applyItemCorrosion(world, player, stack, random);
+                    this.applyItemCorrosion(world, player, stack, random);
                     break;
                 }
                 currentIndex++;
@@ -127,8 +129,8 @@ public final class RustRainEvent implements ChaosEvent {
     private void corrodeMobEquipment(ServerWorld world, LivingEntity living) {
         int damageableCount = 0;
 
-        for (int i = 0; i < EQUIPMENT_SLOTS.length; i++) {
-            ItemStack stack = living.getEquippedStack(EQUIPMENT_SLOTS[i]);
+        for (int i = 0; i < RustRainEvent.EQUIPMENT_SLOTS.length; i++) {
+            ItemStack stack = living.getEquippedStack(RustRainEvent.EQUIPMENT_SLOTS[i]);
             if (!stack.isEmpty() && stack.isDamageable()) {
                 damageableCount++;
             }
@@ -142,8 +144,8 @@ public final class RustRainEvent implements ChaosEvent {
         int targetIndex = random.nextInt(damageableCount);
         int currentIndex = 0;
 
-        for (int i = 0; i < EQUIPMENT_SLOTS.length; i++) {
-            EquipmentSlot slot = EQUIPMENT_SLOTS[i];
+        for (int i = 0; i < RustRainEvent.EQUIPMENT_SLOTS.length; i++) {
+            EquipmentSlot slot = RustRainEvent.EQUIPMENT_SLOTS[i];
             ItemStack stack = living.getEquippedStack(slot);
             if (!stack.isEmpty() && stack.isDamageable()) {
                 if (currentIndex == targetIndex) {
@@ -167,7 +169,7 @@ public final class RustRainEvent implements ChaosEvent {
         double fraction = 0.001 + (random.nextDouble() * 0.019);
         int damageToApply = Math.max(1, (int) Math.round(maxDurability * fraction));
 
-        stack.damage(damageToApply, world, player, NO_OP_BREAK_CALLBACK);
+        stack.damage(damageToApply, world, player, RustRainEvent.NO_OP_BREAK_CALLBACK);
 
         world.playSound(null, player.getX(), player.getY(), player.getZ(),
                 SoundEvents.BLOCK_GRINDSTONE_USE, SoundCategory.PLAYERS, 0.35F, 1.8F);

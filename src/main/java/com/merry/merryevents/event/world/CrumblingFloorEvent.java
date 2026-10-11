@@ -28,7 +28,7 @@ public final class CrumblingFloorEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return CrumblingFloorEvent.ID;
     }
 
     @Override
@@ -48,8 +48,8 @@ public final class CrumblingFloorEvent implements ChaosEvent {
         }
 
         float miningSpeed = (4.0F + targetPlayer.getRandom().nextFloat() * 4.0F) / 3.0F;
-        int breakerEntityId = targetPlayer.getId() + BREAKER_ID_OFFSET;
-        context.set(STATE_KEY, new BreakState(miningSpeed, breakerEntityId));
+        int breakerEntityId = targetPlayer.getId() + CrumblingFloorEvent.BREAKER_ID_OFFSET;
+        context.set(CrumblingFloorEvent.STATE_KEY, new BreakState(miningSpeed, breakerEntityId));
 
         MerryEvents.LOGGER.info("[CrumblingFloorEvent] Flooring deterioration active for {} (Speed: {}x, FakeId: {})",
                 targetPlayer.getName().getString(), miningSpeed, breakerEntityId);
@@ -62,7 +62,7 @@ public final class CrumblingFloorEvent implements ChaosEvent {
             return;
         }
 
-        BreakState state = context.getOrDefault(STATE_KEY, null);
+        BreakState state = context.getOrDefault(CrumblingFloorEvent.STATE_KEY, null);
         if (state == null) {
             return;
         }
@@ -81,7 +81,7 @@ public final class CrumblingFloorEvent implements ChaosEvent {
             BlockState blockState = world.getBlockState(currentPos);
             float hardness = blockState.getHardness(world, currentPos);
 
-            if (blockState.isAir() || hardness < 0.0F) {
+            if (blockState.isAir() || hardness < 0.0F || blockState.hasBlockEntity()) {
                 return;
             }
 
@@ -111,7 +111,7 @@ public final class CrumblingFloorEvent implements ChaosEvent {
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         if (targetPlayer != null) {
-            BreakState state = context.getOrDefault(STATE_KEY, null);
+            BreakState state = context.getOrDefault(CrumblingFloorEvent.STATE_KEY, null);
             if (state != null && state.pos != null) {
                 targetPlayer.getServerWorld().setBlockBreakingInfo(state.breakerEntityId, state.pos, -1);
             }

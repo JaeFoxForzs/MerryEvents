@@ -15,10 +15,9 @@ import org.jetbrains.annotations.Nullable;
 
 /**
  * Player-specific architectural hazard event belonging to EventCategory.WORLD.
- * Unpredictably collapses a quota of 64 to 512 terrain blocks within a
- * randomized
- * radius around the player, distributing structural failures smoothly across
- * the lifetime.
+ * Collapses terrain blocks around the target player while strictly protecting
+ * chests, shulker boxes, and all inventory-holding block entities from
+ * destruction.
  */
 public final class FloorHoleEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("floor_hole");
@@ -31,7 +30,7 @@ public final class FloorHoleEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return FloorHoleEvent.ID;
     }
 
     @Override
@@ -51,11 +50,11 @@ public final class FloorHoleEvent implements ChaosEvent {
         }
 
         Random random = targetPlayer.getRandom();
-        int totalBlocks = MIN_BLOCKS + random.nextInt(MAX_BLOCKS - MIN_BLOCKS + 1);
-        int radius = MIN_RADIUS + random.nextInt(MAX_RADIUS - MIN_RADIUS + 1);
+        int totalBlocks = FloorHoleEvent.MIN_BLOCKS + random.nextInt(FloorHoleEvent.MAX_BLOCKS - FloorHoleEvent.MIN_BLOCKS + 1);
+        int radius = FloorHoleEvent.MIN_RADIUS + random.nextInt(FloorHoleEvent.MAX_RADIUS - FloorHoleEvent.MIN_RADIUS + 1);
 
-        context.set(REMAINING_BLOCKS_KEY, totalBlocks);
-        context.set(RADIUS_KEY, radius);
+        context.set(FloorHoleEvent.REMAINING_BLOCKS_KEY, totalBlocks);
+        context.set(FloorHoleEvent.RADIUS_KEY, radius);
 
         MerryEvents.LOGGER.info(
                 "[FloorHoleEvent] Initialized structural sinkhole decay for {} (Quota: {} blocks, Radius: {} blocks)",
@@ -69,7 +68,7 @@ public final class FloorHoleEvent implements ChaosEvent {
             return;
         }
 
-        int blocksRemaining = context.getInt(REMAINING_BLOCKS_KEY, 0);
+        int blocksRemaining = context.getInt(FloorHoleEvent.REMAINING_BLOCKS_KEY, 0);
         if (blocksRemaining <= 0) {
             return;
         }
@@ -87,7 +86,7 @@ public final class FloorHoleEvent implements ChaosEvent {
             return;
         }
 
-        int radius = context.getInt(RADIUS_KEY, 4);
+        int radius = context.getInt(FloorHoleEvent.RADIUS_KEY, 4);
         ServerWorld world = targetPlayer.getServerWorld();
         BlockPos playerPos = targetPlayer.getBlockPos();
         BlockPos.Mutable searchPos = new BlockPos.Mutable();
@@ -110,7 +109,7 @@ public final class FloorHoleEvent implements ChaosEvent {
                 BlockState state = world.getBlockState(searchPos);
                 float hardness = state.getHardness(world, searchPos);
 
-                if (!state.isAir() && hardness >= 0.0F) {
+                if (!state.isAir() && hardness >= 0.0F && !state.hasBlockEntity()) {
                     world.breakBlock(searchPos, false);
                     successfullyBroken++;
                     blocksRemaining--;
@@ -122,7 +121,7 @@ public final class FloorHoleEvent implements ChaosEvent {
             if (!found && blocksRemaining > 0) {
                 BlockPos steppingPos = targetPlayer.getSteppingPos();
                 BlockState state = world.getBlockState(steppingPos);
-                if (!state.isAir() && state.getHardness(world, steppingPos) >= 0.0F) {
+                if (!state.isAir() && state.getHardness(world, steppingPos) >= 0.0F && !state.hasBlockEntity()) {
                     world.breakBlock(steppingPos, false);
                     successfullyBroken++;
                     blocksRemaining--;
@@ -131,7 +130,7 @@ public final class FloorHoleEvent implements ChaosEvent {
         }
 
         if (successfullyBroken > 0) {
-            context.set(REMAINING_BLOCKS_KEY, blocksRemaining);
+            context.set(FloorHoleEvent.REMAINING_BLOCKS_KEY, blocksRemaining);
         }
     }
 

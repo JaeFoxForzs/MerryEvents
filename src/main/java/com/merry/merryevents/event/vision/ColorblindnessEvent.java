@@ -12,14 +12,16 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Персональное событие: один из 6 режимов искажения цветовосприятия.
+ * Player-specific visual alteration event belonging to EventCategory.VISION.
+ * Simulates one of six distinct color vision deficiency matrix profiles via
+ * post-shaders.
  */
 public final class ColorblindnessEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("colorblindness");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return ColorblindnessEvent.ID;
     }
 
     @Override
@@ -36,18 +38,21 @@ public final class ColorblindnessEvent implements ChaosEvent {
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         if (targetPlayer != null) {
             targetPlayer.playSoundToPlayer(SoundEvents.BLOCK_BREWING_STAND_BREW, SoundCategory.PLAYERS, 0.8F, 1.2F);
-            MerryEvents.LOGGER.info("[ColorblindnessEvent] Colorblindness applied to {}", targetPlayer.getName().getString());
+            MerryEvents.LOGGER.info("[ColorblindnessEvent] Colorblindness applied to {}",
+                    targetPlayer.getName().getString());
         }
     }
 
     @Override
-    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context, int remainingTicks) {
+    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int remainingTicks) {
     }
 
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         if (targetPlayer != null) {
-            MerryEvents.LOGGER.info("[ColorblindnessEvent] Color vision normalized for {}", targetPlayer.getName().getString());
+            MerryEvents.LOGGER.info("[ColorblindnessEvent] Color vision normalized for {}",
+                    targetPlayer.getName().getString());
         }
     }
 }

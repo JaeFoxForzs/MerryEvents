@@ -28,7 +28,7 @@ public final class ClientEventManager {
      * @param effect  Client effect driver implementation
      */
     public static void registerEffect(Identifier eventId, ClientChaosEffect effect) {
-        EFFECT_REGISTRY.put(eventId, effect);
+        ClientEventManager.EFFECT_REGISTRY.put(eventId, effect);
     }
 
     /**
@@ -42,14 +42,14 @@ public final class ClientEventManager {
      */
     public static void handleEventSync(MinecraftClient client, Identifier eventId, int durationTicks, boolean active) {
         if (active) {
-            ClientChaosEffect effect = EFFECT_REGISTRY.get(eventId);
+            ClientChaosEffect effect = ClientEventManager.EFFECT_REGISTRY.get(eventId);
             if (effect != null) {
-                ACTIVE_EFFECTS.put(eventId, effect);
+                ClientEventManager.ACTIVE_EFFECTS.put(eventId, effect);
                 effect.onStart(client, durationTicks);
                 MerryEvents.LOGGER.info("[ClientEventManager] Started visual effect: {}", eventId);
             }
         } else {
-            ClientChaosEffect effect = ACTIVE_EFFECTS.remove(eventId);
+            ClientChaosEffect effect = ClientEventManager.ACTIVE_EFFECTS.remove(eventId);
             if (effect != null) {
                 effect.onStop(client);
                 MerryEvents.LOGGER.info("[ClientEventManager] Stopped visual effect: {}", eventId);
@@ -64,7 +64,7 @@ public final class ClientEventManager {
      * @return True if currently active
      */
     public static boolean isEventActive(Identifier eventId) {
-        return ACTIVE_EFFECTS.containsKey(eventId);
+        return ClientEventManager.ACTIVE_EFFECTS.containsKey(eventId);
     }
 
     /**
@@ -73,7 +73,7 @@ public final class ClientEventManager {
      * @return True if HUD should be suppressed
      */
     public static boolean isHudHidden() {
-        for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
+        for (ClientChaosEffect effect : ClientEventManager.ACTIVE_EFFECTS.values()) {
             if (effect.shouldHideHud()) {
                 return true;
             }
@@ -87,7 +87,7 @@ public final class ClientEventManager {
      * @return True if yaw rotation should be locked
      */
     public static boolean isYawLocked() {
-        for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
+        for (ClientChaosEffect effect : ClientEventManager.ACTIVE_EFFECTS.values()) {
             if (effect.isYawLocked()) {
                 return true;
             }
@@ -101,7 +101,7 @@ public final class ClientEventManager {
      * @return True if pitch rotation should be locked
      */
     public static boolean isPitchLocked() {
-        for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
+        for (ClientChaosEffect effect : ClientEventManager.ACTIVE_EFFECTS.values()) {
             if (effect.isPitchLocked()) {
                 return true;
             }
@@ -115,10 +115,10 @@ public final class ClientEventManager {
      * @param client Active Minecraft client instance
      */
     public static void reset(MinecraftClient client) {
-        for (ClientChaosEffect effect : ACTIVE_EFFECTS.values()) {
+        for (ClientChaosEffect effect : ClientEventManager.ACTIVE_EFFECTS.values()) {
             effect.onStop(client);
         }
-        ACTIVE_EFFECTS.clear();
+        ClientEventManager.ACTIVE_EFFECTS.clear();
         ClientShaderManager.reset(client);
         MerryEvents.LOGGER.info("[ClientEventManager] Reset all active client visual states.");
     }

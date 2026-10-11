@@ -12,14 +12,17 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Персональное событие: переворот картинки шейдером (без изменения управления).
+ * Player-specific visual disorientation event belonging to
+ * EventCategory.VISION.
+ * Inverts world camera orientation by 180 degrees while preserving standard
+ * movement vectors.
  */
 public final class UpsideDownEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("upside_down");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return UpsideDownEvent.ID;
     }
 
     @Override
@@ -41,13 +44,15 @@ public final class UpsideDownEvent implements ChaosEvent {
     }
 
     @Override
-    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context, int remainingTicks) {
+    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int remainingTicks) {
     }
 
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         if (targetPlayer != null) {
-            MerryEvents.LOGGER.info("[UpsideDownEvent] World orientation restored for {}", targetPlayer.getName().getString());
+            MerryEvents.LOGGER.info("[UpsideDownEvent] World orientation restored for {}",
+                    targetPlayer.getName().getString());
         }
     }
 }

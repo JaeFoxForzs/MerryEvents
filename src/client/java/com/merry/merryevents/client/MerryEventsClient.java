@@ -7,7 +7,9 @@ import com.merry.merryevents.network.*;
 import com.merry.merryevents.client.render.*;
 import com.merry.merryevents.event.mobs.*;
 import com.merry.merryevents.event.physics.*;
+import com.merry.merryevents.event.sounds.*;
 import com.merry.merryevents.event.status.*;
+import com.merry.merryevents.event.ui.*;
 import com.merry.merryevents.event.vision.*;
 import com.merry.merryevents.event.visual.*;
 import com.merry.merryevents.event.world.*;
@@ -21,69 +23,88 @@ public class MerryEventsClient implements ClientModInitializer {
     public void onInitializeClient() {
         MerryEvents.LOGGER.info("[MerryEvents-Client] Binding client payload receivers...");
 
-        // Базовые эффекты
+        // Core visual effects
         ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());
         ClientEventManager.registerEffect(MerryEvents.id("stiff_neck"), new StiffNeckClientEffect());
         ClientEventManager.registerEffect(MerryEvents.id("orbital_strike"), new OrbitalStrikeClientEffect());
         ClientEventManager.registerEffect(FlatMobsEvent.ID, new FlatMobsClientEffect());
         ClientEventManager.registerEffect(DontStepOnEvent.ID, new DontStepOnClientEffect());
 
-        // Эффекты ветки друга
+        // Interface and inventory constraint effects
         ClientEventManager.registerEffect(MerryEvents.id("scrambled_buttons"), new ScrambledButtonsClientEffect());
         ClientEventManager.registerEffect(MerryEvents.id("sticky_fingers"), new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
 
-        // Пять новых эффектов
+        // Sensory and vision shaders
         ClientEventManager.registerEffect(DiscoEvent.ID, new DiscoClientEffect());
         ClientEventManager.registerEffect(MinersVisionEvent.ID, new MinersVisionClientEffect());
         ClientEventManager.registerEffect(MyopiaEvent.ID, new MyopiaClientEffect());
         ClientEventManager.registerEffect(UpsideDownEvent.ID, new UpsideDownClientEffect());
         ClientEventManager.registerEffect(ColorblindnessEvent.ID, new ColorblindnessClientEffect());
 
-        // Клиентские сапплаеры состояний
+        // Auditory and UI lockdown effects
+        ClientEventManager.registerEffect(RubberWorldEvent.ID, new RubberWorldClientEffect());
+        ClientEventManager.registerEffect(ClosedInventoryEvent.ID, new ClosedInventoryClientEffect());
+
+        // Global state condition providers
         ClientEventManager.registerEffect(WaterDrinkerEvent.ID, new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
         WaterDrinkerEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(WaterDrinkerEvent.ID);
 
         ClientEventManager.registerEffect(KindergartenEvent.ID, new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
         KindergartenEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(KindergartenEvent.ID);
 
         ClientEventManager.registerEffect(PerfectIceEvent.ID, new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
         PerfectIceEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(PerfectIceEvent.ID);
 
         ClientEventManager.registerEffect(LavaWaterSwapEvent.ID, new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
         LavaWaterSwapEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(LavaWaterSwapEvent.ID);
 
-        // Инициализации рендереров и оверлеев
+        // Renderer and overlay lifecycle bindings
         DontStepOnClientEffect.init();
         DiscoClientEffect.init();
         MinersVisionClientEffect.init();
         OrbitalBeamRenderer.init();
 
-        // Сеть
+        // Authoritative network payload registration
         ClientPlayNetworking.registerGlobalReceiver(EventSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
                 MerryEvents.LOGGER.info("[MerryEvents-Client] Sync: id={}, active={}, ticks={}", payload.eventId(),

@@ -15,13 +15,17 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
  * Intercepts anvil landing dynamics during active AnvilRainEvents to pulverize
- * terrain and shatter the entity.
+ * terrain while strictly protecting container blocks and inventory block
+ * entities.
  */
 @Mixin(AnvilBlock.class)
 public abstract class AnvilBlockMixin {
+
     /**
-     * Pulverizes the block directly beneath the landing anvil and obliterates the
-     * newly placed anvil.
+     * Pulverizes natural terrain directly beneath the landing anvil while
+     * preserving container blocks.
+     * Enforces item drop generation if a block entity is somehow targeted to
+     * prevent item deletion.
      *
      * @param world              Target world instance
      * @param pos                Position where the anvil solidified
@@ -36,8 +40,11 @@ public abstract class AnvilBlockMixin {
         if (!world.isClient() && EventManager.getInstance().isGlobalEventActive(AnvilRainEvent.ID)) {
             BlockPos targetPos = pos.down();
             BlockState targetState = world.getBlockState(targetPos);
+
             if (!targetState.isAir() && targetState.getHardness(world, targetPos) >= 0.0F) {
-                world.breakBlock(targetPos, true);
+                if (!targetState.hasBlockEntity()) {
+                    world.breakBlock(targetPos, false);
+                }
             }
 
             world.removeBlock(pos, false);
@@ -46,8 +53,9 @@ public abstract class AnvilBlockMixin {
     }
 
     /**
-     * Pulverizes the supporting surface block when a high-velocity anvil is
-     * destroyed on landing.
+     * Pulverizes the supporting surface block when a high-velocity anvil shatters
+     * on impact.
+     * Bypasses block destruction if the impacted surface contains a block entity.
      *
      * @param world              Target world instance
      * @param pos                Impact coordinate
@@ -66,7 +74,9 @@ public abstract class AnvilBlockMixin {
             }
 
             if (!targetState.isAir() && targetState.getHardness(world, targetPos) >= 0.0F) {
-                world.breakBlock(targetPos, true);
+                if (!targetState.hasBlockEntity()) {
+                    world.breakBlock(targetPos, false);
+                }
             }
         }
     }

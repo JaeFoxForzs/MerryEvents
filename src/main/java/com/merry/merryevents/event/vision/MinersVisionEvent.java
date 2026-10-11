@@ -12,14 +12,15 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Персональное событие: подсветка руд сквозь стены.
+ * Player-specific visual enhancement event belonging to EventCategory.VISION.
+ * Enables depth-independent bounding box rendering around high-value ore veins.
  */
 public final class MinersVisionEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("miners_vision");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return MinersVisionEvent.ID;
     }
 
     @Override

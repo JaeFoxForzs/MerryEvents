@@ -6,6 +6,7 @@ import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
+import net.minecraft.util.math.ChunkSectionPos;
 import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 
@@ -19,6 +20,8 @@ public final class WeatherUtil {
     /**
      * Determines whether target coordinate is directly exposed to the sky without
      * solid obstructions.
+     * Verifies chunk loading boundaries prior to querying heightmaps to eliminate
+     * synchronous thread stalls.
      *
      * @param world Active server world
      * @param pos   Target block position to test
@@ -26,6 +29,12 @@ public final class WeatherUtil {
      */
     public static boolean isExposedToSky(ServerWorld world, BlockPos pos) {
         if (!world.getDimension().hasSkyLight()) {
+            return false;
+        }
+
+        int chunkX = ChunkSectionPos.getSectionCoord(pos.getX());
+        int chunkZ = ChunkSectionPos.getSectionCoord(pos.getZ());
+        if (!world.isChunkLoaded(chunkX, chunkZ)) {
             return false;
         }
 
@@ -42,6 +51,7 @@ public final class WeatherUtil {
     /**
      * Determines whether an entity is directly exposed to active rainfall in a
      * rainy biome.
+     * Bypasses biome lookups if the parent chunk is currently unloaded.
      *
      * @param world  Active server world
      * @param pos    Target position
@@ -49,7 +59,13 @@ public final class WeatherUtil {
      * @return True if active rain precipitates onto the entity
      */
     public static boolean isExposedToRain(ServerWorld world, BlockPos pos, LivingEntity entity) {
-        if (!world.isRaining() || !isExposedToSky(world, pos)) {
+        if (!world.isRaining() || !WeatherUtil.isExposedToSky(world, pos)) {
+            return false;
+        }
+
+        int chunkX = ChunkSectionPos.getSectionCoord(pos.getX());
+        int chunkZ = ChunkSectionPos.getSectionCoord(pos.getZ());
+        if (!world.isChunkLoaded(chunkX, chunkZ)) {
             return false;
         }
 

@@ -23,23 +23,23 @@ public final class OrbitalBeamRenderer {
         WorldRenderEvents.LAST.register(OrbitalBeamRenderer::render);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
-            ACTIVE_BEAMS.removeIf(ActiveBeam::tick);
+            OrbitalBeamRenderer.ACTIVE_BEAMS.removeIf(ActiveBeam::tick);
         });
     }
 
     public static void addBeam(BlockPos pos, int warmupTicks) {
-        ACTIVE_BEAMS.add(new ActiveBeam(pos, warmupTicks));
+        OrbitalBeamRenderer.ACTIVE_BEAMS.add(new ActiveBeam(pos, warmupTicks));
     }
 
     private static void ensureTextures() {
-        if (!texturesInitialized) {
+        if (!OrbitalBeamRenderer.texturesInitialized) {
             OrbitalTextures.init();
-            texturesInitialized = true;
+            OrbitalBeamRenderer.texturesInitialized = true;
         }
     }
 
     private static void render(WorldRenderContext context) {
-        if (ACTIVE_BEAMS.isEmpty()) {
+        if (OrbitalBeamRenderer.ACTIVE_BEAMS.isEmpty()) {
             return;
         }
 
@@ -48,7 +48,7 @@ public final class OrbitalBeamRenderer {
             return;
         }
 
-        ensureTextures();
+        OrbitalBeamRenderer.ensureTextures();
 
         Vec3d camPos = context.camera().getPos();
         MatrixStack matrices = context.matrixStack();
@@ -66,14 +66,14 @@ public final class OrbitalBeamRenderer {
 
         RenderLayer reticleLayer = RenderLayer.getBeaconBeam(OrbitalTextures.RETICLE_TEXTURE, true);
         VertexConsumer reticleConsumer = consumers.getBuffer(reticleLayer);
-        for (int i = 0; i < ACTIVE_BEAMS.size(); i++) {
-            drawReticle(reticleConsumer, mat, ACTIVE_BEAMS.get(i), tickDelta, time);
+        for (int i = 0; i < OrbitalBeamRenderer.ACTIVE_BEAMS.size(); i++) {
+            OrbitalBeamRenderer.drawReticle(reticleConsumer, mat, OrbitalBeamRenderer.ACTIVE_BEAMS.get(i), tickDelta, time);
         }
 
         RenderLayer beamLayer = RenderLayer.getBeaconBeam(OrbitalTextures.BEAM_TEXTURE, true);
         VertexConsumer beamConsumer = consumers.getBuffer(beamLayer);
-        for (int i = 0; i < ACTIVE_BEAMS.size(); i++) {
-            drawBeam(beamConsumer, mat, ACTIVE_BEAMS.get(i), camPos, tickDelta, time);
+        for (int i = 0; i < OrbitalBeamRenderer.ACTIVE_BEAMS.size(); i++) {
+            OrbitalBeamRenderer.drawBeam(beamConsumer, mat, OrbitalBeamRenderer.ACTIVE_BEAMS.get(i), camPos, tickDelta, time);
         }
 
         if (consumers instanceof VertexConsumerProvider.Immediate immediate) {
@@ -89,7 +89,7 @@ public final class OrbitalBeamRenderer {
         float progress = beam.getProgress(tickDelta);
         float circleRadius = 1.7F;
         float circleT = MathHelper.clamp(progress / 0.12F, 0.0F, 1.0F);
-        float appearScale = MathHelper.sin(circleT * HALF_PI);
+        float appearScale = MathHelper.sin(circleT * OrbitalBeamRenderer.HALF_PI);
         float currentRadius = circleRadius * appearScale;
 
         if (currentRadius <= 0.01F) {
@@ -140,7 +140,7 @@ public final class OrbitalBeamRenderer {
             long time) {
         float progress = beam.getProgress(tickDelta);
         float appearT = MathHelper.clamp(progress / 0.12F, 0.0F, 1.0F);
-        float beamExpand = MathHelper.sin(appearT * HALF_PI);
+        float beamExpand = MathHelper.sin(appearT * OrbitalBeamRenderer.HALF_PI);
 
         float wipeT = MathHelper.clamp((progress - 0.55F) / 0.45F, 0.0F, 1.0F);
         float wipeDown = 0.5F * (1.0F + MathHelper.cos(wipeT * (float) Math.PI));
@@ -197,12 +197,12 @@ public final class OrbitalBeamRenderer {
         }
 
         boolean tick() {
-            return --remaining <= 0;
+            return --this.remaining <= 0;
         }
 
         float getProgress(float tickDelta) {
-            float current = (maxWarmup - remaining) + tickDelta;
-            return MathHelper.clamp(current / (float) maxWarmup, 0.0F, 1.0F);
+            float current = (this.maxWarmup - this.remaining) + tickDelta;
+            return MathHelper.clamp(current / (float) this.maxWarmup, 0.0F, 1.0F);
         }
     }
 }

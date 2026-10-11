@@ -5,7 +5,6 @@ import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.util.SpatialTargeting;
-import com.merry.merryevents.util.WeatherUtil;
 import net.minecraft.block.Blocks;
 import net.minecraft.entity.FallingBlockEntity;
 import net.minecraft.server.MinecraftServer;
@@ -19,23 +18,27 @@ import net.minecraft.util.math.random.Random;
 import net.minecraft.world.Heightmap;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.ArrayList;
+import java.util.List;
+
 /**
  * Global aerial hazard event belonging to EventCategory.WEATHER.
- * Precipitates falling anvils above sky-exposed players with randomized cadence
- * and dispersion.
+ * Precipitates a randomized quota of falling anvils with randomized dispersion.
  */
 public final class AnvilRainEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("anvil_rain");
-    private static final String INTERVAL_KEY = "cadence_ticks";
+    private static final String REMAINING_ANVILS_KEY = "remaining_anvils";
     private static final String RADIUS_KEY = "dispersion_radius";
 
-    private static final int MIN_CADENCE_TICKS = 10;
-    private static final int MAX_CADENCE_TICKS = 24;
-    private static final double MIN_DISPERSION_RADIUS = 8.0;
-    private static final double MAX_DISPERSION_RADIUS = 24.0;
+    private static final int MIN_ANVILS = 256;
+    private static final int MAX_ANVILS = 1024;
+    private static final int MAX_ANVILS_PER_TICK = 16;
+    private static final int MAX_FALL_TICKS = 100;
+    private static final double MIN_DISPERSION_RADIUS = 32.0;
+    private static final double MAX_DISPERSION_RADIUS = 64.0;
     private static final Heightmap.Type SPAWN_HEIGHTMAP = Heightmap.Type.MOTION_BLOCKING;
-    private static final int MIN_HEIGHT_ABOVE_PLAYER = 20;
-    private static final int EXTRA_HEIGHT_VARIATION = 8;
+    private static final int MIN_HEIGHT_ABOVE_PLAYER = 64;
+    private static final int EXTRA_HEIGHT_VARIATION = 64;
     private static final float ANVIL_DAMAGE = 3.0F;
     private static final int ANVIL_DAMAGE_CAP = 40;
     private static final float SPAWN_SOUND_VOLUME = 1.2F;
@@ -59,42 +62,52 @@ public final class AnvilRainEvent implements ChaosEvent {
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         Random random = server.getOverworld().getRandom();
-        int cadenceTicks = MIN_CADENCE_TICKS + random.nextInt(MAX_CADENCE_TICKS - MIN_CADENCE_TICKS + 1);
+        int anvilQuota = MIN_ANVILS + random.nextInt(MAX_ANVILS - MIN_ANVILS + 1);
         double dispersionRadius = MIN_DISPERSION_RADIUS
                 + random.nextDouble() * (MAX_DISPERSION_RADIUS - MIN_DISPERSION_RADIUS);
 
-        context.set(INTERVAL_KEY, cadenceTicks);
+        context.set(REMAINING_ANVILS_KEY, anvilQuota);
         context.set(RADIUS_KEY, dispersionRadius);
 
-        MerryEvents.LOGGER.info("[AnvilRainEvent] Anvil shower initiated: interval={}t, radius={}",
-                cadenceTicks, String.format("%.1f", dispersionRadius));
+        MerryEvents.LOGGER.info("[AnvilRainEvent] Anvil storm initiated: quota={} anvils, radius={}",
+                anvilQuota, String.format("%.1f", dispersionRadius));
     }
 
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
-        int cadence = context.getInt(INTERVAL_KEY, MAX_CADENCE_TICKS);
-        if (remainingTicks % cadence != 0) {
+        int remainingAnvils = context.getInt(REMAINING_ANVILS_KEY, 0);
+        int firingWindowTicks = remainingTicks - MAX_FALL_TICKS;
+        if (remainingAnvils <= 0 || firingWindowTicks <= 0) {
             return;
         }
 
-        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
-
+        List<ServerPlayerEntity> eligiblePlayers = new ArrayList<>();
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            if (SpatialTargeting.isHazardImmune(player)) {
-                continue;
+            if (!SpatialTargeting.isHazardImmune(player)) {
+                eligiblePlayers.add(player);
             }
+        }
+        if (eligiblePlayers.isEmpty()) {
+            return;
+        }
 
+        Random random = server.getOverworld().getRandom();
+        double expectedAnvilsThisTick = (double) remainingAnvils / firingWindowTicks;
+        int anvilsThisTick = (int) expectedAnvilsThisTick;
+        if (random.nextDouble() < expectedAnvilsThisTick - anvilsThisTick) {
+            anvilsThisTick++;
+        }
+        anvilsThisTick = Math.min(anvilsThisTick, MAX_ANVILS_PER_TICK);
+
+        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
+        int spawnedAnvils = 0;
+
+        for (int i = 0; i < anvilsThisTick; i++) {
+            ServerPlayerEntity player = eligiblePlayers.get(random.nextInt(eligiblePlayers.size()));
             ServerWorld world = player.getServerWorld();
-            BlockPos playerPos = player.getBlockPos();
-
-            if (!WeatherUtil.isExposedToSky(world, playerPos)) {
-                continue;
-            }
-
             BlockPos spawnPos = SpatialTargeting.findRandomSkyPosition(
                     world, player, radius, SPAWN_HEIGHTMAP, MIN_HEIGHT_ABOVE_PLAYER, EXTRA_HEIGHT_VARIATION);
-
             if (spawnPos == null) {
                 continue;
             }
@@ -105,9 +118,14 @@ public final class AnvilRainEvent implements ChaosEvent {
             anvil.dropItem = false;
             anvil.setDestroyedOnLanding();
             context.trackEntity(anvil.getUuid());
+            spawnedAnvils++;
 
             world.playSound(null, spawnPos, SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.WEATHER, SPAWN_SOUND_VOLUME,
                     SPAWN_SOUND_PITCH);
+        }
+
+        if (spawnedAnvils > 0) {
+            context.set(REMAINING_ANVILS_KEY, remainingAnvils - spawnedAnvils);
         }
     }
 

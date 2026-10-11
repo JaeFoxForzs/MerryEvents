@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.util.SpatialEntityScanner;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.entity.attribute.EntityAttributeInstance;
@@ -11,7 +12,6 @@ import net.minecraft.entity.attribute.EntityAttributeModifier;
 import net.minecraft.entity.attribute.EntityAttributes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundCategory;
 import net.minecraft.sound.SoundEvents;
 import net.minecraft.util.Identifier;
@@ -21,11 +21,14 @@ import java.util.function.BooleanSupplier;
 
 /**
  * Global entity miniaturization event belonging to EventCategory.MOBS.
- * Scales down all living entities, boosts movement velocity, and forces child
- * behavior characteristics.
+ * Scales down living entities and boosts movement speed within active player
+ * volumes.
  */
 public final class KindergartenEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("kindergarten");
+    private static final String PLAYER_INDEX_KEY = "kindergarten_player_idx";
+    private static final double SEARCH_RADIUS = 64.0;
+    private static final int MAX_TARGETS_PER_TICK = 128;
 
     private static final Identifier SCALE_MODIFIER_ID = MerryEvents.id("kindergarten_scale");
     private static final Identifier SPEED_MODIFIER_ID = MerryEvents.id("kindergarten_speed");
@@ -85,19 +88,23 @@ public final class KindergartenEvent implements ChaosEvent {
 
     @Override
     public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        for (ServerWorld world : server.getWorlds()) {
-            for (Entity entity : world.iterateEntities()) {
-                if (entity instanceof LivingEntity living && living.isAlive()) {
-                    KindergartenEvent.applyModifiers(living);
-                }
-            }
-        }
+        SpatialEntityScanner.scanAndProcess(
+                server,
+                context,
+                KindergartenEvent.PLAYER_INDEX_KEY,
+                LivingEntity.class,
+                96.0,
+                512,
+                world -> true,
+                LivingEntity::isAlive,
+                (world, player, living) -> KindergartenEvent.applyModifiers(living));
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             player.playSoundToPlayer(SoundEvents.ENTITY_CHICKEN_EGG, SoundCategory.AMBIENT, 1.0F, 1.8F);
         }
 
-        MerryEvents.LOGGER.info("[KindergartenEvent] Miniaturization active globally across all living entities.");
+        MerryEvents.LOGGER
+                .info("[KindergartenEvent] Miniaturization active globally across localized living entities.");
     }
 
     @Override
@@ -107,27 +114,35 @@ public final class KindergartenEvent implements ChaosEvent {
             return;
         }
 
-        for (ServerWorld world : server.getWorlds()) {
-            for (Entity entity : world.iterateEntities()) {
-                if (entity instanceof LivingEntity living && living.isAlive()) {
+        SpatialEntityScanner.scanAndProcess(
+                server,
+                context,
+                KindergartenEvent.PLAYER_INDEX_KEY,
+                LivingEntity.class,
+                KindergartenEvent.SEARCH_RADIUS,
+                KindergartenEvent.MAX_TARGETS_PER_TICK,
+                world -> true,
+                LivingEntity::isAlive,
+                (world, player, living) -> {
                     EntityAttributeInstance scaleAttr = living.getAttributeInstance(EntityAttributes.GENERIC_SCALE);
                     if (scaleAttr != null && scaleAttr.getModifier(KindergartenEvent.SCALE_MODIFIER_ID) == null) {
                         KindergartenEvent.applyModifiers(living);
                     }
-                }
-            }
-        }
+                });
     }
 
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        for (ServerWorld world : server.getWorlds()) {
-            for (Entity entity : world.iterateEntities()) {
-                if (entity instanceof LivingEntity living) {
-                    KindergartenEvent.removeModifiers(living);
-                }
-            }
-        }
+        SpatialEntityScanner.scanAndProcess(
+                server,
+                context,
+                KindergartenEvent.PLAYER_INDEX_KEY,
+                LivingEntity.class,
+                96.0,
+                512,
+                world -> true,
+                living -> true,
+                (world, player, living) -> KindergartenEvent.removeModifiers(living));
 
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             player.playSoundToPlayer(SoundEvents.ENTITY_CHICKEN_EGG, SoundCategory.AMBIENT, 1.0F, 0.8F);

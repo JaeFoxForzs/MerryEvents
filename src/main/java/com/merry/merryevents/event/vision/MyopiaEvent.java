@@ -12,14 +12,16 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Персональное событие: размытие экрана (близорукость).
+ * Player-specific sensory impairment event belonging to EventCategory.VISION.
+ * Engages a full-screen Gaussian blur post-processing shader to compromise
+ * distant perception.
  */
 public final class MyopiaEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("myopia");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return MyopiaEvent.ID;
     }
 
     @Override
@@ -41,7 +43,8 @@ public final class MyopiaEvent implements ChaosEvent {
     }
 
     @Override
-    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context, int remainingTicks) {
+    public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int remainingTicks) {
     }
 
     @Override

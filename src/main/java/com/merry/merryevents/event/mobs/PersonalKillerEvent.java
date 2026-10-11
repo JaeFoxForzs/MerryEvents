@@ -5,6 +5,7 @@ import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.engine.EventManager;
+import com.merry.merryevents.util.MobSpawnUtil;
 import net.minecraft.entity.Entity;
 import net.minecraft.entity.EntityType;
 import net.minecraft.entity.EquipmentSlot;
@@ -20,8 +21,7 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
-import net.minecraft.util.math.BlockPos;
-import net.minecraft.util.math.ChunkSectionPos;
+import net.minecraft.util.math.Vec3d;
 import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.Nullable;
 
@@ -59,19 +59,6 @@ public final class PersonalKillerEvent implements ChaosEvent {
         ServerWorld world = targetPlayer.getServerWorld();
         Random random = targetPlayer.getRandom();
 
-        double angle = random.nextDouble() * Math.PI * 2.0;
-        double distance = 8.0 + random.nextDouble() * 4.0;
-        double spawnX = targetPlayer.getX() + Math.cos(angle) * distance;
-        double spawnZ = targetPlayer.getZ() + Math.sin(angle) * distance;
-        double spawnY = targetPlayer.getY();
-
-        BlockPos spawnPos = BlockPos.ofFloored(spawnX, spawnY, spawnZ);
-        if (!world.isChunkLoaded(ChunkSectionPos.getSectionCoord(spawnPos.getX()),
-                ChunkSectionPos.getSectionCoord(spawnPos.getZ()))) {
-            spawnX = targetPlayer.getX();
-            spawnZ = targetPlayer.getZ();
-        }
-
         MobEntity killer;
         if (random.nextBoolean()) {
             VindicatorEntity vindicator = EntityType.VINDICATOR.create(world);
@@ -91,7 +78,12 @@ public final class PersonalKillerEvent implements ChaosEvent {
             }
         }
 
-        killer.refreshPositionAndAngles(spawnX, spawnY, spawnZ, random.nextFloat() * 360.0F, 0.0F);
+        Vec3d spawnPos = MobSpawnUtil.findRandomGroundPosition(world, killer, targetPlayer, 8.0, 12.0, 24);
+        if (spawnPos == null) {
+            MerryEvents.LOGGER.warn("[PersonalKillerEvent] Could not find a safe spawn position for {}",
+                    targetPlayer.getName().getString());
+            return;
+        }
 
         Text mobTitle = Text
                 .translatable("event.merryevents.personal_killer.mob_name_target", targetPlayer.getName().getString())
@@ -104,7 +96,12 @@ public final class PersonalKillerEvent implements ChaosEvent {
             hostile.setTarget(targetPlayer);
         }
 
-        world.spawnEntity(killer);
+        if (!world.spawnEntity(killer)) {
+            MerryEvents.LOGGER.warn("[PersonalKillerEvent] Failed to spawn stalker for {}",
+                    targetPlayer.getName().getString());
+            return;
+        }
+
         context.trackEntity(killer.getUuid());
         context.set(KILLER_UUID_KEY, killer.getUuid());
 
@@ -121,6 +118,9 @@ public final class PersonalKillerEvent implements ChaosEvent {
 
         UUID killerUuid = context.getOrDefault(KILLER_UUID_KEY, null);
         if (killerUuid == null) {
+            MerryEvents.LOGGER.warn("[PersonalKillerEvent] No stalker was spawned; terminating event for {}",
+                    targetPlayer.getName().getString());
+            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, ID);
             return;
         }
 
