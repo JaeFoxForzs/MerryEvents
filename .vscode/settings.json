@@ -1,8 +1,9 @@
 {
   "java.configuration.updateBuildConfiguration": "automatic",
-  "java.compile.nullAnalysis.mode": "automatic",
+  "java.compile.nullAnalysis.mode": "disabled",
+  "java.server.launchMode": "LightWeight",
   "java.cleanup.actions": ["qualifyMembers", "qualifyStaticMembers"],
-  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx3G -Xms256m",
+  "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx1G -Xms128m",
   "files.exclude": {
     "**/.git": true,
     "**/.gradle": true,

@@ -44,17 +44,17 @@ public final class MerryEventsCommand {
                 .requires(source -> source.hasPermissionLevel(2))
                 .then(CommandManager.literal("start")
                         .then(CommandManager.argument("eventId", IdentifierArgumentType.identifier())
-                                .suggests((ctx, builder) -> suggestEvents(builder,
+                                .suggests((ctx, builder) -> MerryEventsCommand.suggestEvents(builder,
                                         EventManager.getInstance().getRegisteredEventIds()))
                                 .executes(ctx -> {
                                     Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
-                                    return executeStart(ctx.getSource(), resolveEventId(rawId), -1, null);
+                                    return MerryEventsCommand.executeStart(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), -1, null);
                                 })
                                 .then(CommandManager.argument("durationSeconds", IntegerArgumentType.integer(1, 3600))
                                         .executes(ctx -> {
                                             Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
                                             int seconds = IntegerArgumentType.getInteger(ctx, "durationSeconds");
-                                            return executeStart(ctx.getSource(), resolveEventId(rawId), seconds, null);
+                                            return MerryEventsCommand.executeStart(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), seconds, null);
                                         })
                                         .then(CommandManager.argument("target", EntityArgumentType.player())
                                                 .executes(ctx -> {
@@ -64,7 +64,7 @@ public final class MerryEventsCommand {
                                                             "durationSeconds");
                                                     ServerPlayerEntity player = EntityArgumentType.getPlayer(ctx,
                                                             "target");
-                                                    return executeStart(ctx.getSource(), resolveEventId(rawId), seconds,
+                                                    return MerryEventsCommand.executeStart(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), seconds,
                                                             player);
                                                 })))))
                 .then(CommandManager.literal("stop")
@@ -82,29 +82,29 @@ public final class MerryEventsCommand {
                                             }
                                         }
                                     }
-                                    return suggestEvents(builder, active);
+                                    return MerryEventsCommand.suggestEvents(builder, active);
                                 })
                                 .executes(ctx -> {
                                     Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
-                                    return executeStop(ctx.getSource(), resolveEventId(rawId), null);
+                                    return MerryEventsCommand.executeStop(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), null);
                                 })
                                 .then(CommandManager.argument("target", EntityArgumentType.player())
                                         .executes(ctx -> {
                                             Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
                                             ServerPlayerEntity target = EntityArgumentType.getPlayer(ctx, "target");
-                                            return executeStop(ctx.getSource(), resolveEventId(rawId), target);
+                                            return MerryEventsCommand.executeStop(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), target);
                                         }))))
                 .then(CommandManager.literal("status")
-                        .executes(ctx -> executeStatus(ctx.getSource())))
+                        .executes(ctx -> MerryEventsCommand.executeStatus(ctx.getSource())))
                 .then(CommandManager.literal("events")
-                        .executes(ctx -> executeEvents(ctx.getSource())))
+                        .executes(ctx -> MerryEventsCommand.executeEvents(ctx.getSource())))
                 .then(CommandManager.literal("director")
                         .then(CommandManager.literal("status")
                                 .executes(ctx -> {
                                     ServerCommandSource source = ctx.getSource();
                                     ChaosDirector director = ChaosDirector.getInstance();
                                     boolean enabled = ConfigManager.get().isAutoDirectorEnabled();
-                                    int remainingSec = Math.max(0, director.getTicksUntilNextEvent() / 20);
+                                    int globalRemainingSec = Math.max(0, director.getTicksUntilNextGlobalEvent() / 20);
 
                                     Text enabledText = Text.translatable(enabled ? "gui.yes" : "gui.no")
                                             .formatted(enabled ? Formatting.GREEN : Formatting.RED);
@@ -113,18 +113,34 @@ public final class MerryEventsCommand {
                                             .formatted(Formatting.GOLD));
                                     source.sendMessage(Text.translatable("command.merryevents.director.status.enabled",
                                             enabledText));
-                                    source.sendMessage(Text
-                                            .translatable("command.merryevents.director.status.countdown", remainingSec)
+                                    source.sendMessage(Text.translatable("command.merryevents.director.status.global",
+                                            globalRemainingSec, director.getGlobalDeck().size())
                                             .formatted(Formatting.YELLOW));
-                                    source.sendMessage(Text.translatable("command.merryevents.director.status.deck",
-                                            director.getDeck().size()).formatted(Formatting.AQUA));
+
+                                    if (source.isExecutedByPlayer()) {
+                                        ServerPlayerEntity player = source.getPlayer();
+                                        int personalRemainingSec = player != null
+                                                ? Math.max(0,
+                                                        director.getPlayerCountdowns().getInt(player.getUuid()) / 20)
+                                                : 0;
+                                        source.sendMessage(Text
+                                                .translatable("command.merryevents.director.status.personal",
+                                                        director.getPersonalDeck().size(), personalRemainingSec)
+                                                .formatted(Formatting.AQUA));
+                                    } else {
+                                        source.sendMessage(Text
+                                                .translatable("command.merryevents.director.status.personal_console",
+                                                        director.getPersonalDeck().size(),
+                                                        director.getPlayerCountdowns().size())
+                                                .formatted(Formatting.AQUA));
+                                    }
                                     return 1;
                                 }))
                         .then(CommandManager.literal("enable")
                                 .executes(ctx -> {
                                     ConfigManager.get().setAutoDirectorEnabled(true);
                                     ConfigManager.save();
-                                    ChaosDirector.getInstance().initializeCountdown();
+                                    ChaosDirector.getInstance().initializeGlobalCountdown();
                                     ctx.getSource().sendMessage(Text.translatable("command.merryevents.director.enable")
                                             .formatted(Formatting.GREEN));
                                     return 1;
@@ -141,10 +157,21 @@ public final class MerryEventsCommand {
                         .then(CommandManager.literal("skip")
                                 .executes(ctx -> {
                                     ServerCommandSource source = ctx.getSource();
-                                    boolean triggered = ChaosDirector.getInstance()
-                                            .dispatchNextEvent(source.getServer());
-                                    ChaosDirector.getInstance().initializeCountdown();
-                                    if (triggered) {
+                                    boolean triggeredGlobal = ChaosDirector.getInstance()
+                                            .dispatchNextGlobalEvent(source.getServer());
+                                    ChaosDirector.getInstance().initializeGlobalCountdown();
+
+                                    boolean triggeredPersonal = false;
+                                    if (source.isExecutedByPlayer()) {
+                                        ServerPlayerEntity player = source.getPlayer();
+                                        if (player != null) {
+                                            triggeredPersonal = ChaosDirector.getInstance()
+                                                    .dispatchNextPersonalEvent(source.getServer(), player);
+                                            ChaosDirector.getInstance().initializePlayerCountdown(player.getUuid());
+                                        }
+                                    }
+
+                                    if (triggeredGlobal || triggeredPersonal) {
                                         source.sendMessage(
                                                 Text.translatable("command.merryevents.director.skip.success")
                                                         .formatted(Formatting.GREEN));
@@ -158,7 +185,7 @@ public final class MerryEventsCommand {
                         .executes(ctx -> {
                             ConfigManager.load();
                             ConfigManager.syncRegisteredEvents(EventManager.getInstance().getRegistry());
-                            ChaosDirector.getInstance().refillDeck();
+                            ChaosDirector.getInstance().refillDecks();
                             ctx.getSource().sendMessage(Text.translatable("command.merryevents.reload.success")
                                     .formatted(Formatting.GREEN));
                             return 1;
@@ -306,8 +333,8 @@ public final class MerryEventsCommand {
 
             source.sendMessage(Text.translatable("command.merryevents.status.category_entry",
                     cat.getDisplayName(),
-                    joinOrFree(globalEvents),
-                    joinOrFree(playerEvents)).formatted(
+                    MerryEventsCommand.joinOrFree(globalEvents),
+                    MerryEventsCommand.joinOrFree(playerEvents)).formatted(
                             globalEvents.isEmpty() && playerEvents.isEmpty()
                                     ? Formatting.DARK_GRAY
                                     : Formatting.GRAY));
@@ -315,13 +342,14 @@ public final class MerryEventsCommand {
 
         ChaosDirector director = ChaosDirector.getInstance();
         boolean directorEnabled = ConfigManager.get().isAutoDirectorEnabled();
-        int nextSeconds = Math.max(0, director.getTicksUntilNextEvent() / 20);
+        int nextGlobalSeconds = Math.max(0, director.getTicksUntilNextGlobalEvent() / 20);
         Text dirStatus = Text.translatable(directorEnabled ? "gui.yes" : "gui.no")
                 .formatted(directorEnabled ? Formatting.GREEN : Formatting.RED);
         source.sendMessage(Text.translatable("command.merryevents.status.director",
                 dirStatus,
-                nextSeconds,
-                director.getDeck().size()).formatted(Formatting.DARK_AQUA));
+                nextGlobalSeconds,
+                director.getGlobalDeck().size(),
+                director.getPersonalDeck().size()).formatted(Formatting.DARK_AQUA));
 
         return 1;
     }
@@ -378,7 +406,7 @@ public final class MerryEventsCommand {
         int durationTicks;
         if (seconds <= 0) {
             int customTicks = event.getCustomDurationTicks(source.getServer());
-            durationTicks = (customTicks > 0) ? customTicks : DEFAULT_DURATION_SECONDS * 20;
+            durationTicks = (customTicks > 0) ? customTicks : MerryEventsCommand.DEFAULT_DURATION_SECONDS * 20;
         } else {
             durationTicks = seconds * 20;
         }

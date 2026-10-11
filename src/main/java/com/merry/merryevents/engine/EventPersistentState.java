@@ -15,7 +15,8 @@ import java.util.Map;
 import java.util.UUID;
 
 /**
- * World-level persistence layer saving active events and director state across
+ * World-level persistence layer saving active events and dual director state
+ * across
  * server restarts.
  */
 public final class EventPersistentState extends PersistentState {
@@ -28,14 +29,16 @@ public final class EventPersistentState extends PersistentState {
 
     final Map<Identifier, SavedEventData> globalEvents = new HashMap<>();
     final Map<UUID, Map<Identifier, SavedEventData>> playerEvents = new HashMap<>();
-    final Deque<Identifier> directorDeck = new ArrayDeque<>();
-    int directorCountdown = -1;
+    final Deque<Identifier> globalDeck = new ArrayDeque<>();
+    final Deque<Identifier> personalDeck = new ArrayDeque<>();
+    final Map<UUID, Integer> playerCountdowns = new HashMap<>();
+    int globalCountdown = -1;
 
     public EventPersistentState() {
     }
 
     /**
-     * Deserializes active chaos events and director deck from NBT storage.
+     * Deserializes active chaos events and dual director decks from NBT storage.
      *
      * @param nbt        Source NbtCompound
      * @param registries Registry wrapper lookup
@@ -68,20 +71,33 @@ public final class EventPersistentState extends PersistentState {
             state.playerEvents.put(uuid, map);
         }
 
-        if (nbt.contains("directorCountdown", NbtElement.INT_TYPE)) {
-            state.directorCountdown = nbt.getInt("directorCountdown");
+        if (nbt.contains("globalCountdown", NbtElement.INT_TYPE)) {
+            state.globalCountdown = nbt.getInt("globalCountdown");
+        } else if (nbt.contains("directorCountdown", NbtElement.INT_TYPE)) {
+            state.globalCountdown = nbt.getInt("directorCountdown");
         }
 
-        NbtList deckList = nbt.getList("directorDeck", NbtElement.STRING_TYPE);
-        for (int i = 0; i < deckList.size(); i++) {
-            state.directorDeck.add(Identifier.of(deckList.getString(i)));
+        NbtList globalDeckList = nbt.getList("globalDeck", NbtElement.STRING_TYPE);
+        for (int i = 0; i < globalDeckList.size(); i++) {
+            state.globalDeck.add(Identifier.of(globalDeckList.getString(i)));
+        }
+
+        NbtList personalDeckList = nbt.getList("personalDeck", NbtElement.STRING_TYPE);
+        for (int i = 0; i < personalDeckList.size(); i++) {
+            state.personalDeck.add(Identifier.of(personalDeckList.getString(i)));
+        }
+
+        NbtList countdownsList = nbt.getList("playerCountdowns", NbtElement.COMPOUND_TYPE);
+        for (int i = 0; i < countdownsList.size(); i++) {
+            NbtCompound tag = countdownsList.getCompound(i);
+            state.playerCountdowns.put(tag.getUuid("uuid"), tag.getInt("countdown"));
         }
 
         return state;
     }
 
     /**
-     * Serializes active events and director state into target NBT storage.
+     * Serializes active events and dual director state into target NBT storage.
      *
      * @param nbt        Destination NbtCompound
      * @param registries Registry wrapper lookup
@@ -120,13 +136,28 @@ public final class EventPersistentState extends PersistentState {
         nbt.put("playerEvents", playerList);
 
         ChaosDirector director = ChaosDirector.getInstance();
-        nbt.putInt("directorCountdown", director.getTicksUntilNextEvent());
+        nbt.putInt("globalCountdown", director.getTicksUntilNextGlobalEvent());
 
-        NbtList deckList = new NbtList();
-        for (Identifier id : director.getDeck()) {
-            deckList.add(NbtString.of(id.toString()));
+        NbtList globalDeckList = new NbtList();
+        for (Identifier id : director.getGlobalDeck()) {
+            globalDeckList.add(NbtString.of(id.toString()));
         }
-        nbt.put("directorDeck", deckList);
+        nbt.put("globalDeck", globalDeckList);
+
+        NbtList personalDeckList = new NbtList();
+        for (Identifier id : director.getPersonalDeck()) {
+            personalDeckList.add(NbtString.of(id.toString()));
+        }
+        nbt.put("personalDeck", personalDeckList);
+
+        NbtList countdownsList = new NbtList();
+        for (var entry : director.getPlayerCountdowns().object2IntEntrySet()) {
+            NbtCompound tag = new NbtCompound();
+            tag.putUuid("uuid", entry.getKey());
+            tag.putInt("countdown", entry.getIntValue());
+            countdownsList.add(tag);
+        }
+        nbt.put("playerCountdowns", countdownsList);
 
         return nbt;
     }

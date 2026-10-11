@@ -9,7 +9,7 @@
       "console": "internalConsole",
       "stopOnEntry": false,
       "mainClass": "net.fabricmc.devlaunchinjector.Main",
-      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
+      "vmArgs": "-Xms128M -Xmx1G -Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
       "args": "--username DevPlayer1"
     },
     {
@@ -20,7 +20,7 @@
       "console": "internalConsole",
       "stopOnEntry": false,
       "mainClass": "net.fabricmc.devlaunchinjector.Main",
-      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
+      "vmArgs": "-Xms128M -Xmx1G -Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
       "args": "--username DevPlayer2"
     },
     {
@@ -31,7 +31,7 @@
       "console": "internalConsole",
       "stopOnEntry": false,
       "mainClass": "net.fabricmc.devlaunchinjector.Main",
-      "vmArgs": "-Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=server -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotServer",
+      "vmArgs": "-Xms128M -Xmx1G -Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=server -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotServer",
       "args": "nogui"
     }
   ]

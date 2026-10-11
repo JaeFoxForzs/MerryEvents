@@ -217,17 +217,28 @@ public final class EventManager {
         }
 
         ChaosDirector director = ChaosDirector.getInstance();
-        if (state.directorCountdown > 0) {
-            director.setCountdown(state.directorCountdown);
+        if (state.globalCountdown > 0) {
+            director.setGlobalCountdown(state.globalCountdown);
         } else {
-            director.initializeCountdown();
+            director.initializeGlobalCountdown();
         }
 
-        if (!state.directorDeck.isEmpty()) {
-            director.getDeck().clear();
-            director.getDeck().addAll(state.directorDeck);
+        if (!state.globalDeck.isEmpty()) {
+            director.getGlobalDeck().clear();
+            director.getGlobalDeck().addAll(state.globalDeck);
         } else {
-            director.refillDeck();
+            director.refillGlobalDeck();
+        }
+
+        if (!state.personalDeck.isEmpty()) {
+            director.getPersonalDeck().clear();
+            director.getPersonalDeck().addAll(state.personalDeck);
+        } else {
+            director.refillPersonalDeck();
+        }
+
+        if (!state.playerCountdowns.isEmpty()) {
+            director.restorePlayerCountdowns(state.playerCountdowns);
         }
 
         state.markDirty();
@@ -401,6 +412,8 @@ public final class EventManager {
     }
 
     public void onPlayerJoin(MinecraftServer server, ServerPlayerEntity player) {
+        ChaosDirector.getInstance().onPlayerJoin(player.getUuid());
+
         Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
         if (pEvents != null) {
             for (ActiveEventInstance inst : pEvents.values()) {

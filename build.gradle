@@ -27,6 +27,7 @@ loom {
 			configName = "Minecraft Client 1"
 			ideConfigGenerated = true
 			runDir = "run"
+			vmArgs "-Xms128M", "-Xmx1G"
 			programArgs "--username", "DevPlayer1"
 		}
 		client2 {
@@ -34,6 +35,7 @@ loom {
 			configName = "Minecraft Client 2"
 			ideConfigGenerated = true
 			runDir = "run-client2"
+			vmArgs "-Xms128M", "-Xmx1G"
 			programArgs "--username", "DevPlayer2"
 		}
 		server {
@@ -41,9 +43,63 @@ loom {
 			configName = "Minecraft Server"
 			ideConfigGenerated = true
 			runDir = "run-server"
+			vmArgs "-Xms128M", "-Xmx1G"
 			programArgs "nogui"
 		}
 	}
+}
+
+def lowMemoryClientOptions = [
+	renderDistance: "2",
+	simulationDistance: "5",
+	graphicsMode: "0",
+	clouds: "0",
+	particles: "2",
+	entityShadows: "false",
+	entityDistanceScaling: "0.5",
+	biomeBlendRadius: "0",
+	mipmapLevels: "0",
+	maxFps: "30",
+	vsync: "false"
+]
+
+def configureLowMemoryClient = { String optionsFilePath ->
+	def optionsFile = new File(optionsFilePath)
+	def lines = optionsFile.exists() ? optionsFile.readLines("UTF-8") : []
+
+	lowMemoryClientOptions.each { key, value ->
+		def index = lines.findIndexOf { it.startsWith("${key}:") }
+		if (index >= 0) {
+			lines[index] = "${key}:${value}"
+		} else {
+			lines.add("${key}:${value}")
+		}
+	}
+
+	optionsFile.parentFile.mkdirs()
+	optionsFile.setText(lines.join(System.lineSeparator()) + System.lineSeparator(), "UTF-8")
+}
+
+tasks.register("configureLowMemoryClient1") {
+	def optionsFilePath = layout.projectDirectory.file("run/options.txt").asFile.absolutePath
+	doLast {
+		configureLowMemoryClient(optionsFilePath)
+	}
+}
+
+tasks.register("configureLowMemoryClient2") {
+	def optionsFilePath = layout.projectDirectory.file("run-client2/options.txt").asFile.absolutePath
+	doLast {
+		configureLowMemoryClient(optionsFilePath)
+	}
+}
+
+tasks.named("runClient") {
+	dependsOn("configureLowMemoryClient1")
+}
+
+tasks.named("runClient2") {
+	dependsOn("configureLowMemoryClient2")
 }
 
 tasks.register("acceptEula") {
@@ -58,8 +114,32 @@ tasks.register("acceptEula") {
 	}
 }
 
+tasks.register("configureLocalDevServer") {
+	def propertiesFile = layout.projectDirectory.file("run-server/server.properties").asFile
+	outputs.file(propertiesFile)
+
+	doLast {
+		def properties = propertiesFile.exists() ? propertiesFile.readLines("UTF-8") : []
+		[
+			"online-mode": "false",
+			"enforce-secure-profile": "false",
+			"server-ip": "127.0.0.1"
+		].each { key, value ->
+			def index = properties.findIndexOf { it.startsWith("${key}=") }
+			if (index >= 0) {
+				properties[index] = "${key}=${value}"
+			} else {
+				properties.add("${key}=${value}")
+			}
+		}
+
+		propertiesFile.parentFile.mkdirs()
+		propertiesFile.setText(properties.join(System.lineSeparator()) + System.lineSeparator(), "UTF-8")
+	}
+}
+
 tasks.named("runServer") {
-	dependsOn("acceptEula")
+	dependsOn("acceptEula", "configureLocalDevServer")
 }
 
 dependencies {

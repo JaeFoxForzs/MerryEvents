@@ -4,9 +4,14 @@
     {
       "label": "Run: Client 1",
       "type": "shell",
-      "command": "./gradlew runClient",
+      "command": "./gradlew",
+      "args": [
+        "--no-daemon",
+        "--max-workers=1",
+        "runClient"
+      ],
       "windows": {
-        "command": ".\\gradlew.bat runClient"
+        "command": ".\\gradlew.bat"
       },
       "presentation": {
         "reveal": "always",
@@ -17,9 +22,14 @@
     {
       "label": "Run: Client 2",
       "type": "shell",
-      "command": "./gradlew runClient2",
+      "command": "./gradlew",
+      "args": [
+        "--no-daemon",
+        "--max-workers=1",
+        "runClient2"
+      ],
       "windows": {
-        "command": ".\\gradlew.bat runClient2"
+        "command": ".\\gradlew.bat"
       },
       "presentation": {
         "reveal": "always",
@@ -30,9 +40,14 @@
     {
       "label": "Run: Server",
       "type": "shell",
-      "command": "./gradlew runServer",
+      "command": "./gradlew",
+      "args": [
+        "--no-daemon",
+        "--max-workers=1",
+        "runServer"
+      ],
       "windows": {
-        "command": ".\\gradlew.bat runServer"
+        "command": ".\\gradlew.bat"
       },
       "presentation": {
         "reveal": "always",
@@ -54,16 +69,7 @@
       "problemMatcher": []
     },
     {
-      "label": "⚡ Run: Server + Client",
-      "dependsOn": [
-        "Run: Server",
-        "Run: Client 1"
-      ],
-      "dependsOrder": "parallel",
-      "problemMatcher": []
-    },
-    {
-      "label": "⚡ Run: Server + 2 Clients",
+      "label": "⚡ Run: Server + 2 Clients (Low Memory)",
       "dependsOn": [
         "Run: Server",
         "Run: Client 1",
