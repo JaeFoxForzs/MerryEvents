@@ -8,6 +8,10 @@
       "windows": {
         "command": ".\\gradlew.bat runClient"
       },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -17,6 +21,10 @@
       "windows": {
         "command": ".\\gradlew.bat runClient2"
       },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
       "problemMatcher": []
     },
     {
@@ -25,6 +33,23 @@
       "command": "./gradlew runServer",
       "windows": {
         "command": ".\\gradlew.bat runServer"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Check: Localization",
+      "type": "shell",
+      "command": "./gradlew validateAndFormatLocalization",
+      "windows": {
+        "command": ".\\gradlew.bat validateAndFormatLocalization"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
       },
       "problemMatcher": []
     },

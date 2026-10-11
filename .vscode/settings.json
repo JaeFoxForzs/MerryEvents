@@ -1,7 +1,7 @@
 {
   "java.configuration.updateBuildConfiguration": "automatic",
   "java.compile.nullAnalysis.mode": "automatic",
-  "java.cleanup.actionsOnSave": ["qualifyMembers", "qualifyStaticMembers"],
+  "java.cleanup.actions": ["qualifyMembers", "qualifyStaticMembers"],
   "java.jdt.ls.vmargs": "-XX:+UseParallelGC -XX:GCTimeRatio=4 -XX:AdaptiveSizePolicyWeight=90 -Dsun.zip.disableMemoryMapping=true -Xmx3G -Xms256m",
   "files.exclude": {
     "**/.git": true,
