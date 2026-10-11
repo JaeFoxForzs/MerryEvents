@@ -4,10 +4,13 @@
   "compatibilityLevel": "JAVA_21",
   "client": [
     "CameraEntityMixin",
+    "CameraRollMixin",
     "GameRendererAccessor",
     "InGameHudMixin",
     "LivingEntityRendererMixin",
     "ScreenMixin"
+    "LivingEntityRendererMixin",
+    "PostEffectProcessorAccessor"
   ],
   "injectors": {
     "defaultRequire": 1

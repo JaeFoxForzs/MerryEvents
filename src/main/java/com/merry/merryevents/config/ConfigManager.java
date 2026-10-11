@@ -126,6 +126,11 @@ public final class ConfigManager {
             case "crumbling_floor" -> EventConfigEntry.ofDefault(60, 240);
             case "wandering_blocks" -> EventConfigEntry.ofDefault(60, 240);
             case "flat_mobs" -> EventConfigEntry.ofDefault(120, 480);
+            case "disco" -> EventConfigEntry.ofDefault(120, 300);
+            case "miners_vision" -> EventConfigEntry.ofDefault(60, 300);
+            case "myopia" -> EventConfigEntry.ofDefault(60, 180);
+            case "upside_down" -> EventConfigEntry.ofDefault(60, 120);
+            case "colorblindness" -> EventConfigEntry.ofDefault(60, 300);
             case "delayed_damage" -> EventConfigEntry.ofDefault(60, 180);
             case "water_drinker" -> EventConfigEntry.ofDefault(120, 600);
             case "kindergarten" -> EventConfigEntry.ofDefault(180, 480);
