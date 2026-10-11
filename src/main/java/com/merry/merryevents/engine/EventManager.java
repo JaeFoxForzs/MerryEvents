@@ -75,6 +75,8 @@ public final class EventManager {
         this.register(new FlatMobsEvent());
         this.register(new DelayedDamageEvent());
         this.register(new WaterDrinkerEvent());
+        this.register(new KindergartenEvent());
+        this.register(new PerfectIceEvent());
     }
 
     public static EventManager getInstance() {

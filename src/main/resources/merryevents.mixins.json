@@ -4,10 +4,12 @@
   "compatibilityLevel": "JAVA_21",
   "mixins": [
     "AnvilBlockMixin",
+    "BlockSlipperinessMixin",
     "EntityFluidSwapMixin",
     "FlowableFluidMixin",
     "FluidBlockMixin",
     "LavaFluidMixin",
+    "LivingEntityChildMixin",
     "PlayerEntityMixin",
     "PotionItemMixin",
     "WaterFluidMixin"

@@ -128,6 +128,8 @@ public final class ConfigManager {
             case "flat_mobs" -> EventConfigEntry.ofDefault(120, 480);
             case "delayed_damage" -> EventConfigEntry.ofDefault(60, 180);
             case "water_drinker" -> EventConfigEntry.ofDefault(120, 600);
+            case "kindergarten" -> EventConfigEntry.ofDefault(180, 480);
+            case "perfect_ice" -> EventConfigEntry.ofDefault(120, 240);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

@@ -5,6 +5,8 @@ import com.merry.merryevents.client.api.*;
 import com.merry.merryevents.client.effect.*;
 import com.merry.merryevents.network.*;
 import com.merry.merryevents.client.render.*;
+import com.merry.merryevents.event.mobs.*;
+import com.merry.merryevents.event.physics.*;
 import com.merry.merryevents.event.status.*;
 import com.merry.merryevents.event.visual.*;
 import com.merry.merryevents.event.world.*;
@@ -36,6 +38,32 @@ public class MerryEventsClient implements ClientModInitializer {
                 });
         WaterDrinkerEvent.clientActiveSupplier = () -> ClientEventManager
                 .isEventActive(WaterDrinkerEvent.ID);
+
+        ClientEventManager.registerEffect(KindergartenEvent.ID,
+                new ClientChaosEffect() {
+                    @Override
+                    public void onStart(MinecraftClient client, int initialRemainingTicks) {
+                    }
+
+                    @Override
+                    public void onStop(MinecraftClient client) {
+                    }
+                });
+        KindergartenEvent.clientActiveSupplier = () -> ClientEventManager
+                .isEventActive(KindergartenEvent.ID);
+
+        ClientEventManager.registerEffect(PerfectIceEvent.ID,
+                new ClientChaosEffect() {
+                    @Override
+                    public void onStart(MinecraftClient client, int initialRemainingTicks) {
+                    }
+
+                    @Override
+                    public void onStop(MinecraftClient client) {
+                    }
+                });
+        PerfectIceEvent.clientActiveSupplier = () -> ClientEventManager
+                .isEventActive(PerfectIceEvent.ID);
 
         ClientEventManager.registerEffect(LavaWaterSwapEvent.ID,
                 new ClientChaosEffect() {
