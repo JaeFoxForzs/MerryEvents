@@ -4,22 +4,17 @@ MerryEvents is a Fabric mod for **Minecraft 1.21.1**. It adds timed, randomized 
 
 ## Downloads
 
-Choose the JAR for the environment where you are installing the mod:
+Download the single `merryevents-<version>.jar` file attached to a release. The same JAR works on both Minecraft clients and dedicated servers. Fabric loads client entrypoints and mixins only in the client environment; server-only environments safely ignore them.
 
-| File                               | Install on        | Contents                                                  |
-| ---------------------------------- | ----------------- | --------------------------------------------------------- |
-| `merryevents-<version>-client.jar` | Minecraft clients | Common mod code and client effects, rendering, and mixins |
-| `merryevents-<version>-server.jar` | Dedicated servers | Common and server code; no client-only classes            |
-
-Both files are Fabric mod JARs. Install the matching JAR in the instance's `mods` folder. The server JAR is intended for a dedicated server; clients joining that server should install the client JAR. Install Fabric Loader and Fabric API as well.
+This is one universal mod JAR, not a Jar-in-Jar dependency bundle. Install it in the instance's `mods` folder on the client and on the dedicated server. Install Fabric Loader and Fabric API as separate mods as well.
 
 ### Development build
 
-The [`dev` prerelease](https://github.com/JaeFoxForzs/MerryEvents/releases/tag/dev) contains the latest build from the `master` branch. Download `merryevents-client.jar` or `merryevents-server.jar` there. Each asset is uploaded only when its contents change; unchanged JARs are left in place. Development builds may be unstable.
+The [`dev` prerelease](https://github.com/JaeFoxForzs/MerryEvents/releases/tag/dev) contains the latest build from the `master` branch. Its single `merryevents.jar` asset is replaced only when the JAR contents change. The release notes list commits since the previous development build. Development builds may be unstable.
 
 ### Stable release
 
-Stable releases are published from version tags, for example `v1.0.0`. Each release includes both JARs and English download links in its description.
+Stable releases are published from version tags, for example `v1.0.0`. Each release includes the universal JAR and automatically generated release notes describing the changes.
 
 ## Features
 
@@ -51,7 +46,7 @@ Commands require permission level 2 (operator):
 - Java 21 or newer to run Minecraft and the compiled mod.
 - Minecraft 1.21.1.
 
-### Build JARs
+### Build the universal JAR
 
 On Windows, use `gradlew.bat`; on Linux and macOS, use `./gradlew`.
 
@@ -59,12 +54,7 @@ On Windows, use `gradlew.bat`; on Linux and macOS, use `./gradlew`.
 ./gradlew build
 ```
 
-The release JARs are written to `build/libs/`. To build just one:
-
-```sh
-./gradlew clientJar
-./gradlew serverJar
-```
+The universal, remapped JAR is written to `build/libs/merryevents-<version>.jar`. A separate `-sources.jar` may also be generated for development; install the regular JAR in Minecraft.
 
 Run a development client or dedicated server with:
 

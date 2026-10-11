@@ -18,6 +18,8 @@ jobs:
     steps:
       - name: checkout repository
         uses: actions/checkout@v6
+        with:
+          fetch-depth: 0
       - name: validate gradle wrapper
         uses: gradle/actions/wrapper-validation@v6
       - name: setup jdk
@@ -29,7 +31,7 @@ jobs:
         run: chmod +x ./gradlew
       - name: build release jars
         run: ./gradlew build
-      - name: stage changed development jars
+      - name: prepare development release
         id: assets
         shell: bash
         env:
@@ -42,38 +44,63 @@ jobs:
           fi
           DOWNLOAD_DIR="build/dev-release/download"
           UPLOAD_DIR="build/dev-release/upload"
+          NOTES_FILE="build/dev-release-notes.md"
+          JAR="build/libs/merryevents-${VERSION}.jar"
+          ASSET="merryevents.jar"
           mkdir -p "$DOWNLOAD_DIR" "$UPLOAD_DIR"
+
+          PREVIOUS_DEV_SHA="$(git rev-parse -q --verify 'refs/tags/dev^{commit}' || true)"
+          {
+            echo "Latest development build from the \`master\` branch."
+            echo
+            echo "Install the attached JAR on both Minecraft clients and dedicated servers."
+            echo
+            echo "## Changes"
+            if [[ -n "$PREVIOUS_DEV_SHA" ]] &&
+              git merge-base --is-ancestor "$PREVIOUS_DEV_SHA" "$GITHUB_SHA"; then
+              git log --no-merges --pretty=format:'- %s (%h)' \
+                "$PREVIOUS_DEV_SHA..$GITHUB_SHA"
+            else
+              git log -10 --no-merges --pretty=format:'- %s (%h)' "$GITHUB_SHA"
+            fi
+            echo
+          } > "$NOTES_FILE"
+
+          git tag -f dev "$GITHUB_SHA"
+          git push origin refs/tags/dev --force
 
           RELEASE_EXISTS=false
           if gh release view dev --repo "$GITHUB_REPOSITORY" >/dev/null 2>&1; then
             RELEASE_EXISTS=true
           fi
 
-          for component in server client; do
-            source="build/libs/merryevents-${VERSION}-${component}.jar"
-            asset="merryevents-${component}.jar"
-
-            if [[ "$RELEASE_EXISTS" == true ]] &&
-              gh release download dev --repo "$GITHUB_REPOSITORY" \
-                --pattern "$asset" --dir "$DOWNLOAD_DIR" --clobber >/dev/null 2>&1; then
-              local_hash="$(sha256sum "$source" | cut -d ' ' -f 1)"
-              remote_hash="$(sha256sum "$DOWNLOAD_DIR/$asset" | cut -d ' ' -f 1)"
-              if [[ "$local_hash" == "$remote_hash" ]]; then
-                echo "$asset is unchanged; keeping the existing release asset."
-                continue
-              fi
-            fi
-
-            cp "$source" "$UPLOAD_DIR/$asset"
-          done
-
-          if compgen -G "$UPLOAD_DIR/*.jar" > /dev/null; then
-            echo "changed=true" >> "$GITHUB_OUTPUT"
+          if [[ "$RELEASE_EXISTS" == true ]]; then
+            RELEASE_ASSETS="$(gh release view dev --repo "$GITHUB_REPOSITORY" --json assets --jq '.assets[].name')"
           else
-            echo "changed=false" >> "$GITHUB_OUTPUT"
+            RELEASE_ASSETS=""
           fi
+
+          if grep -Fxq "$ASSET" <<< "$RELEASE_ASSETS"; then
+            gh release download dev --repo "$GITHUB_REPOSITORY" \
+              --pattern "$ASSET" --dir "$DOWNLOAD_DIR" --clobber
+            local_hash="$(sha256sum "$JAR" | cut -d ' ' -f 1)"
+            remote_hash="$(sha256sum "$DOWNLOAD_DIR/$ASSET" | cut -d ' ' -f 1)"
+            if [[ "$local_hash" == "$remote_hash" ]]; then
+              echo "$ASSET is unchanged; keeping the existing release asset."
+            else
+              cp "$JAR" "$UPLOAD_DIR/$ASSET"
+            fi
+          else
+            cp "$JAR" "$UPLOAD_DIR/$ASSET"
+          fi
+          if [[ -f "$UPLOAD_DIR/$ASSET" ]]; then
+            echo "asset_changed=true" >> "$GITHUB_OUTPUT"
+          else
+            echo "asset_changed=false" >> "$GITHUB_OUTPUT"
+          fi
+          echo "release_exists=$RELEASE_EXISTS" >> "$GITHUB_OUTPUT"
       - name: update development release
-        if: steps.assets.outputs.changed == 'true'
+        if: steps.assets.outputs.asset_changed == 'true'
         uses: softprops/action-gh-release@v2
         with:
           tag_name: dev
@@ -82,12 +109,11 @@ jobs:
           prerelease: true
           make_latest: false
           overwrite_files: true
-          body: |
-            Latest development build from the `master` branch.
-
-            - **Server**: [Download the server JAR](https://github.com/${{ github.repository }}/releases/download/dev/merryevents-server.jar)
-            - **Client**: [Download the client JAR](https://github.com/${{ github.repository }}/releases/download/dev/merryevents-client.jar)
-
-            The stable asset filenames are replaced only when their JAR contents change.
+          body_path: build/dev-release-notes.md
           files: |
-            build/dev-release/upload/*.jar
+            build/dev-release/upload/merryevents.jar
+      - name: update development release notes without replacing JAR
+        if: steps.assets.outputs.asset_changed == 'false' && steps.assets.outputs.release_exists == 'true'
+        env:
+          GH_TOKEN: ${{ github.token }}
+        run: gh release edit dev --repo "$GITHUB_REPOSITORY" --title "MerryEvents Development Build" --notes-file build/dev-release-notes.md --prerelease

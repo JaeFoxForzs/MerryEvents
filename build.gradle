@@ -106,46 +106,8 @@ jar {
 	}
 }
 
-def remapClientJar = tasks.named("remapJar", net.fabricmc.loom.task.RemapJarTask)
-remapClientJar.configure {
-	archiveClassifier.set("client")
-}
-
-def serverDevJar = tasks.register("serverDevJar", Jar) {
-	group = "build"
-	description = "Assembles the development jar with common and server classes only."
-	archiveClassifier.set("server-dev")
-	destinationDirectory.set(layout.buildDirectory.dir("intermediates/server"))
-	from(sourceSets.main.output)
-
-	def projectName = project.name
-	from("LICENSE") {
-		rename { "${it}_$projectName"}
-	}
-}
-
-def clientJar = tasks.register("clientJar") {
-	group = "build"
-	description = "Builds the remapped client release jar."
-	dependsOn(remapClientJar)
-}
-
-def serverJar = tasks.register("serverJar", net.fabricmc.loom.task.RemapJarTask) {
-	group = "build"
-	description = "Builds the remapped dedicated-server release jar."
-	dependsOn(serverDevJar)
-
-	inputFile.set(serverDevJar.flatMap { it.archiveFile })
-	archiveClassifier.set("server")
-	sourceNamespace.set(remapClientJar.get().sourceNamespace)
-	targetNamespace.set(remapClientJar.get().targetNamespace)
-	classpath.from(remapClientJar.get().classpath)
-	includesClientOnlyClasses.set(false)
-	clientOnlySourceSetName.set("client")
-}
-
-tasks.named("assemble") {
-	dependsOn(clientJar, serverJar)
+tasks.named("remapJar", net.fabricmc.loom.task.RemapJarTask) {
+	archiveClassifier.set("")
 }
 
 // configure the maven publication
