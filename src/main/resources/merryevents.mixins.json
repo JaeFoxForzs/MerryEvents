@@ -8,6 +8,8 @@
     "FlowableFluidMixin",
     "FluidBlockMixin",
     "LavaFluidMixin",
+    "PlayerEntityMixin",
+    "PotionItemMixin",
     "WaterFluidMixin"
   ],
   "injectors": {

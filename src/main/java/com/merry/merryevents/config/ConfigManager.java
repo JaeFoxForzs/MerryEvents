@@ -126,6 +126,8 @@ public final class ConfigManager {
             case "crumbling_floor" -> EventConfigEntry.ofDefault(60, 240);
             case "wandering_blocks" -> EventConfigEntry.ofDefault(60, 240);
             case "flat_mobs" -> EventConfigEntry.ofDefault(120, 480);
+            case "delayed_damage" -> EventConfigEntry.ofDefault(60, 180);
+            case "water_drinker" -> EventConfigEntry.ofDefault(120, 600);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }

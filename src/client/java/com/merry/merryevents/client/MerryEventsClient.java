@@ -1,12 +1,17 @@
 package com.merry.merryevents.client;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.client.api.*;
 import com.merry.merryevents.client.effect.*;
 import com.merry.merryevents.network.*;
 import com.merry.merryevents.client.render.*;
+import com.merry.merryevents.event.status.*;
+import com.merry.merryevents.event.visual.*;
+import com.merry.merryevents.event.world.*;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
+import net.minecraft.client.*;
 
 public class MerryEventsClient implements ClientModInitializer {
     @Override
@@ -16,23 +21,34 @@ public class MerryEventsClient implements ClientModInitializer {
         ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());
         ClientEventManager.registerEffect(MerryEvents.id("stiff_neck"), new StiffNeckClientEffect());
         ClientEventManager.registerEffect(MerryEvents.id("orbital_strike"), new OrbitalStrikeClientEffect());
-        ClientEventManager.registerEffect(com.merry.merryevents.event.visual.FlatMobsEvent.ID,
+        ClientEventManager.registerEffect(FlatMobsEvent.ID,
                 new FlatMobsClientEffect());
-        ClientEventManager.registerEffect(com.merry.merryevents.event.world.DontStepOnEvent.ID,
-                new DontStepOnClientEffect());
 
-        ClientEventManager.registerEffect(com.merry.merryevents.event.world.LavaWaterSwapEvent.ID,
-                new com.merry.merryevents.client.api.ClientChaosEffect() {
+        ClientEventManager.registerEffect(WaterDrinkerEvent.ID,
+                new ClientChaosEffect() {
                     @Override
-                    public void onStart(net.minecraft.client.MinecraftClient client, int initialRemainingTicks) {
+                    public void onStart(MinecraftClient client, int initialRemainingTicks) {
                     }
 
                     @Override
-                    public void onStop(net.minecraft.client.MinecraftClient client) {
+                    public void onStop(MinecraftClient client) {
                     }
                 });
-        com.merry.merryevents.event.world.LavaWaterSwapEvent.clientActiveSupplier = () -> ClientEventManager
-                .isEventActive(com.merry.merryevents.event.world.LavaWaterSwapEvent.ID);
+        WaterDrinkerEvent.clientActiveSupplier = () -> ClientEventManager
+                .isEventActive(WaterDrinkerEvent.ID);
+
+        ClientEventManager.registerEffect(LavaWaterSwapEvent.ID,
+                new ClientChaosEffect() {
+                    @Override
+                    public void onStart(MinecraftClient client, int initialRemainingTicks) {
+                    }
+
+                    @Override
+                    public void onStop(MinecraftClient client) {
+                    }
+                });
+        LavaWaterSwapEvent.clientActiveSupplier = () -> ClientEventManager
+                .isEventActive(LavaWaterSwapEvent.ID);
 
         DontStepOnClientEffect.init();
 

@@ -73,6 +73,8 @@ public final class EventManager {
         this.register(new CrumblingFloorEvent());
         this.register(new WanderingBlocksEvent());
         this.register(new FlatMobsEvent());
+        this.register(new DelayedDamageEvent());
+        this.register(new WaterDrinkerEvent());
     }
 
     public static EventManager getInstance() {
