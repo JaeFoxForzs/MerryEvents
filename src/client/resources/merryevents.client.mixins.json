@@ -15,7 +15,8 @@
     "PostEffectProcessorAccessor",
     "ScreenMixin",
     "SoundSystemMixin",
-    "SourceMixin"
+    "SourceMixin",
+    "WorldRendererMixin"
   ],
   "injectors": {
     "defaultRequire": 1

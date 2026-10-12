@@ -25,6 +25,28 @@
     },
     {
       "type": "java",
+      "name": "Minecraft Client (Sodium)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Xms256M -Xmx2G -Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
+      "args": "--username DevSodium"
+    },
+    {
+      "type": "java",
+      "name": "Minecraft Client (Sodium + Iris)",
+      "request": "launch",
+      "cwd": "${workspaceFolder}/run",
+      "console": "internalConsole",
+      "stopOnEntry": false,
+      "mainClass": "net.fabricmc.devlaunchinjector.Main",
+      "vmArgs": "-Xms512M -Xmx2G -Dfabric.dli.config=${workspaceFolder}/.gradle/loom-cache/launch.cfg -Dfabric.dli.env=client -Dfabric.dli.main=net.fabricmc.loader.impl.launch.knot.KnotClient",
+      "args": "--username DevIris"
+    },
+    {
+      "type": "java",
       "name": "Minecraft Server",
       "request": "launch",
       "cwd": "${workspaceFolder}/run-server",

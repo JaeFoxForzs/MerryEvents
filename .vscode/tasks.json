@@ -38,6 +38,42 @@
       "problemMatcher": []
     },
     {
+      "label": "Run: Client (Sodium)",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "--no-daemon",
+        "--max-workers=1",
+        "runClientSodium"
+      ],
+      "windows": {
+        "command": ".\\gradlew.bat"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
+      "label": "Run: Client (Sodium + Iris)",
+      "type": "shell",
+      "command": "./gradlew",
+      "args": [
+        "--no-daemon",
+        "--max-workers=1",
+        "runClientIris"
+      ],
+      "windows": {
+        "command": ".\\gradlew.bat"
+      },
+      "presentation": {
+        "reveal": "always",
+        "panel": "dedicated"
+      },
+      "problemMatcher": []
+    },
+    {
       "label": "Run: Server",
       "type": "shell",
       "command": "./gradlew",

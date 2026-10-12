@@ -6,6 +6,8 @@ import com.merry.merryevents.client.effect.*;
 import com.merry.merryevents.event.camera.AdhdEvent;
 import com.merry.merryevents.event.sounds.RubberWorldEvent;
 import com.merry.merryevents.event.ui.ClosedInventoryEvent;
+import com.merry.merryevents.event.weather.AcidRainEvent;
+import com.merry.merryevents.event.weather.RustRainEvent;
 import com.merry.merryevents.network.*;
 import com.merry.merryevents.client.render.*;
 import com.merry.merryevents.event.camera.EpilepsyEvent;
@@ -49,15 +51,21 @@ public class MerryEventsClient implements ClientModInitializer {
 
         ClientEventManager.registerEffect(MerryEvents.id("creeper_revenge"), new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
         ClientEventManager.registerEffect(MerryEvents.id("ant_man"), new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
 
         ClientEventManager.registerEffect(MerryEvents.id("butterfingers"), new ClientChaosEffect() {
@@ -71,12 +79,36 @@ public class MerryEventsClient implements ClientModInitializer {
         });
         ClientEventManager.registerEffect(MerryEvents.id("adhd"), new ClientChaosEffect() {
             @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
             @Override
-            public void onStop(MinecraftClient client) {}
+            public void onStop(MinecraftClient client) {
+            }
         });
         ClientEventManager.registerEffect(AdhdEvent.ID, new AdhdClientEffect());
         AdhdClientEffect.init();
+
+        // Weather precipitation tint state drivers
+        ClientEventManager.registerEffect(AcidRainEvent.ID, new ClientChaosEffect() {
+            @Override
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
+            @Override
+            public void onStop(MinecraftClient client) {
+            }
+        });
+
+        ClientEventManager.registerEffect(RustRainEvent.ID, new ClientChaosEffect() {
+            @Override
+            public void onStart(MinecraftClient client, int initialRemainingTicks) {
+            }
+
+            @Override
+            public void onStop(MinecraftClient client) {
+            }
+        });
 
         // Sensory and vision shaders
         ClientEventManager.registerEffect(DiscoEvent.ID, new DiscoClientEffect());

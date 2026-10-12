@@ -4,11 +4,14 @@ plugins {
 }
 
 repositories {
-	// Add repositories to retrieve artifacts from in here.
-	// You should only use this when depending on other mods because
-	// Loom adds the essential maven repositories to download Minecraft and libraries from automatically.
-	// See https://docs.gradle.org/current/userguide/declaring_repositories.html
-	// for more information about repositories.
+	mavenCentral()
+	maven {
+		name = "Modrinth"
+		url = "https://api.modrinth.com/maven"
+		content {
+			includeGroup "maven.modrinth"
+		}
+	}
 }
 
 loom {
@@ -37,6 +40,22 @@ loom {
 			runDir = "run-client2"
 			vmArgs "-Xms128M", "-Xmx1G"
 			programArgs "--username", "DevPlayer2"
+		}
+		clientSodium {
+			client()
+			configName = "Minecraft Client (Sodium)"
+			ideConfigGenerated = true
+			runDir = "run"
+			vmArgs "-Xms256M", "-Xmx2G"
+			programArgs "--username", "DevSodium"
+		}
+		clientIris {
+			client()
+			configName = "Minecraft Client (Sodium + Iris)"
+			ideConfigGenerated = true
+			runDir = "run"
+			vmArgs "-Xms512M", "-Xmx2G"
+			programArgs "--username", "DevIris"
 		}
 		server {
 			server()
@@ -102,6 +121,14 @@ tasks.named("runClient2") {
 	dependsOn("configureLowMemoryClient2")
 }
 
+tasks.named("runClientSodium") {
+	dependsOn("configureLowMemoryClient1")
+}
+
+tasks.named("runClientIris") {
+	dependsOn("configureLowMemoryClient1")
+}
+
 tasks.register("acceptEula") {
 	def eulaFile = layout.projectDirectory.file("run-server/eula.txt").asFile
 	outputs.file(eulaFile)
@@ -142,6 +169,13 @@ tasks.named("runServer") {
 	dependsOn("acceptEula", "configureLocalDevServer")
 }
 
+def isSodiumRequested = project.hasProperty("withSodium") || gradle.startParameter.taskNames.any {
+	it.toLowerCase().contains("sodium") || it.toLowerCase().contains("iris")
+}
+def isIrisRequested = project.hasProperty("withIris") || gradle.startParameter.taskNames.any {
+	it.toLowerCase().contains("iris")
+}
+
 dependencies {
 	// To change the versions see the gradle.properties file
 	minecraft "com.mojang:minecraft:${project.minecraft_version}"
@@ -150,6 +184,17 @@ dependencies {
 
 	// Fabric API. This is technically optional, but you probably want it anyway.
 	modImplementation "net.fabricmc.fabric-api:fabric-api:${project.fabric_api_version}"
+
+	// Isolated runtime rendering mods for standalone dev testing
+	if (isSodiumRequested) {
+		modLocalRuntime "maven.modrinth:sodium:mc1.21.1-0.6.13-fabric"
+	}
+	if (isIrisRequested) {
+		modLocalRuntime "maven.modrinth:iris:1.8.8+1.21.1-fabric"
+		runtimeOnly "org.anarres:jcpp:1.4.14"
+		runtimeOnly "io.github.douira:glsl-transformer:2.0.1"
+		runtimeOnly "org.antlr:antlr4-runtime:4.13.1"
+	}
 
 	testImplementation "org.junit.jupiter:junit-jupiter:5.11.4"
 	testRuntimeOnly "org.junit.platform:junit-platform-launcher"
