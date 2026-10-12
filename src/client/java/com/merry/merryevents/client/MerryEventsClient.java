@@ -86,8 +86,28 @@ public class MerryEventsClient implements ClientModInitializer {
             public void onStop(MinecraftClient client) {
             }
         });
-        ClientEventManager.registerEffect(AdhdEvent.ID, new AdhdClientEffect());
         AdhdClientEffect.init();
+
+        ClientEventManager.registerEffect(CatapultEvent.ID, new ClientChaosEffect() {
+            @Override public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override public void onStop(MinecraftClient client) {}
+        });
+        ClientEventManager.registerEffect(RandomPetEvent.ID, new ClientChaosEffect() {
+            @Override public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override public void onStop(MinecraftClient client) {}
+        });
+        ClientEventManager.registerEffect(EquilibriumEvent.ID, new ClientChaosEffect() {
+            @Override public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override public void onStop(MinecraftClient client) {}
+        });
+        ClientEventManager.registerEffect(FireSkinEvent.ID, new ClientChaosEffect() {
+            @Override public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override public void onStop(MinecraftClient client) {}
+        });
+        ClientEventManager.registerEffect(ZooEvent.ID, new ClientChaosEffect() {
+            @Override public void onStart(MinecraftClient client, int initialRemainingTicks) {}
+            @Override public void onStop(MinecraftClient client) {}
+        });
 
         // Weather precipitation tint state drivers
         ClientEventManager.registerEffect(AcidRainEvent.ID, new ClientChaosEffect() {

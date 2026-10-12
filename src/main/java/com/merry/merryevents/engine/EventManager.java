@@ -97,6 +97,11 @@ public final class EventManager {
         this.register(new BouncingHamsterEvent());
         this.register(new UncontrolledRunEvent());
         this.register(new OreMutationEvent());
+        this.register(new CatapultEvent());
+        this.register(new RandomPetEvent());
+        this.register(new EquilibriumEvent());
+        this.register(new FireSkinEvent());
+        this.register(new ZooEvent());
     }
 
     public static EventManager getInstance() {

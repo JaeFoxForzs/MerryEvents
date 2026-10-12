@@ -26,11 +26,6 @@ import java.util.ArrayList;
 import java.util.List;
 import java.util.OptionalDouble;
 
-/**
- * Client visual driver scanning localized terrain and rendering occluded ore
- * bounding boxes.
- * Utilizes motion-gated cache validation to prevent client framerate hitches.
- */
 public final class MinersVisionClientEffect implements ClientChaosEffect {
     private static volatile boolean active = false;
     private static final List<HighlightedOre> ORE_CACHE = new ArrayList<>();
@@ -38,8 +33,7 @@ public final class MinersVisionClientEffect implements ClientChaosEffect {
     private static int scanCooldown = 0;
     private static boolean registered = false;
 
-    // Custom depth-independent line layer ensuring visibility through solid
-    // geometry
+    // writeMaskState исправлен на COLOR_MASK: не перезаписывает Z-буфер мира сквозь стены!
     private static final RenderLayer LINES_THROUGH_WALLS = RenderLayer.MultiPhase.of(
             "merryevents_lines_always",
             VertexFormats.LINES,
@@ -52,7 +46,7 @@ public final class MinersVisionClientEffect implements ClientChaosEffect {
                     .lineWidth(new RenderPhase.LineWidth(OptionalDouble.of(2.5D)))
                     .layering(RenderPhase.VIEW_OFFSET_Z_LAYERING)
                     .transparency(RenderPhase.TRANSLUCENT_TRANSPARENCY)
-                    .writeMaskState(RenderPhase.ALL_MASK)
+                    .writeMaskState(RenderPhase.COLOR_MASK)
                     .cull(RenderPhase.DISABLE_CULLING)
                     .depthTest(RenderPhase.ALWAYS_DEPTH_TEST)
                     .build(false));
@@ -60,9 +54,6 @@ public final class MinersVisionClientEffect implements ClientChaosEffect {
     public record HighlightedOre(BlockPos pos, float r, float g, float b) {
     }
 
-    /**
-     * Binds periodic client scan ticks and post-world line render callbacks.
-     */
     public static void init() {
         if (MinersVisionClientEffect.registered) {
             return;

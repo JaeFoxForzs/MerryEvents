@@ -17,39 +17,29 @@ import net.minecraft.util.math.MathHelper;
 
 import java.util.concurrent.ThreadLocalRandom;
 
-/**
- * Client visual effect driver applying periodic pixelated viewport freezing, film grain, and audio bitcrushing.
- * Renders high-contrast, downscaled static snapshots that smoothly decay in opacity.
- */
 public final class LobotomyClientEffect implements ClientChaosEffect {
     private static final Identifier FREEZE_TEXTURE_ID = MerryEvents.id("textures/vfx/lobotomy_freeze.png");
     private static final Identifier NOISE_TEXTURE_ID = MerryEvents.id("textures/vfx/lobotomy_noise.png");
 
-    // Grid sizing and noise dimensions
     private static final int PIXEL_BLOCK_SIZE = 6;
     private static final int NOISE_SIZE = 64;
 
-    // Configurable randomization bounds (in ticks: 20 ticks = 1 second)
-    private static final int MIN_HOLD_TICKS = 8;        // 0.4 seconds hold
-    private static final int MAX_HOLD_TICKS = 17;       // 0.85 seconds hold
-    private static final int MIN_FADE_TICKS = 35;       // 1.75 seconds fade
-    private static final int MAX_FADE_TICKS = 65;       // 3.25 seconds fade
+    private static final int MIN_HOLD_TICKS = 8;
+    private static final int MAX_HOLD_TICKS = 17;
+    private static final int MIN_FADE_TICKS = 35;
+    private static final int MAX_FADE_TICKS = 65;
 
-    // Contrast scaling bounds
     private static final float MIN_CONTRAST = 1.6F;
     private static final float MAX_CONTRAST = 2.0F;
 
-    // Audio pitch variation bounds
     private static final float MIN_PITCH = 0.82F;
     private static final float MAX_PITCH = 1.22F;
 
-    // Quota-based stochastic scheduling state
-    private static final int MIN_COOLDOWN_TICKS = 300; // Minimum 15 seconds between triggers
+    private static final int MIN_COOLDOWN_TICKS = 300;
     private static int remainingLifetimeTicks = 0;
     private static int remainingQuota = 0;
     private static int cooldownTicks = 0;
 
-    // Active frame state machines
     private static volatile boolean active = false;
     private static boolean registered = false;
     private static boolean freezeActive = false;
@@ -60,21 +50,10 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
     private static NativeImageBackedTexture freezeTexture = null;
     private static NativeImageBackedTexture noiseTexture = null;
 
-    /**
-     * Queries whether low-bitrate audio degradation should currently affect playing sound sources.
-     *
-     * @return True if sound bitcrushing is active
-     */
     public static boolean isLowBitrateAudioActive() {
         return active && freezeActive;
     }
 
-    /**
-     * Quantizes sound pitch into discrete low-sample-rate steps and injects acoustic flutter.
-     *
-     * @param originalPitch Inbound nominal sound pitch
-     * @return Degraded bitcrushed pitch value
-     */
     public static float degradePitch(float originalPitch) {
         float step = 0.12F;
         float quantized = Math.round(originalPitch / step) * step;
@@ -82,43 +61,27 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
         return MathHelper.clamp(quantized * 0.85F + flutter, 0.45F, 1.95F);
     }
 
-    /**
-     * Overdrives sound gain past nominal clipping thresholds to produce distorted lo-fi clipping.
-     *
-     * @param originalVolume Inbound nominal sound volume
-     * @return Overdriven clipping gain multiplier
-     */
     public static float degradeVolume(float originalVolume) {
         return MathHelper.clamp(originalVolume * 2.2F, 0.0F, 3.5F);
     }
 
-    /**
-     * Initializes global client tick updates and HUD overlay rendering listeners.
-     */
     public static void init() {
         if (registered) return;
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             if (!active) {
                 if (freezeActive) {
-                    cleanupTextures();
+                    cleanupFreezeTexture();
                     freezeActive = false;
                 }
                 return;
             }
 
-            // Advance freeze decay timeline
             if (freezeActive) {
                 currentFreezeElapsed++;
-
-                // Update animated static noise every 2 ticks
-                if (currentFreezeElapsed % 2 == 0) {
-                    updateNoiseTexture();
-                }
-
                 if (currentFreezeElapsed >= holdTicks + fadeTicks) {
                     freezeActive = false;
-                    cleanupTextures();
+                    cleanupFreezeTexture();
                 }
             }
 
@@ -126,7 +89,6 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
                 cooldownTicks--;
             }
 
-            // Evaluate stochastic quota dispatching across remaining lifetime
             if (remainingLifetimeTicks > 0) {
                 remainingLifetimeTicks--;
 
@@ -151,11 +113,6 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
         registered = true;
     }
 
-    /**
-     * Captures the active framebuffer, initiates texture baking, and plays the auditory cue.
-     *
-     * @param client Active Minecraft client instance
-     */
     private static void triggerLobotomy(MinecraftClient client) {
         if (client.world == null || client.player == null) return;
 
@@ -172,16 +129,10 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
         float contrast = MIN_CONTRAST + rand.nextFloat() * (MAX_CONTRAST - MIN_CONTRAST);
 
         captureAndBakeTexture(client, contrast);
-        updateNoiseTexture();
+        ensureNoiseTexture();
         freezeActive = true;
     }
 
-    /**
-     * Downsamples the active framebuffer attachment, bakes film grain, and uploads the texture.
-     *
-     * @param client   Active Minecraft client instance
-     * @param contrast Multiplication factor applied to color channels
-     */
     private static void captureAndBakeTexture(MinecraftClient client, float contrast) {
         Framebuffer fb = client.getFramebuffer();
         if (fb == null) return;
@@ -201,7 +152,6 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
             for (int y = 0; y < lowH; y++) {
                 for (int x = 0; x < lowW; x++) {
                     int srcX = Math.min(fullW - 1, x * PIXEL_BLOCK_SIZE + PIXEL_BLOCK_SIZE / 2);
-                    // Standard direct vertical coordinate mapping without secondary inversion
                     int srcY = Math.min(fullH - 1, y * PIXEL_BLOCK_SIZE + PIXEL_BLOCK_SIZE / 2);
 
                     int abgr = fullImg.getColor(srcX, srcY);
@@ -210,10 +160,8 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
                     int g = (abgr >> 8) & 0xFF;
                     int r = abgr & 0xFF;
 
-                    // Baked analog film grain noise injection
                     int grain = rand.nextInt(61) - 30;
 
-                    // Channel contrast enhancement
                     r = MathHelper.clamp((int) ((r - 128) * contrast + 128) + grain, 0, 255);
                     g = MathHelper.clamp((int) ((g - 128) * contrast + 128) + grain, 0, 255);
                     b = MathHelper.clamp((int) ((b - 128) * contrast + 128) + grain, 0, 255);
@@ -232,10 +180,10 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
         }
     }
 
-    /**
-     * Generates and uploads procedural dynamic static noise to simulate CRT/VHS grain crawl.
-     */
-    private static void updateNoiseTexture() {
+    // Текстура шума генерируется ровно один раз!
+    private static void ensureNoiseTexture() {
+        if (noiseTexture != null) return;
+
         MinecraftClient client = MinecraftClient.getInstance();
         NativeImage noiseImg = new NativeImage(NOISE_SIZE, NOISE_SIZE, false);
         ThreadLocalRandom rand = ThreadLocalRandom.current();
@@ -248,18 +196,10 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
             }
         }
 
-        if (noiseTexture != null) {
-            noiseTexture.close();
-        }
         noiseTexture = new NativeImageBackedTexture(noiseImg);
         client.getTextureManager().registerTexture(NOISE_TEXTURE_ID, noiseTexture);
     }
 
-    /**
-     * Renders the baked downscaled freeze texture and dynamic film grain with decaying alpha.
-     *
-     * @param context Active graphical draw context
-     */
     private static void renderFreezeOverlay(DrawContext context) {
         float alpha;
 
@@ -276,7 +216,6 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
         RenderSystem.enableBlend();
         RenderSystem.defaultBlendFunc();
 
-        // 1. Render primary high-contrast pixelated snapshot with baked grain
         RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha);
         context.drawTexture(
                 FREEZE_TEXTURE_ID,
@@ -287,13 +226,15 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
         );
         context.draw();
 
-        // 2. Render dynamic crawling CRT noise overlay
+        // Живой шум получается за счёт рандомизации UV-смещения (0% нагрузки на CPU и 0 выделений памяти)
         if (noiseTexture != null && alpha > 0.1F) {
             RenderSystem.setShaderColor(1.0F, 1.0F, 1.0F, alpha * 0.22F);
+            float uShift = ThreadLocalRandom.current().nextInt(NOISE_SIZE);
+            float vShift = ThreadLocalRandom.current().nextInt(NOISE_SIZE);
             context.drawTexture(
                     NOISE_TEXTURE_ID,
                     0, 0,
-                    0.0F, 0.0F,
+                    uShift, vShift,
                     width, height,
                     NOISE_SIZE, NOISE_SIZE
             );
@@ -304,20 +245,6 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
         RenderSystem.disableBlend();
     }
 
-    /**
-     * Releases active snapshot textures and dynamic noise buffers.
-     */
-    private static void cleanupTextures() {
-        cleanupFreezeTexture();
-        if (noiseTexture != null) {
-            MinecraftClient.getInstance().getTextureManager().destroyTexture(NOISE_TEXTURE_ID);
-            noiseTexture = null;
-        }
-    }
-
-    /**
-     * Releases the primary frozen snapshot texture.
-     */
     private static void cleanupFreezeTexture() {
         if (freezeTexture != null) {
             MinecraftClient.getInstance().getTextureManager().destroyTexture(FREEZE_TEXTURE_ID);
@@ -344,6 +271,6 @@ public final class LobotomyClientEffect implements ClientChaosEffect {
     public void onStop(MinecraftClient client) {
         active = false;
         freezeActive = false;
-        cleanupTextures();
+        cleanupFreezeTexture();
     }
 }
