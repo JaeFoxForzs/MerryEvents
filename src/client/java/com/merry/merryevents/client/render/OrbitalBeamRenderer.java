@@ -5,6 +5,7 @@ import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
 import net.minecraft.client.render.*;
 import net.minecraft.client.util.math.MatrixStack;
+import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.MathHelper;
 import net.minecraft.util.math.Vec3d;
@@ -18,8 +19,12 @@ public final class OrbitalBeamRenderer {
     private static final float HALF_PI = 1.57079632679F;
     private static boolean texturesInitialized = false;
 
+    private static RenderLayer RETICLE_LAYER;
+    private static RenderLayer BEAM_LAYER;
+
     public static void init() {
-        WorldRenderEvents.LAST.register(OrbitalBeamRenderer::render);
+        // AFTER_ENTITIES гарантирует, что consumers открыт и обрабатывается Sodium
+        WorldRenderEvents.AFTER_ENTITIES.register(OrbitalBeamRenderer::render);
 
         ClientTickEvents.END_CLIENT_TICK.register(client -> {
             OrbitalBeamRenderer.ACTIVE_BEAMS.removeIf(ActiveBeam::tick);
@@ -30,9 +35,28 @@ public final class OrbitalBeamRenderer {
         OrbitalBeamRenderer.ACTIVE_BEAMS.add(new ActiveBeam(pos, warmupTicks));
     }
 
+    private static RenderLayer createOrbitalLayer(String name, Identifier texture) {
+        return RenderLayer.of(
+                name,
+                VertexFormats.POSITION_COLOR_TEXTURE_OVERLAY_LIGHT_NORMAL,
+                VertexFormat.DrawMode.QUADS,
+                1536,
+                false,
+                true,
+                RenderLayer.MultiPhaseParameters.builder()
+                        .program(RenderPhase.BEACON_BEAM_PROGRAM)
+                        .texture(new RenderPhase.Texture(texture, false, false))
+                        .transparency(RenderPhase.TRANSLUCENT_TRANSPARENCY)
+                        .writeMaskState(RenderPhase.COLOR_MASK)
+                        .target(RenderPhase.MAIN_TARGET)
+                        .build(false));
+    }
+
     private static void ensureTextures() {
         if (!OrbitalBeamRenderer.texturesInitialized) {
             OrbitalTextures.init();
+            RETICLE_LAYER = createOrbitalLayer("orbital_reticle_layer", OrbitalTextures.RETICLE_TEXTURE);
+            BEAM_LAYER = createOrbitalLayer("orbital_beam_layer", OrbitalTextures.BEAM_TEXTURE);
             OrbitalBeamRenderer.texturesInitialized = true;
         }
     }
@@ -65,23 +89,23 @@ public final class OrbitalBeamRenderer {
                     time);
         }
 
-        RenderLayer beamLayer = RenderLayer.getBeaconBeam(OrbitalTextures.BEAM_TEXTURE, true);
-        VertexConsumer beamConsumer = consumers.getBuffer(beamLayer);
+        // 2. Отрисовка лучей
+        VertexConsumer beamConsumer = consumers.getBuffer(BEAM_LAYER);
         for (int i = 0; i < OrbitalBeamRenderer.ACTIVE_BEAMS.size(); i++) {
             OrbitalBeamRenderer.drawBeam(beamConsumer, mat, OrbitalBeamRenderer.ACTIVE_BEAMS.get(i), camPos, tickDelta,
                     time);
         }
 
+        // Сбрасываем все буферы разом
         if (consumers instanceof VertexConsumerProvider.Immediate immediate) {
-            immediate.draw(reticleLayer);
-            immediate.draw(beamLayer);
+            immediate.draw();
         }
 
         matrices.pop();
     }
 
     private static void drawReticle(VertexConsumer consumer, Matrix4f mat, ActiveBeam beam, float tickDelta,
-            long time) {
+                                    long time) {
         float progress = beam.getProgress(tickDelta);
         float circleRadius = 1.7F;
         float circleT = MathHelper.clamp(progress / 0.12F, 0.0F, 1.0F);
@@ -113,27 +137,29 @@ public final class OrbitalBeamRenderer {
         float x3 = x + cos + sin;
         float z3 = z + sin - cos;
 
+        int light = LightmapTextureManager.MAX_LIGHT_COORDINATE;
+
         consumer.vertex(mat, x0, groundY, z0).color(255, 255, 255, 255).texture(0.0F, 0.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x1, groundY, z1).color(255, 255, 255, 255).texture(0.0F, 1.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x2, groundY, z2).color(255, 255, 255, 255).texture(1.0F, 1.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x3, groundY, z3).color(255, 255, 255, 255).texture(1.0F, 0.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
 
         consumer.vertex(mat, x3, groundY, z3).color(255, 255, 255, 255).texture(1.0F, 0.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, -1, 0);
         consumer.vertex(mat, x2, groundY, z2).color(255, 255, 255, 255).texture(1.0F, 1.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, -1, 0);
         consumer.vertex(mat, x1, groundY, z1).color(255, 255, 255, 255).texture(0.0F, 1.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, -1, 0);
         consumer.vertex(mat, x0, groundY, z0).color(255, 255, 255, 255).texture(0.0F, 0.0F)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, -1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, -1, 0);
     }
 
     private static void drawBeam(VertexConsumer consumer, Matrix4f mat, ActiveBeam beam, Vec3d camPos, float tickDelta,
-            long time) {
+                                 long time) {
         float progress = beam.getProgress(tickDelta);
         float appearT = MathHelper.clamp(progress / 0.12F, 0.0F, 1.0F);
         float beamExpand = MathHelper.sin(appearT * OrbitalBeamRenderer.HALF_PI);
@@ -161,24 +187,25 @@ public final class OrbitalBeamRenderer {
 
         float vScroll = (time % 10000) * 0.003F;
         float vTop = wipeDown * 10.0F + vScroll;
+        int light = LightmapTextureManager.MAX_LIGHT_COORDINATE;
 
         consumer.vertex(mat, x - nx, y, z - nz).color(255, 255, 255, 255).texture(0.0F, vScroll)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x + nx, y, z + nz).color(255, 255, 255, 255).texture(1.0F, vScroll)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x + nx, y + fullHeight, z + nz).color(255, 255, 255, 255).texture(1.0F, vTop)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x - nx, y + fullHeight, z - nz).color(255, 255, 255, 255).texture(0.0F, vTop)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
 
         consumer.vertex(mat, x - nx, y + fullHeight, z - nz).color(255, 255, 255, 255).texture(0.0F, vTop)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x + nx, y + fullHeight, z + nz).color(255, 255, 255, 255).texture(1.0F, vTop)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x + nx, y, z + nz).color(255, 255, 255, 255).texture(1.0F, vScroll)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
         consumer.vertex(mat, x - nx, y, z - nz).color(255, 255, 255, 255).texture(0.0F, vScroll)
-                .overlay(OverlayTexture.DEFAULT_UV).light(15728880).normal(0, 1, 0);
+                .overlay(OverlayTexture.DEFAULT_UV).light(light).normal(0, 1, 0);
     }
 
     private static class ActiveBeam {

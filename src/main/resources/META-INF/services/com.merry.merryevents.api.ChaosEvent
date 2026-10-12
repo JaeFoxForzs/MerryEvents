@@ -47,3 +47,8 @@ com.merry.merryevents.event.camera.EpilepsyEvent
 com.merry.merryevents.event.physics.BouncingHamsterEvent
 com.merry.merryevents.event.physics.UncontrolledRunEvent
 com.merry.merryevents.event.world.OreMutationEvent
+com.merry.merryevents.event.physics.CatapultEvent
+com.merry.merryevents.event.mobs.RandomPetEvent
+com.merry.merryevents.event.status.EquilibriumEvent
+com.merry.merryevents.event.status.FireSkinEvent
+com.merry.merryevents.event.mobs.ZooEvent

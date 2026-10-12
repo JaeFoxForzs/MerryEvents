@@ -160,6 +160,11 @@ public final class ConfigManager {
             case "bouncing_hamster" -> EventConfigEntry.ofDefault(120, 300);
             case "uncontrolled_run" -> EventConfigEntry.ofDefault(60, 300);
             case "ore_mutation" -> EventConfigEntry.ofDefault(60, 180);
+            case "catapult" -> EventConfigEntry.ofDefault(60, 240);
+            case "random_pet" -> EventConfigEntry.ofDefault(180, 600);
+            case "equilibrium" -> EventConfigEntry.ofDefault(60, 180);
+            case "fire_skin" -> EventConfigEntry.ofDefault(60, 180);
+            case "zoo" -> EventConfigEntry.ofDefault(1, 3);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }
