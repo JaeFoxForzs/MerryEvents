@@ -37,7 +37,7 @@ public final class PersonalKillerEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return PersonalKillerEvent.ID;
     }
 
     @Override
@@ -80,10 +80,13 @@ public final class PersonalKillerEvent implements ChaosEvent {
 
         Vec3d spawnPos = MobSpawnUtil.findRandomGroundPosition(world, killer, targetPlayer, 8.0, 12.0, 24);
         if (spawnPos == null) {
-            MerryEvents.LOGGER.warn("[PersonalKillerEvent] Could not find a safe spawn position for {}",
+            spawnPos = targetPlayer.getPos();
+            MerryEvents.LOGGER.info(
+                    "[PersonalKillerEvent] No distant ground found; spawning stalker directly beside {}",
                     targetPlayer.getName().getString());
-            return;
         }
+
+        killer.refreshPositionAndAngles(spawnPos.x, spawnPos.y, spawnPos.z, random.nextFloat() * 360.0F, 0.0F);
 
         Text mobTitle = Text
                 .translatable("event.merryevents.personal_killer.mob_name_target", targetPlayer.getName().getString())
@@ -103,7 +106,7 @@ public final class PersonalKillerEvent implements ChaosEvent {
         }
 
         context.trackEntity(killer.getUuid());
-        context.set(KILLER_UUID_KEY, killer.getUuid());
+        context.set(PersonalKillerEvent.KILLER_UUID_KEY, killer.getUuid());
 
         MerryEvents.LOGGER.info("[PersonalKillerEvent] Dispatched stalker ({}) targeting {}",
                 killer.getType().getName().getString(), targetPlayer.getName().getString());
@@ -116,11 +119,11 @@ public final class PersonalKillerEvent implements ChaosEvent {
             return;
         }
 
-        UUID killerUuid = context.getOrDefault(KILLER_UUID_KEY, null);
+        UUID killerUuid = context.getOrDefault(PersonalKillerEvent.KILLER_UUID_KEY, null);
         if (killerUuid == null) {
             MerryEvents.LOGGER.warn("[PersonalKillerEvent] No stalker was spawned; terminating event for {}",
                     targetPlayer.getName().getString());
-            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, ID);
+            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, PersonalKillerEvent.ID);
             return;
         }
 
@@ -128,7 +131,7 @@ public final class PersonalKillerEvent implements ChaosEvent {
         if (killerEntity == null || !killerEntity.isAlive()) {
             MerryEvents.LOGGER.info("[PersonalKillerEvent] Stalker slain. Terminating event for {}",
                     targetPlayer.getName().getString());
-            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, ID);
+            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, PersonalKillerEvent.ID);
             return;
         }
 

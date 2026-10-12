@@ -1,13 +1,11 @@
 package com.merry.merryevents.util;
 
 import net.minecraft.entity.LivingEntity;
-import net.minecraft.fluid.FluidState;
 import net.minecraft.network.packet.s2c.play.GameStateChangeS2CPacket;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.ChunkSectionPos;
-import net.minecraft.world.Heightmap;
 import net.minecraft.world.biome.Biome;
 
 /**
@@ -38,20 +36,14 @@ public final class WeatherUtil {
             return false;
         }
 
-        int topY = world.getTopY(Heightmap.Type.MOTION_BLOCKING, pos.getX(), pos.getZ());
-        if (pos.getY() >= topY - 1) {
-            return true;
-        }
-
-        BlockPos topPos = new BlockPos(pos.getX(), topY - 1, pos.getZ());
-        FluidState fluidState = world.getFluidState(topPos);
-        return !fluidState.isEmpty();
+        return world.isSkyVisible(pos);
     }
 
     /**
      * Determines whether an entity is directly exposed to active rainfall in a
      * rainy biome.
-     * Bypasses biome lookups if the parent chunk is currently unloaded.
+     * Verifies overhead clearance at both feet and eye elevation to guarantee
+     * shelter under ceilings.
      *
      * @param world  Active server world
      * @param pos    Target position
@@ -59,17 +51,22 @@ public final class WeatherUtil {
      * @return True if active rain precipitates onto the entity
      */
     public static boolean isExposedToRain(ServerWorld world, BlockPos pos, LivingEntity entity) {
-        if (!world.isRaining() || !WeatherUtil.isExposedToSky(world, pos)) {
+        if (!world.isRaining()) {
             return false;
         }
 
-        int chunkX = ChunkSectionPos.getSectionCoord(pos.getX());
-        int chunkZ = ChunkSectionPos.getSectionCoord(pos.getZ());
+        BlockPos checkPos = entity != null ? BlockPos.ofFloored(entity.getX(), entity.getEyeY(), entity.getZ()) : pos;
+        if (!WeatherUtil.isExposedToSky(world, checkPos)) {
+            return false;
+        }
+
+        int chunkX = ChunkSectionPos.getSectionCoord(checkPos.getX());
+        int chunkZ = ChunkSectionPos.getSectionCoord(checkPos.getZ());
         if (!world.isChunkLoaded(chunkX, chunkZ)) {
             return false;
         }
 
-        return world.getBiome(pos).value().getPrecipitation(pos) == Biome.Precipitation.RAIN;
+        return world.getBiome(checkPos).value().getPrecipitation(checkPos) == Biome.Precipitation.RAIN;
     }
 
     /**

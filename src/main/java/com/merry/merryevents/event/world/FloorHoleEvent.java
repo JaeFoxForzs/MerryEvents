@@ -4,20 +4,28 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
+import net.minecraft.block.Blocks;
+import net.minecraft.block.entity.BlockEntity;
+import net.minecraft.item.Item;
+import net.minecraft.item.ItemStack;
+import net.minecraft.item.Items;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
 import net.minecraft.util.math.random.Random;
+import net.minecraft.world.WorldEvents;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Player-specific architectural hazard event belonging to EventCategory.WORLD.
- * Collapses terrain blocks around the target player while strictly protecting
- * chests, shulker boxes, and all inventory-holding block entities from
- * destruction.
+ * Collapses terrain blocks around the target player with an expanded radius,
+ * dropping
+ * all broken blocks as whole Silk Touch items, preserving block entity
+ * container data.
  */
 public final class FloorHoleEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("floor_hole");
@@ -25,8 +33,8 @@ public final class FloorHoleEvent implements ChaosEvent {
     private static final String RADIUS_KEY = "horizontal_radius";
     private static final int MIN_BLOCKS = 64;
     private static final int MAX_BLOCKS = 512;
-    private static final int MIN_RADIUS = 2;
-    private static final int MAX_RADIUS = 6;
+    private static final int MIN_RADIUS = 4;
+    private static final int MAX_RADIUS = 10;
 
     @Override
     public Identifier getId() {
@@ -50,8 +58,10 @@ public final class FloorHoleEvent implements ChaosEvent {
         }
 
         Random random = targetPlayer.getRandom();
-        int totalBlocks = FloorHoleEvent.MIN_BLOCKS + random.nextInt(FloorHoleEvent.MAX_BLOCKS - FloorHoleEvent.MIN_BLOCKS + 1);
-        int radius = FloorHoleEvent.MIN_RADIUS + random.nextInt(FloorHoleEvent.MAX_RADIUS - FloorHoleEvent.MIN_RADIUS + 1);
+        int totalBlocks = FloorHoleEvent.MIN_BLOCKS
+                + random.nextInt(FloorHoleEvent.MAX_BLOCKS - FloorHoleEvent.MIN_BLOCKS + 1);
+        int radius = FloorHoleEvent.MIN_RADIUS
+                + random.nextInt(FloorHoleEvent.MAX_RADIUS - FloorHoleEvent.MIN_RADIUS + 1);
 
         context.set(FloorHoleEvent.REMAINING_BLOCKS_KEY, totalBlocks);
         context.set(FloorHoleEvent.RADIUS_KEY, radius);
@@ -86,7 +96,7 @@ public final class FloorHoleEvent implements ChaosEvent {
             return;
         }
 
-        int radius = context.getInt(FloorHoleEvent.RADIUS_KEY, 4);
+        int radius = context.getInt(FloorHoleEvent.RADIUS_KEY, 6);
         ServerWorld world = targetPlayer.getServerWorld();
         BlockPos playerPos = targetPlayer.getBlockPos();
         BlockPos.Mutable searchPos = new BlockPos.Mutable();
@@ -98,7 +108,7 @@ public final class FloorHoleEvent implements ChaosEvent {
             for (int attempt = 0; attempt < 8; attempt++) {
                 int dx = random.nextInt(radius * 2 + 1) - radius;
                 int dz = random.nextInt(radius * 2 + 1) - radius;
-                int dy = -random.nextInt(4);
+                int dy = -random.nextInt(5);
 
                 searchPos.set(playerPos.getX() + dx, playerPos.getY() + dy, playerPos.getZ() + dz);
 
@@ -109,8 +119,8 @@ public final class FloorHoleEvent implements ChaosEvent {
                 BlockState state = world.getBlockState(searchPos);
                 float hardness = state.getHardness(world, searchPos);
 
-                if (!state.isAir() && hardness >= 0.0F && !state.hasBlockEntity()) {
-                    world.breakBlock(searchPos, false);
+                if (!state.isAir() && hardness >= 0.0F) {
+                    FloorHoleEvent.dropBlockSilkTouch(world, searchPos, state);
                     successfullyBroken++;
                     blocksRemaining--;
                     found = true;
@@ -121,8 +131,8 @@ public final class FloorHoleEvent implements ChaosEvent {
             if (!found && blocksRemaining > 0) {
                 BlockPos steppingPos = targetPlayer.getSteppingPos();
                 BlockState state = world.getBlockState(steppingPos);
-                if (!state.isAir() && state.getHardness(world, steppingPos) >= 0.0F && !state.hasBlockEntity()) {
-                    world.breakBlock(steppingPos, false);
+                if (!state.isAir() && state.getHardness(world, steppingPos) >= 0.0F) {
+                    FloorHoleEvent.dropBlockSilkTouch(world, steppingPos, state);
                     successfullyBroken++;
                     blocksRemaining--;
                 }
@@ -140,5 +150,27 @@ public final class FloorHoleEvent implements ChaosEvent {
             MerryEvents.LOGGER.info("[FloorHoleEvent] Sinkhole decay concluded for {}",
                     targetPlayer.getName().getString());
         }
+    }
+
+    /**
+     * Harvests and drops the targeted block as a complete Silk Touch item stack,
+     * serializing block entity data and preventing container scatter.
+     *
+     * @param world Server world instance
+     * @param pos   Target block coordinate
+     * @param state Block state being destroyed
+     */
+    private static void dropBlockSilkTouch(ServerWorld world, BlockPos pos, BlockState state) {
+        Item item = state.getBlock().asItem();
+        if (item != Items.AIR) {
+            ItemStack stack = new ItemStack(item);
+            BlockEntity blockEntity = world.getBlockEntity(pos);
+            if (blockEntity != null) {
+                blockEntity.setStackNbt(stack, world.getRegistryManager());
+            }
+            Block.dropStack(world, pos, stack);
+        }
+        world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL | Block.SKIP_DROPS);
+        world.syncWorldEvent(WorldEvents.BLOCK_BROKEN, pos, Block.getRawIdFromState(state));
     }
 }
