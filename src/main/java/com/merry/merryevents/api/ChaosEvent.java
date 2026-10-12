@@ -6,25 +6,55 @@ import net.minecraft.text.Text;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
+import java.util.Set;
+
 /**
- * Core contract defining a deterministic chaos event lifecycle.
- * Encapsulates initialization, server tick routines, teardown, and respawn
- * persistence.
+ * Core contract defining an authoritative chaos event lifecycle.
+ * Encapsulates initialization, resume restoration, server tick routines,
+ * pre-flight validation, graceful teardown, and cross-client synchronization
+ * hooks.
  */
 public interface ChaosEvent {
+    /**
+     * Resolves the immutable declaration model for this event.
+     *
+     * @return Event definition metadata
+     */
+    default EventDefinition getDefinition() {
+        return EventDefinition.standard(
+                this.getId(),
+                this.getCategory(),
+                this.isGlobal() ? EventScope.GLOBAL : EventScope.PLAYER,
+                600,
+                1);
+    }
+
     /**
      * Resolves the unique namespaced identifier of the chaos event.
      *
      * @return Unique event identifier
      */
-    Identifier getId();
+    default Identifier getId() {
+        return this.getDefinition().id();
+    }
 
     /**
-     * Resolves the architectural conflict resolution category.
+     * Resolves the primary architectural conflict resolution category.
      *
-     * @return Category used for concurrency checks
+     * @return Primary category used for backward compatibility
      */
-    EventCategory getCategory();
+    default EventCategory getCategory() {
+        return this.getDefinition().categories().iterator().next();
+    }
+
+    /**
+     * Resolves all conflict resolution categories assigned to this event.
+     *
+     * @return Set of occupied categories
+     */
+    default Set<EventCategory> getCategories() {
+        return this.getDefinition().categories();
+    }
 
     /**
      * Queries whether the event targets the entire server or a specific player
@@ -32,7 +62,22 @@ public interface ChaosEvent {
      *
      * @return True if globally broadcast, false if bound to individual players
      */
-    boolean isGlobal();
+    default boolean isGlobal() {
+        return this.getDefinition().scope() == EventScope.GLOBAL;
+    }
+
+    /**
+     * Evaluates runtime preconditions before the scheduler attempts ignition.
+     * If false, the scheduler bypasses this event without locking category slots.
+     *
+     * @param server       Authoritative MinecraftServer instance
+     * @param targetPlayer Targeted player for personal events, or null for global
+     *                     events
+     * @return True if environmental conditions satisfy execution preconditions
+     */
+    default boolean canStart(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer) {
+        return true;
+    }
 
     /**
      * Computes dynamic event duration in server ticks based on active world
@@ -46,7 +91,8 @@ public interface ChaosEvent {
     }
 
     /**
-     * Executes server-side ignition logic and sets up contextual state trackers.
+     * Executes authoritative ignition routines upon initial event start.
+     * Invoked strictly once per unique event lifetime.
      *
      * @param server       Authoritative server instance
      * @param targetPlayer Targeted player for personal events, or null for global
@@ -54,6 +100,21 @@ public interface ChaosEvent {
      * @param context      Isolated event execution state container
      */
     void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context);
+
+    /**
+     * Restores execution state following server restarts or player reconnection.
+     * Invoked instead of {@link #onStartServer} when an already active event is
+     * resumed.
+     *
+     * @param server       Authoritative server instance
+     * @param targetPlayer Targeted player for personal events, or null for global
+     *                     events
+     * @param context      Isolated event execution state container containing
+     *                     deserialized data
+     */
+    default void onResumeServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context) {
+    }
 
     /**
      * Executes per-tick server logic and updates contextual state machines.
@@ -91,12 +152,32 @@ public interface ChaosEvent {
     }
 
     /**
+     * Broadcasts auxiliary event payloads to newly joined or dimension-swapped
+     * players.
+     *
+     * @param server          Authoritative server instance
+     * @param receivingPlayer The player receiving world state synchronization
+     * @param eventOwner      Target player for personal events, or null for global
+     *                        events
+     * @param context         Isolated event execution state container
+     */
+    default void onSyncToPlayer(MinecraftServer server, ServerPlayerEntity receivingPlayer,
+            @Nullable ServerPlayerEntity eventOwner, EventContext context) {
+    }
+
+    /**
+     * Registers event-specific Fabric callbacks, game rules, or network listeners.
+     */
+    default void registerHooks() {
+    }
+
+    /**
      * Resolves the localization translation key for this event.
      *
      * @return Namespaced translation key
      */
     default String getTranslationKey() {
-        return "event." + getId().getNamespace() + "." + getId().getPath();
+        return "event." + this.getId().getNamespace() + "." + this.getId().getPath();
     }
 
     /**
@@ -105,6 +186,6 @@ public interface ChaosEvent {
      * @return Localized display text
      */
     default Text getDisplayName() {
-        return Text.translatable(getTranslationKey());
+        return Text.translatable(this.getTranslationKey());
     }
 }

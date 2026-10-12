@@ -9,8 +9,8 @@ import org.spongepowered.asm.mixin.injection.Inject;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 
 /**
- * Mixin intercepting screen initialization and recreation pipelines to scramble
- * button labels.
+ * Mixin intercepting screen initialization to scramble button labels cleanly
+ * once per initialization cycle.
  */
 @Mixin(Screen.class)
 public abstract class ScreenMixin {
@@ -26,19 +26,6 @@ public abstract class ScreenMixin {
      */
     @Inject(method = "init(Lnet/minecraft/client/MinecraftClient;II)V", at = @At("TAIL"))
     private void merryevents$scrambleButtonsOnInit(MinecraftClient client, int width, int height, CallbackInfo ci) {
-        if (ScrambledButtonsClientEffect.isActive()) {
-            ScrambledButtonsClientEffect.scrambleScreen((Screen) (Object) this);
-        }
-    }
-
-    /**
-     * Intercepts screen tab navigation and widget re-creations to maintain button
-     * scrambling.
-     *
-     * @param ci Callback info
-     */
-    @Inject(method = "clearAndInit", at = @At("TAIL"))
-    private void merryevents$scrambleButtonsOnClearAndInit(CallbackInfo ci) {
         if (ScrambledButtonsClientEffect.isActive()) {
             ScrambledButtonsClientEffect.scrambleScreen((Screen) (Object) this);
         }

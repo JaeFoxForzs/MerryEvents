@@ -2,19 +2,28 @@ package com.merry.merryevents;
 
 import com.merry.merryevents.command.MerryEventsCommand;
 import com.merry.merryevents.config.ConfigManager;
-import com.merry.merryevents.engine.*;
+import com.merry.merryevents.engine.ChaosDirector;
+import com.merry.merryevents.engine.EventManager;
+import com.merry.merryevents.engine.EventPersistentState;
 import com.merry.merryevents.event.inventory.DiamondRushEvent;
 import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
 import com.merry.merryevents.event.world.CobwebNightmareEvent;
-import com.merry.merryevents.item.*;
-import com.merry.merryevents.network.*;
+import com.merry.merryevents.item.ChaosMemoItem;
+import com.merry.merryevents.network.EventSyncPayload;
+import com.merry.merryevents.network.ForbiddenBlocksPayload;
+import com.merry.merryevents.network.OrbitalStrikeSpawnPayload;
 import com.mojang.serialization.Codec;
 import net.fabricmc.api.ModInitializer;
 import net.fabricmc.fabric.api.command.v2.CommandRegistrationCallback;
-import net.fabricmc.fabric.api.entity.event.v1.*;
-import net.fabricmc.fabric.api.event.lifecycle.v1.*;
+import net.fabricmc.fabric.api.entity.event.v1.ServerLivingEntityEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerPlayerEvents;
+import net.fabricmc.fabric.api.entity.event.v1.ServerEntityWorldChangeEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerLifecycleEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerTickEvents;
+import net.fabricmc.fabric.api.event.lifecycle.v1.ServerWorldEvents;
 import net.fabricmc.fabric.api.event.player.PlayerBlockBreakEvents;
-import net.fabricmc.fabric.api.networking.v1.*;
+import net.fabricmc.fabric.api.networking.v1.PayloadTypeRegistry;
+import net.fabricmc.fabric.api.networking.v1.ServerPlayConnectionEvents;
 import net.minecraft.component.ComponentType;
 import net.minecraft.entity.LivingEntity;
 import net.minecraft.item.Item;
@@ -26,7 +35,8 @@ import net.minecraft.server.world.ServerWorld;
 import net.minecraft.sound.SoundEvent;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.World;
-import org.slf4j.*;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.List;
 
@@ -36,41 +46,47 @@ import java.util.List;
  */
 public class MerryEvents implements ModInitializer {
         public static final String MOD_ID = "merryevents";
-        public static final Logger LOGGER = LoggerFactory.getLogger(MOD_ID);
+        public static final Logger LOGGER = LoggerFactory.getLogger(MerryEvents.MOD_ID);
 
-        public static final Identifier LOBOTOMY_SOUND_ID = id("lobotomy");
-        public static final SoundEvent LOBOTOMY_SOUND = Registry.register(
-                Registries.SOUND_EVENT,
-                LOBOTOMY_SOUND_ID,
-                SoundEvent.of(LOBOTOMY_SOUND_ID)
-        );
-
-        public static final ComponentType<List<Identifier>> FORBIDDEN_BLOCKS_COMPONENT = Registry.register(
-                        Registries.DATA_COMPONENT_TYPE,
-                        Identifier.of(MOD_ID, "forbidden_blocks"),
-                        ComponentType.<List<Identifier>>builder()
-                                        .codec(Identifier.CODEC.listOf())
-                                        .packetCodec(Identifier.PACKET_CODEC.collect(PacketCodecs.toList()))
-                                        .build());
-
-        public static final ComponentType<String> MEMO_OWNER_COMPONENT = Registry.register(
-                        Registries.DATA_COMPONENT_TYPE,
-                        Identifier.of(MOD_ID, "memo_owner"),
-                        ComponentType.<String>builder()
-                                        .codec(Codec.STRING)
-                                        .packetCodec(PacketCodecs.STRING)
-                                        .build());
-
-        public static final ChaosMemoItem CHAOS_MEMO = Registry.register(
-                        Registries.ITEM,
-                        Identifier.of(MOD_ID, ChaosMemoItem.ID),
-                        new ChaosMemoItem(new Item.Settings().maxCount(1).fireproof()));
+        public static final Identifier LOBOTOMY_SOUND_ID = MerryEvents.id("lobotomy");
+        public static SoundEvent LOBOTOMY_SOUND;
+        public static ComponentType<List<Identifier>> FORBIDDEN_BLOCKS_COMPONENT;
+        public static ComponentType<String> MEMO_OWNER_COMPONENT;
+        public static ChaosMemoItem CHAOS_MEMO;
 
         @Override
         public void onInitialize() {
-                LOGGER.info("[MerryEvents] Initializing 1.21.1 Chaos Engine...");
+                MerryEvents.LOGGER.info("[MerryEvents] Initializing 1.21.1 Chaos Engine...");
+
+                MerryEvents.LOBOTOMY_SOUND = Registry.register(
+                                Registries.SOUND_EVENT,
+                                MerryEvents.LOBOTOMY_SOUND_ID,
+                                SoundEvent.of(MerryEvents.LOBOTOMY_SOUND_ID));
+
+                MerryEvents.FORBIDDEN_BLOCKS_COMPONENT = Registry.register(
+                                Registries.DATA_COMPONENT_TYPE,
+                                Identifier.of(MerryEvents.MOD_ID, "forbidden_blocks"),
+                                ComponentType.<List<Identifier>>builder()
+                                                .codec(Identifier.CODEC.listOf())
+                                                .packetCodec(Identifier.PACKET_CODEC.collect(PacketCodecs.toList()))
+                                                .build());
+
+                MerryEvents.MEMO_OWNER_COMPONENT = Registry.register(
+                                Registries.DATA_COMPONENT_TYPE,
+                                Identifier.of(MerryEvents.MOD_ID, "memo_owner"),
+                                ComponentType.<String>builder()
+                                                .codec(Codec.STRING)
+                                                .packetCodec(PacketCodecs.STRING)
+                                                .build());
+
+                MerryEvents.CHAOS_MEMO = Registry.register(
+                                Registries.ITEM,
+                                Identifier.of(MerryEvents.MOD_ID, ChaosMemoItem.ID),
+                                new ChaosMemoItem(new Item.Settings().maxCount(1).fireproof()));
 
                 ConfigManager.load();
+                EventManager.getInstance().registerDefaultEvents();
+
                 PayloadTypeRegistry.playS2C().register(EventSyncPayload.ID, EventSyncPayload.CODEC);
                 PayloadTypeRegistry.playS2C().register(OrbitalStrikeSpawnPayload.ID, OrbitalStrikeSpawnPayload.CODEC);
                 PayloadTypeRegistry.playS2C().register(ForbiddenBlocksPayload.ID, ForbiddenBlocksPayload.CODEC);
@@ -104,6 +120,11 @@ public class MerryEvents implements ModInitializer {
                 ServerLifecycleEvents.SERVER_STOPPING
                                 .register(server -> EventManager.getInstance().onServerStopping(server));
 
+                ServerLifecycleEvents.SERVER_STOPPED.register(server -> {
+                        EventManager.getInstance().resetRuntimeState();
+                        ChaosDirector.getInstance().resetState();
+                });
+
                 CommandRegistrationCallback.EVENT
                                 .register((dispatcher, registryAccess, environment) -> MerryEventsCommand
                                                 .register(dispatcher));
@@ -122,16 +143,10 @@ public class MerryEvents implements ModInitializer {
                         }
                 });
 
-                LOGGER.info("[MerryEvents] Chaos Engine core initialization complete.");
+                MerryEvents.LOGGER.info("[MerryEvents] Chaos Engine core initialization complete.");
         }
 
-        /**
-         * Resolves a namespaced identifier for the mod domain.
-         *
-         * @param path Target resource path
-         * @return Namespaced Identifier
-         */
         public static Identifier id(String path) {
-                return Identifier.of(MOD_ID, path);
+                return Identifier.of(MerryEvents.MOD_ID, path);
         }
 }

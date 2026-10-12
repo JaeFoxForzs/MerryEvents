@@ -387,14 +387,13 @@ tasks.register("validateAndFormatLocalization") {
 			}
 		}
 
-		javaFiles.each { File file ->
-			def tokens = tokensByFile[file.absolutePath]
-			for (int i = 0; i + 6 < tokens.size(); i++) {
-				if (tokens[i].value == "register" && tokens[i + 1].value == "(" &&
-						tokens[i + 2].value == "new" && tokens[i + 3].type == "identifier" &&
-						tokens[i + 4].value == "(" && tokens[i + 5].value == ")" &&
-						tokens[i + 6].value == ")") {
-					String eventId = eventIdsByClass[tokens[i + 3].value]
+	def spiFile = new File(localizationRoot, "src/main/resources/META-INF/services/com.merry.merryevents.api.ChaosEvent")
+		if (spiFile.exists()) {
+			spiFile.eachLine { line ->
+				line = line.trim()
+				if (!line.isEmpty() && !line.startsWith("#")) {
+					String simpleName = line.contains(".") ? line.substring(line.lastIndexOf('.') + 1) : line
+					String eventId = eventIdsByClass[simpleName]
 					if (eventId != null) {
 						codeReferences.add("event.merryevents.${eventId}".toString())
 					}

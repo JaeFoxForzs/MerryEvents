@@ -7,7 +7,6 @@ import com.merry.merryevents.api.EventContext;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -31,7 +30,15 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class CrumblingFloorEvent implements ChaosEvent {
     public static final Identifier ID = MerryEvents.id("crumbling_floor");
-    private static final String STATE_KEY = "crumble_state";
+    private static final String SPEED_KEY = "crumb_speed";
+    private static final String BREAKER_ID_KEY = "crumb_breaker_id";
+    private static final String POS_X_KEY = "crumb_x";
+    private static final String POS_Y_KEY = "crumb_y";
+    private static final String POS_Z_KEY = "crumb_z";
+    private static final String PROGRESS_KEY = "crumb_progress";
+    private static final String TICK_COUNTER_KEY = "crumb_ticks";
+    private static final String HAS_POS_KEY = "crumb_has_pos";
+
     private static final int BREAKER_ID_OFFSET = 100_000;
 
     @Override
@@ -58,7 +65,9 @@ public final class CrumblingFloorEvent implements ChaosEvent {
         // Stone pickaxe tool mining speed multiplier is 4.0F, diamond pickaxe is 8.0F
         float baseMiningSpeed = 4.0F + targetPlayer.getRandom().nextFloat() * 4.0F;
         int breakerEntityId = targetPlayer.getId() + CrumblingFloorEvent.BREAKER_ID_OFFSET;
-        context.set(CrumblingFloorEvent.STATE_KEY, new BreakState(baseMiningSpeed, breakerEntityId));
+        context.set(CrumblingFloorEvent.SPEED_KEY, baseMiningSpeed);
+        context.set(CrumblingFloorEvent.BREAKER_ID_KEY, breakerEntityId);
+        context.set(CrumblingFloorEvent.HAS_POS_KEY, false);
 
         MerryEvents.LOGGER.info(
                 "[CrumblingFloorEvent] Flooring deterioration active for {} (BaseSpeed: {}x, BreakerId: {})",
@@ -72,54 +81,68 @@ public final class CrumblingFloorEvent implements ChaosEvent {
             return;
         }
 
-        BreakState state = context.getOrDefault(CrumblingFloorEvent.STATE_KEY, null);
-        if (state == null) {
+        int breakerEntityId = context.getInt(CrumblingFloorEvent.BREAKER_ID_KEY, -1);
+        if (breakerEntityId == -1) {
             return;
         }
 
         BlockPos currentPos = targetPlayer.getSteppingPos();
         ServerWorld world = targetPlayer.getServerWorld();
 
-        if (!currentPos.equals(state.pos)) {
-            if (state.pos != null) {
-                world.setBlockBreakingInfo(state.breakerEntityId, state.pos, -1);
+        boolean hasSavedPos = context.getBoolean(CrumblingFloorEvent.HAS_POS_KEY, false);
+        BlockPos savedPos = null;
+        if (hasSavedPos) {
+            savedPos = new BlockPos(
+                    context.getInt(CrumblingFloorEvent.POS_X_KEY, 0),
+                    context.getInt(CrumblingFloorEvent.POS_Y_KEY, 0),
+                    context.getInt(CrumblingFloorEvent.POS_Z_KEY, 0));
+        }
+
+        if (!hasSavedPos || !currentPos.equals(savedPos)) {
+            if (hasSavedPos && savedPos != null) {
+                world.setBlockBreakingInfo(breakerEntityId, savedPos, -1);
             }
-            state.pos = currentPos;
-            state.progress = 0.0F;
-            state.tickCounter = 0;
+            context.set(CrumblingFloorEvent.HAS_POS_KEY, true);
+            context.set(CrumblingFloorEvent.POS_X_KEY, currentPos.getX());
+            context.set(CrumblingFloorEvent.POS_Y_KEY, currentPos.getY());
+            context.set(CrumblingFloorEvent.POS_Z_KEY, currentPos.getZ());
+            context.set(CrumblingFloorEvent.PROGRESS_KEY, 0.0F);
+            context.set(CrumblingFloorEvent.TICK_COUNTER_KEY, 0);
         } else {
             BlockState blockState = world.getBlockState(currentPos);
             float hardness = blockState.getHardness(world, currentPos);
 
-            if (blockState.isAir() || hardness < 0.0F) {
+            if (blockState.isAir() || hardness < 0.0F || blockState.hasBlockEntity()) {
                 return;
             }
 
-            state.tickCounter++;
+            int tickCounter = context.getInt(CrumblingFloorEvent.TICK_COUNTER_KEY, 0) + 1;
+            context.set(CrumblingFloorEvent.TICK_COUNTER_KEY, tickCounter);
 
-            if (state.tickCounter % 4 == 0) {
+            if (tickCounter % 4 == 0) {
                 targetPlayer.swingHand(Hand.MAIN_HAND, true);
                 BlockSoundGroup sounds = blockState.getSoundGroup();
                 world.playSound(null, currentPos, sounds.getHitSound(), SoundCategory.BLOCKS,
                         (sounds.getVolume() + 1.0F) / 8.0F, sounds.getPitch() * 0.5F);
             }
 
-            float effectiveSpeed = state.speedMultiplier;
+            float effectiveSpeed = context.getFloat(CrumblingFloorEvent.SPEED_KEY, 4.0F);
             float playerToolSpeed = targetPlayer.getBlockBreakingSpeed(blockState);
             if (targetPlayer.getMainHandStack().isSuitableFor(blockState) || playerToolSpeed > 1.0F) {
                 effectiveSpeed += playerToolSpeed;
             }
 
             float delta = hardness == 0.0F ? 1.0F : (effectiveSpeed / hardness / 30.0F);
-            state.progress += delta;
+            float progress = context.getFloat(CrumblingFloorEvent.PROGRESS_KEY, 0.0F) + delta;
 
-            if (state.progress >= 1.0F) {
-                world.setBlockBreakingInfo(state.breakerEntityId, currentPos, -1);
+            if (progress >= 1.0F) {
+                world.setBlockBreakingInfo(breakerEntityId, currentPos, -1);
                 CrumblingFloorEvent.dropBlockSilkTouch(world, currentPos, blockState);
-                state.progress = 0.0F;
-                state.tickCounter = 0;
+                context.set(CrumblingFloorEvent.PROGRESS_KEY, 0.0F);
+                context.set(CrumblingFloorEvent.TICK_COUNTER_KEY, 0);
             } else {
-                world.setBlockBreakingInfo(state.breakerEntityId, currentPos, (int) (state.progress * 10.0F));
+                context.set(CrumblingFloorEvent.PROGRESS_KEY, progress);
+                world.setBlockBreakingInfo(breakerEntityId, currentPos, (int) (progress * 10.0F));
             }
         }
     }
@@ -127,9 +150,16 @@ public final class CrumblingFloorEvent implements ChaosEvent {
     @Override
     public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
         if (targetPlayer != null) {
-            BreakState state = context.getOrDefault(CrumblingFloorEvent.STATE_KEY, null);
-            if (state != null && state.pos != null) {
-                targetPlayer.getServerWorld().setBlockBreakingInfo(state.breakerEntityId, state.pos, -1);
+            boolean hasSavedPos = context.getBoolean(CrumblingFloorEvent.HAS_POS_KEY, false);
+            if (hasSavedPos) {
+                BlockPos savedPos = new BlockPos(
+                        context.getInt(CrumblingFloorEvent.POS_X_KEY, 0),
+                        context.getInt(CrumblingFloorEvent.POS_Y_KEY, 0),
+                        context.getInt(CrumblingFloorEvent.POS_Z_KEY, 0));
+                int breakerEntityId = context.getInt(CrumblingFloorEvent.BREAKER_ID_KEY, -1);
+                if (breakerEntityId != -1) {
+                    targetPlayer.getServerWorld().setBlockBreakingInfo(breakerEntityId, savedPos, -1);
+                }
             }
         }
     }
@@ -143,35 +173,15 @@ public final class CrumblingFloorEvent implements ChaosEvent {
      * @param state Block state being destroyed
      */
     private static void dropBlockSilkTouch(ServerWorld world, BlockPos pos, BlockState state) {
+        if (state.hasBlockEntity()) {
+            return;
+        }
         Item item = state.getBlock().asItem();
         if (item != Items.AIR) {
             ItemStack stack = new ItemStack(item);
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (blockEntity != null) {
-                blockEntity.setStackNbt(stack, world.getRegistryManager());
-            }
             Block.dropStack(world, pos, stack);
         }
         world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL | Block.SKIP_DROPS);
         world.syncWorldEvent(WorldEvents.BLOCK_BROKEN, pos, Block.getRawIdFromState(state));
-    }
-
-    /**
-     * Mutable, zero-allocation tracking container handling active crumble
-     * execution.
-     */
-    private static final class BreakState {
-        final float speedMultiplier;
-        final int breakerEntityId;
-        BlockPos pos;
-        float progress;
-        int tickCounter;
-
-        BreakState(float speedMultiplier, int breakerEntityId) {
-            this.speedMultiplier = speedMultiplier;
-            this.breakerEntityId = breakerEntityId;
-            this.progress = 0.0F;
-            this.tickCounter = 0;
-        }
     }
 }

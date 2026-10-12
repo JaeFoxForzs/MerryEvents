@@ -1,189 +1,82 @@
 package com.merry.merryevents.client;
 
 import com.merry.merryevents.MerryEvents;
-import com.merry.merryevents.client.api.*;
 import com.merry.merryevents.client.effect.*;
-import com.merry.merryevents.event.camera.AdhdEvent;
-import com.merry.merryevents.event.sounds.RubberWorldEvent;
-import com.merry.merryevents.event.ui.ClosedInventoryEvent;
-import com.merry.merryevents.event.weather.AcidRainEvent;
-import com.merry.merryevents.event.weather.RustRainEvent;
-import com.merry.merryevents.network.*;
-import com.merry.merryevents.client.render.*;
-import com.merry.merryevents.event.camera.EpilepsyEvent;
-import com.merry.merryevents.event.mobs.*;
-import com.merry.merryevents.event.physics.*;
-import com.merry.merryevents.event.status.*;
-import com.merry.merryevents.event.vision.*;
-import com.merry.merryevents.event.visual.*;
-import com.merry.merryevents.event.world.*;
+import com.merry.merryevents.client.render.OrbitalBeamRenderer;
+import com.merry.merryevents.event.mobs.KindergartenEvent;
+import com.merry.merryevents.event.physics.PerfectIceEvent;
+import com.merry.merryevents.event.status.WaterDrinkerEvent;
+import com.merry.merryevents.event.world.LavaWaterSwapEvent;
+import com.merry.merryevents.network.EventSyncPayload;
+import com.merry.merryevents.network.ForbiddenBlocksPayload;
+import com.merry.merryevents.network.OrbitalStrikeSpawnPayload;
 import net.fabricmc.api.ClientModInitializer;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayConnectionEvents;
 import net.fabricmc.fabric.api.client.networking.v1.ClientPlayNetworking;
-import net.minecraft.client.*;
 
 public class MerryEventsClient implements ClientModInitializer {
     @Override
     public void onInitializeClient() {
         MerryEvents.LOGGER.info("[MerryEvents-Client] Binding client payload receivers...");
 
-        ClientEventManager.registerEffect(LobotomyEvent.ID, new LobotomyClientEffect());
+        ClientEventManager.init();
+
+        // 1. Core visual & camera effects
+        ClientEventManager.registerEffect(MerryEvents.id("lobotomy"), new LobotomyClientEffect());
         LobotomyClientEffect.init();
 
-        // Core visual effects
         ClientEventManager.registerEffect(MerryEvents.id("ghost_gui"), new GhostGuiVisualEffect());
         ClientEventManager.registerEffect(MerryEvents.id("stiff_neck"), new StiffNeckClientEffect());
         ClientEventManager.registerEffect(MerryEvents.id("orbital_strike"), new OrbitalStrikeClientEffect());
-        ClientEventManager.registerEffect(FlatMobsEvent.ID, new FlatMobsClientEffect());
-        ClientEventManager.registerEffect(DontStepOnEvent.ID, new DontStepOnClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("flat_mobs"), new FlatMobsClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("dont_step_on"), new DontStepOnClientEffect());
 
-        // Interface and inventory constraint effects
+        // 2. Input & UI constraints
         ClientEventManager.registerEffect(MerryEvents.id("scrambled_buttons"), new ScrambledButtonsClientEffect());
-        ClientEventManager.registerEffect(MerryEvents.id("sticky_fingers"), new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
+        ClientEventManager.registerEffect(MerryEvents.id("closed_inventory"), new ClosedInventoryClientEffect());
 
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-
-        ClientEventManager.registerEffect(MerryEvents.id("creeper_revenge"), new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-        ClientEventManager.registerEffect(MerryEvents.id("ant_man"), new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-
-        ClientEventManager.registerEffect(MerryEvents.id("butterfingers"), new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-        ClientEventManager.registerEffect(MerryEvents.id("adhd"), new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-        ClientEventManager.registerEffect(AdhdEvent.ID, new AdhdClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("adhd"), new AdhdClientEffect());
         AdhdClientEffect.init();
 
-        // Weather precipitation tint state drivers
-        ClientEventManager.registerEffect(AcidRainEvent.ID, new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
+        // 3. Post-processing shaders & viewports
+        ClientEventManager.registerEffect(MerryEvents.id("disco"), new DiscoClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("miners_vision"), new MinersVisionClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("myopia"), new MyopiaClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("upside_down"), new UpsideDownClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("colorblindness"), new ColorblindnessClientEffect());
 
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
+        // 4. Auditory & physics constraints
+        ClientEventManager.registerEffect(MerryEvents.id("rubber_world"), new RubberWorldClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("bouncing_hamster"), new BouncingHamsterClientEffect());
 
-        ClientEventManager.registerEffect(RustRainEvent.ID, new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-
-        // Sensory and vision shaders
-        ClientEventManager.registerEffect(DiscoEvent.ID, new DiscoClientEffect());
-        ClientEventManager.registerEffect(MinersVisionEvent.ID, new MinersVisionClientEffect());
-        ClientEventManager.registerEffect(MyopiaEvent.ID, new MyopiaClientEffect());
-        ClientEventManager.registerEffect(UpsideDownEvent.ID, new UpsideDownClientEffect());
-        ClientEventManager.registerEffect(ColorblindnessEvent.ID, new ColorblindnessClientEffect());
-
-        // Auditory and UI lockdown effects
-        ClientEventManager.registerEffect(RubberWorldEvent.ID, new RubberWorldClientEffect());
-        ClientEventManager.registerEffect(ClosedInventoryEvent.ID, new ClosedInventoryClientEffect());
-        ClientEventManager.registerEffect(EpilepsyEvent.ID, new EpilepsyClientEffect());
+        ClientEventManager.registerEffect(MerryEvents.id("epilepsy"), new EpilepsyClientEffect());
         EpilepsyClientEffect.init();
-        ClientEventManager.registerEffect(BouncingHamsterEvent.ID, new BouncingHamsterClientEffect());
-        ClientEventManager.registerEffect(UncontrolledRunEvent.ID, new UncontrolledRunClientEffect());
+
+        ClientEventManager.registerEffect(MerryEvents.id("uncontrolled_run"), new UncontrolledRunClientEffect());
         UncontrolledRunClientEffect.init();
 
-        // Global state condition providers
-        ClientEventManager.registerEffect(WaterDrinkerEvent.ID, new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
+        // 5. Client prediction bridges
+        WaterDrinkerEvent.clientActiveSupplier = () -> ClientEventManager
+                .isEventActive(MerryEvents.id("water_drinker"));
+        KindergartenEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(MerryEvents.id("kindergarten"));
+        PerfectIceEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(MerryEvents.id("perfect_ice"));
+        LavaWaterSwapEvent.clientActiveSupplier = () -> ClientEventManager
+                .isEventActive(MerryEvents.id("lava_water_swap"));
 
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-        WaterDrinkerEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(WaterDrinkerEvent.ID);
-
-        ClientEventManager.registerEffect(KindergartenEvent.ID, new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-        KindergartenEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(KindergartenEvent.ID);
-
-        ClientEventManager.registerEffect(PerfectIceEvent.ID, new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-        PerfectIceEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(PerfectIceEvent.ID);
-
-        ClientEventManager.registerEffect(LavaWaterSwapEvent.ID, new ClientChaosEffect() {
-            @Override
-            public void onStart(MinecraftClient client, int initialRemainingTicks) {
-            }
-
-            @Override
-            public void onStop(MinecraftClient client) {
-            }
-        });
-        LavaWaterSwapEvent.clientActiveSupplier = () -> ClientEventManager.isEventActive(LavaWaterSwapEvent.ID);
-
-        // Renderer and overlay lifecycle bindings
+        // 6. Subsystem listeners initialization
         DontStepOnClientEffect.init();
         DiscoClientEffect.init();
         MinersVisionClientEffect.init();
         OrbitalBeamRenderer.init();
 
-        // Authoritative network payload registration
+        // 7. Network payload registration
         ClientPlayNetworking.registerGlobalReceiver(EventSyncPayload.ID, (payload, context) -> {
             context.client().execute(() -> {
-                MerryEvents.LOGGER.info("[MerryEvents-Client] Sync: id={}, active={}, ticks={}", payload.eventId(),
-                        payload.active(), payload.durationTicks());
+                MerryEvents.LOGGER.info("[MerryEvents-Client] Sync: id={}, active={}, ticks={}, seq={}",
+                        payload.eventId(),
+                        payload.active(), payload.durationTicks(), payload.startSequence());
                 ClientEventManager.handleEventSync(context.client(), payload.eventId(), payload.durationTicks(),
-                        payload.active());
+                        payload.active(), payload.startSequence());
             });
         });
 

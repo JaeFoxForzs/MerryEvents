@@ -43,6 +43,16 @@ public final class ClientShaderManager {
     }
 
     /**
+     * Re-applies the top post-processing shader to the active framebuffer upon
+     * dimension change.
+     *
+     * @param client Active Minecraft client instance
+     */
+    public static synchronized void reapply(MinecraftClient client) {
+        applyTopShader(client);
+    }
+
+    /**
      * Empties the shader stack and closes active post-processing pipelines.
      *
      * @param client Active Minecraft client instance

@@ -1,6 +1,5 @@
 package com.merry.merryevents.client.render;
 
-import com.mojang.blaze3d.systems.RenderSystem;
 import net.fabricmc.fabric.api.client.event.lifecycle.v1.ClientTickEvents;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderContext;
 import net.fabricmc.fabric.api.client.rendering.v1.WorldRenderEvents;
@@ -59,21 +58,18 @@ public final class OrbitalBeamRenderer {
         matrices.translate(-camPos.x, -camPos.y, -camPos.z);
         Matrix4f mat = matrices.peek().getPositionMatrix();
 
-        RenderSystem.enableDepthTest();
-        RenderSystem.depthFunc(515);
-        RenderSystem.enableBlend();
-        RenderSystem.defaultBlendFunc();
-
         RenderLayer reticleLayer = RenderLayer.getBeaconBeam(OrbitalTextures.RETICLE_TEXTURE, true);
         VertexConsumer reticleConsumer = consumers.getBuffer(reticleLayer);
         for (int i = 0; i < OrbitalBeamRenderer.ACTIVE_BEAMS.size(); i++) {
-            OrbitalBeamRenderer.drawReticle(reticleConsumer, mat, OrbitalBeamRenderer.ACTIVE_BEAMS.get(i), tickDelta, time);
+            OrbitalBeamRenderer.drawReticle(reticleConsumer, mat, OrbitalBeamRenderer.ACTIVE_BEAMS.get(i), tickDelta,
+                    time);
         }
 
         RenderLayer beamLayer = RenderLayer.getBeaconBeam(OrbitalTextures.BEAM_TEXTURE, true);
         VertexConsumer beamConsumer = consumers.getBuffer(beamLayer);
         for (int i = 0; i < OrbitalBeamRenderer.ACTIVE_BEAMS.size(); i++) {
-            OrbitalBeamRenderer.drawBeam(beamConsumer, mat, OrbitalBeamRenderer.ACTIVE_BEAMS.get(i), camPos, tickDelta, time);
+            OrbitalBeamRenderer.drawBeam(beamConsumer, mat, OrbitalBeamRenderer.ACTIVE_BEAMS.get(i), camPos, tickDelta,
+                    time);
         }
 
         if (consumers instanceof VertexConsumerProvider.Immediate immediate) {

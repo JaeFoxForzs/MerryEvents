@@ -43,7 +43,7 @@ public abstract class AnvilBlockMixin {
 
             if (!targetState.isAir() && targetState.getHardness(world, targetPos) >= 0.0F) {
                 if (!targetState.hasBlockEntity()) {
-                    world.breakBlock(targetPos, false);
+                    world.breakBlock(targetPos, true);
                 }
             }
 
@@ -75,7 +75,7 @@ public abstract class AnvilBlockMixin {
 
             if (!targetState.isAir() && targetState.getHardness(world, targetPos) >= 0.0F) {
                 if (!targetState.hasBlockEntity()) {
-                    world.breakBlock(targetPos, false);
+                    world.breakBlock(targetPos, true);
                 }
             }
         }

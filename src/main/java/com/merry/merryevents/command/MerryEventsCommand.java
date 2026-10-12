@@ -2,10 +2,10 @@ package com.merry.merryevents.command;
 
 import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
-import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.config.ConfigManager;
 import com.merry.merryevents.engine.ChaosDirector;
 import com.merry.merryevents.engine.EventManager;
+import com.merry.merryevents.util.ChaosBookGenerator;
 import com.mojang.brigadier.CommandDispatcher;
 import com.mojang.brigadier.arguments.IntegerArgumentType;
 import com.mojang.brigadier.suggestion.Suggestions;
@@ -13,24 +13,22 @@ import com.mojang.brigadier.suggestion.SuggestionsBuilder;
 import net.minecraft.command.CommandSource;
 import net.minecraft.command.argument.EntityArgumentType;
 import net.minecraft.command.argument.IdentifierArgumentType;
+import net.minecraft.item.ItemStack;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.command.CommandManager;
 import net.minecraft.server.command.ServerCommandSource;
 import net.minecraft.server.network.ServerPlayerEntity;
-import net.minecraft.text.MutableText;
 import net.minecraft.text.Text;
 import net.minecraft.util.Formatting;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 import java.util.ArrayList;
-import java.util.Comparator;
 import java.util.HashSet;
 import java.util.List;
 import java.util.Locale;
 import java.util.Map;
 import java.util.Set;
-import java.util.UUID;
 import java.util.concurrent.CompletableFuture;
 
 public final class MerryEventsCommand {
@@ -48,13 +46,15 @@ public final class MerryEventsCommand {
                                         EventManager.getInstance().getRegisteredEventIds()))
                                 .executes(ctx -> {
                                     Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
-                                    return MerryEventsCommand.executeStart(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), -1, null);
+                                    return MerryEventsCommand.executeStart(ctx.getSource(),
+                                            MerryEventsCommand.resolveEventId(rawId), -1, null);
                                 })
                                 .then(CommandManager.argument("durationSeconds", IntegerArgumentType.integer(1, 3600))
                                         .executes(ctx -> {
                                             Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
                                             int seconds = IntegerArgumentType.getInteger(ctx, "durationSeconds");
-                                            return MerryEventsCommand.executeStart(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), seconds, null);
+                                            return MerryEventsCommand.executeStart(ctx.getSource(),
+                                                    MerryEventsCommand.resolveEventId(rawId), seconds, null);
                                         })
                                         .then(CommandManager.argument("target", EntityArgumentType.player())
                                                 .executes(ctx -> {
@@ -64,7 +64,8 @@ public final class MerryEventsCommand {
                                                             "durationSeconds");
                                                     ServerPlayerEntity player = EntityArgumentType.getPlayer(ctx,
                                                             "target");
-                                                    return MerryEventsCommand.executeStart(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), seconds,
+                                                    return MerryEventsCommand.executeStart(ctx.getSource(),
+                                                            MerryEventsCommand.resolveEventId(rawId), seconds,
                                                             player);
                                                 })))))
                 .then(CommandManager.literal("stop")
@@ -86,18 +87,42 @@ public final class MerryEventsCommand {
                                 })
                                 .executes(ctx -> {
                                     Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
-                                    return MerryEventsCommand.executeStop(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), null);
+                                    return MerryEventsCommand.executeStop(ctx.getSource(),
+                                            MerryEventsCommand.resolveEventId(rawId), null);
                                 })
                                 .then(CommandManager.argument("target", EntityArgumentType.player())
                                         .executes(ctx -> {
                                             Identifier rawId = IdentifierArgumentType.getIdentifier(ctx, "eventId");
                                             ServerPlayerEntity target = EntityArgumentType.getPlayer(ctx, "target");
-                                            return MerryEventsCommand.executeStop(ctx.getSource(), MerryEventsCommand.resolveEventId(rawId), target);
+                                            return MerryEventsCommand.executeStop(ctx.getSource(),
+                                                    MerryEventsCommand.resolveEventId(rawId), target);
                                         }))))
                 .then(CommandManager.literal("status")
                         .executes(ctx -> MerryEventsCommand.executeStatus(ctx.getSource())))
-                .then(CommandManager.literal("events")
-                        .executes(ctx -> MerryEventsCommand.executeEvents(ctx.getSource())))
+                .then(CommandManager.literal("book")
+                        .executes(ctx -> {
+                            ServerCommandSource source = ctx.getSource();
+                            ServerPlayerEntity player = source.getPlayer();
+                            if (player == null) {
+                                source.sendError(Text.translatable("command.merryevents.start.error.no_player"));
+                                return 0;
+                            }
+                            ItemStack book = ChaosBookGenerator.createGuideBook();
+                            player.giveItemStack(book);
+                            source.sendMessage(Text.translatable("command.merryevents.book.success")
+                                    .formatted(Formatting.GREEN));
+                            return 1;
+                        })
+                        .then(CommandManager.argument("target", EntityArgumentType.player())
+                                .executes(ctx -> {
+                                    ServerPlayerEntity target = EntityArgumentType.getPlayer(ctx, "target");
+                                    ItemStack book = ChaosBookGenerator.createGuideBook();
+                                    target.giveItemStack(book);
+                                    ctx.getSource()
+                                            .sendMessage(Text.translatable("command.merryevents.book.success.target",
+                                                    target.getName().getString()).formatted(Formatting.GREEN));
+                                    return 1;
+                                })))
                 .then(CommandManager.literal("director")
                         .then(CommandManager.literal("status")
                                 .executes(ctx -> {
@@ -305,41 +330,6 @@ public final class MerryEventsCommand {
             }
         }
 
-        source.sendMessage(
-                Text.translatable("command.merryevents.status.categories_header").formatted(Formatting.YELLOW));
-        for (EventCategory cat : EventCategory.values()) {
-            List<Text> globalEvents = new ArrayList<>();
-            for (EventManager.ActiveEventInstance instance : manager.getActiveGlobalEvents().values()) {
-                if (instance.getEvent().getCategory() == cat) {
-                    globalEvents.add(instance.getEvent().getDisplayName());
-                }
-            }
-
-            List<Text> playerEvents = new ArrayList<>();
-            for (Map.Entry<UUID, Map<Identifier, EventManager.ActiveEventInstance>> playerEntry : manager
-                    .getActivePlayerEvents().entrySet()) {
-                ServerPlayerEntity activePlayer = source.getServer().getPlayerManager()
-                        .getPlayer(playerEntry.getKey());
-                Text playerName = activePlayer != null
-                        ? activePlayer.getName().copy()
-                        : Text.literal(playerEntry.getKey().toString());
-                for (EventManager.ActiveEventInstance instance : playerEntry.getValue().values()) {
-                    if (instance.getEvent().getCategory() == cat) {
-                        playerEvents.add(Text.translatable("command.merryevents.status.category_player_event",
-                                playerName, instance.getEvent().getDisplayName()));
-                    }
-                }
-            }
-
-            source.sendMessage(Text.translatable("command.merryevents.status.category_entry",
-                    cat.getDisplayName(),
-                    MerryEventsCommand.joinOrFree(globalEvents),
-                    MerryEventsCommand.joinOrFree(playerEvents)).formatted(
-                            globalEvents.isEmpty() && playerEvents.isEmpty()
-                                    ? Formatting.DARK_GRAY
-                                    : Formatting.GRAY));
-        }
-
         ChaosDirector director = ChaosDirector.getInstance();
         boolean directorEnabled = ConfigManager.get().isAutoDirectorEnabled();
         int nextGlobalSeconds = Math.max(0, director.getTicksUntilNextGlobalEvent() / 20);
@@ -351,47 +341,6 @@ public final class MerryEventsCommand {
                 director.getGlobalDeck().size(),
                 director.getPersonalDeck().size()).formatted(Formatting.DARK_AQUA));
 
-        return 1;
-    }
-
-    private static Text joinOrFree(List<Text> entries) {
-        if (entries.isEmpty()) {
-            return Text.translatable("command.merryevents.status.category_free").formatted(Formatting.DARK_GRAY);
-        }
-
-        MutableText joined = Text.empty();
-        for (int i = 0; i < entries.size(); i++) {
-            if (i > 0) {
-                joined.append(Text.literal(", ").formatted(Formatting.GRAY));
-            }
-            joined.append(entries.get(i).copy().formatted(Formatting.WHITE));
-        }
-        return joined;
-    }
-
-    private static int executeEvents(ServerCommandSource source) {
-        EventManager manager = EventManager.getInstance();
-        List<ChaosEvent> events = new ArrayList<>(manager.getRegistry().values());
-        events.sort(Comparator.comparing(event -> event.getId().toString()));
-
-        source.sendMessage(Text.translatable("command.merryevents.events.header", events.size())
-                .formatted(Formatting.GOLD));
-        for (ChaosEvent event : events) {
-            var config = ConfigManager.get().getEvents().get(event.getId().toString());
-            boolean autoEnabled = config == null || config.enabled();
-            Text scope = Text.translatable(event.isGlobal()
-                    ? "command.merryevents.events.scope.global"
-                    : "command.merryevents.events.scope.player");
-            Text autoStart = Text.translatable(autoEnabled
-                    ? "command.merryevents.events.autostart.enabled"
-                    : "command.merryevents.events.autostart.disabled");
-            source.sendMessage(Text.translatable("command.merryevents.events.entry",
-                    event.getDisplayName(),
-                    event.getId().toString(),
-                    event.getCategory().getDisplayName(),
-                    scope,
-                    autoStart).formatted(Formatting.GRAY));
-        }
         return 1;
     }
 

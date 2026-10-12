@@ -39,26 +39,33 @@ public final class DontStepOnClientEffect implements ClientChaosEffect {
      * Initializes global HUD and inventory screen render callbacks.
      */
     public static void init() {
-        if (registered) {
+        if (DontStepOnClientEffect.registered) {
             return;
         }
+
+        ChaosMemoItem.clientUseAction = stack -> {
+            MinecraftClient client = MinecraftClient.getInstance();
+            if (client.player != null) {
+                DontStepOnClientEffect.CACHE.updateIfChanged(client, stack);
+            }
+        };
 
         HudRenderCallback.EVENT.register((context, tickCounter) -> {
             MinecraftClient client = MinecraftClient.getInstance();
             if (client.currentScreen == null) {
-                renderOverlay(context, -1000, -1000);
+                DontStepOnClientEffect.renderOverlay(context, -1000, -1000);
             }
         });
 
         ScreenEvents.AFTER_INIT.register((clientInstance, screen, scaledWidth, scaledHeight) -> {
             if (screen instanceof HandledScreen<?>) {
                 ScreenEvents.afterRender(screen).register((scr, context, mouseX, mouseY, tickDelta) -> {
-                    renderOverlay(context, mouseX, mouseY);
+                    DontStepOnClientEffect.renderOverlay(context, mouseX, mouseY);
                 });
             }
         });
 
-        registered = true;
+        DontStepOnClientEffect.registered = true;
     }
 
     /**
@@ -71,15 +78,15 @@ public final class DontStepOnClientEffect implements ClientChaosEffect {
     public static void setPlayerRestrictionStatus(String playerName, boolean active) {
         if (playerName == null || playerName.isEmpty()) {
             if (!active) {
-                ACTIVE_TARGET_PLAYERS.clear();
+                DontStepOnClientEffect.ACTIVE_TARGET_PLAYERS.clear();
             }
             return;
         }
         String normalized = playerName.toLowerCase(Locale.ROOT);
         if (active) {
-            ACTIVE_TARGET_PLAYERS.add(normalized);
+            DontStepOnClientEffect.ACTIVE_TARGET_PLAYERS.add(normalized);
         } else {
-            ACTIVE_TARGET_PLAYERS.remove(normalized);
+            DontStepOnClientEffect.ACTIVE_TARGET_PLAYERS.remove(normalized);
         }
     }
 
@@ -91,15 +98,15 @@ public final class DontStepOnClientEffect implements ClientChaosEffect {
      * @return True if player is actively tracked in hazard set
      */
     public static boolean isPlayerRestricted(String playerName) {
-        return !playerName.isEmpty() && ACTIVE_TARGET_PLAYERS.contains(playerName.toLowerCase(Locale.ROOT));
+        return !playerName.isEmpty() && DontStepOnClientEffect.ACTIVE_TARGET_PLAYERS.contains(playerName.toLowerCase(Locale.ROOT));
     }
 
     /**
      * Resets active hazard tracker sets upon server disconnection.
      */
     public static void reset() {
-        ACTIVE_TARGET_PLAYERS.clear();
-        CACHE.clear();
+        DontStepOnClientEffect.ACTIVE_TARGET_PLAYERS.clear();
+        DontStepOnClientEffect.CACHE.clear();
     }
 
     @Override
@@ -124,27 +131,27 @@ public final class DontStepOnClientEffect implements ClientChaosEffect {
             return;
         }
 
-        ItemStack memoStack = getActiveMemoStack(client.player);
+        ItemStack memoStack = DontStepOnClientEffect.getActiveMemoStack(client.player);
         if (memoStack.isEmpty()) {
             return;
         }
 
-        CACHE.updateIfChanged(client, memoStack);
-        if (CACHE.itemStacks.isEmpty()) {
+        DontStepOnClientEffect.CACHE.updateIfChanged(client, memoStack);
+        if (DontStepOnClientEffect.CACHE.itemStacks.isEmpty()) {
             return;
         }
 
-        boolean isEventActive = isPlayerRestricted(CACHE.ownerName);
+        boolean isEventActive = DontStepOnClientEffect.isPlayerRestricted(DontStepOnClientEffect.CACHE.ownerName);
 
         int startX = 10;
         int startY = 10;
         int borderColor = isEventActive ? 0xFFFF5555 : 0xFF777777;
 
-        context.fill(startX, startY, startX + CACHE.boxWidth, startY + CACHE.boxHeight, 0xD0141414);
-        context.drawBorder(startX, startY, CACHE.boxWidth, CACHE.boxHeight, borderColor);
+        context.fill(startX, startY, startX + DontStepOnClientEffect.CACHE.boxWidth, startY + DontStepOnClientEffect.CACHE.boxHeight, 0xD0141414);
+        context.drawBorder(startX, startY, DontStepOnClientEffect.CACHE.boxWidth, DontStepOnClientEffect.CACHE.boxHeight, borderColor);
 
-        context.drawText(client.textRenderer, CACHE.title, startX + 8, startY + 6, 0xFFFFFF, true);
-        context.drawText(client.textRenderer, CACHE.ownerText, startX + 8, startY + 18, 0xFFFFFF, true);
+        context.drawText(client.textRenderer, DontStepOnClientEffect.CACHE.title, startX + 8, startY + 6, 0xFFFFFF, true);
+        context.drawText(client.textRenderer, DontStepOnClientEffect.CACHE.ownerText, startX + 8, startY + 18, 0xFFFFFF, true);
 
         Text statusBadge = isEventActive
                 ? Text.translatable("ui.merryevents.dont_step_on.status.active").formatted(Formatting.GREEN,
@@ -155,19 +162,19 @@ public final class DontStepOnClientEffect implements ClientChaosEffect {
                 .append(statusBadge);
         context.drawText(client.textRenderer, statusText, startX + 8, startY + 29, 0xFFFFFF, true);
 
-        context.fill(startX + 6, startY + 41, startX + CACHE.boxWidth - 6, startY + 42, 0x40FFFFFF);
-        context.drawText(client.textRenderer, CACHE.sectionHeader, startX + 8, startY + 45, 0xFFFFFF, true);
+        context.fill(startX + 6, startY + 41, startX + DontStepOnClientEffect.CACHE.boxWidth - 6, startY + 42, 0x40FFFFFF);
+        context.drawText(client.textRenderer, DontStepOnClientEffect.CACHE.sectionHeader, startX + 8, startY + 45, 0xFFFFFF, true);
 
-        int gridStartX = startX + (CACHE.boxWidth - CACHE.gridWidth) / 2;
+        int gridStartX = startX + (DontStepOnClientEffect.CACHE.boxWidth - DontStepOnClientEffect.CACHE.gridWidth) / 2;
         int gridStartY = startY + 56;
 
         boolean canInteractWithMouse = client.currentScreen instanceof HandledScreen && mouseX >= 0 && mouseY >= 0;
         ItemStack hoveredStack = ItemStack.EMPTY;
 
-        for (int i = 0; i < CACHE.itemStacks.size(); i++) {
+        for (int i = 0; i < DontStepOnClientEffect.CACHE.itemStacks.size(); i++) {
             int x = gridStartX + (i % 6) * 18;
             int y = gridStartY + (i / 6) * 18;
-            ItemStack stack = CACHE.itemStacks.get(i);
+            ItemStack stack = DontStepOnClientEffect.CACHE.itemStacks.get(i);
             context.drawItem(stack, x, y);
 
             if (canInteractWithMouse && mouseX >= x && mouseX < x + 16 && mouseY >= y && mouseY < y + 16) {

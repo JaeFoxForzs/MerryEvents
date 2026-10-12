@@ -1,118 +1,85 @@
 package com.merry.merryevents.engine;
 
-import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.api.DurationPolicy;
 import com.merry.merryevents.config.ConfigManager;
-import com.merry.merryevents.event.inventory.*;
-import com.merry.merryevents.event.mobs.*;
-import com.merry.merryevents.event.physics.*;
-import com.merry.merryevents.event.sounds.*;
-import com.merry.merryevents.event.status.*;
-import com.merry.merryevents.event.ui.*;
-import com.merry.merryevents.event.vision.*;
-import com.merry.merryevents.event.visual.*;
-import com.merry.merryevents.event.weather.*;
-import com.merry.merryevents.event.world.*;
-import com.merry.merryevents.event.camera.*;
-import com.merry.merryevents.network.*;
+import com.merry.merryevents.network.EventSyncPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
+import org.slf4j.Logger;
+import org.slf4j.LoggerFactory;
 
 import java.util.ArrayList;
 import java.util.Collections;
 import java.util.List;
 import java.util.Map;
+import java.util.ServiceLoader;
+import java.util.Set;
 import java.util.UUID;
 import java.util.concurrent.ConcurrentHashMap;
 
 /**
- * Authoritative lifecycle and conflict resolution engine for chaos events.
- * Enforces single source of truth (SSOT) state without independent redundant
- * category bitmasks.
+ * Authoritative lifecycle coordinator and fault-isolated dispatcher for chaos
+ * events.
+ * Enforces cross-stream single-source-of-truth (SSOT) conflict checks, global
+ * preemption,
+ * clean start/resume separation, dormant offline state preservation, and safe
+ * synchronization.
  */
 public final class EventManager {
+    private static final Logger LOGGER = LoggerFactory.getLogger("merryevents");
     private static final EventManager INSTANCE = new EventManager();
 
     private final Map<Identifier, ChaosEvent> registry = new ConcurrentHashMap<>();
     private final Map<Identifier, ActiveEventInstance> activeGlobalEvents = new ConcurrentHashMap<>();
     private final Map<UUID, Map<Identifier, ActiveEventInstance>> activePlayerEvents = new ConcurrentHashMap<>();
+    private final Map<UUID, Map<Identifier, ActiveEventInstance>> dormantPlayerEvents = new ConcurrentHashMap<>();
 
     private final List<Identifier> globalRemovalQueue = new ArrayList<>();
     private final List<Identifier> playerRemovalQueue = new ArrayList<>();
 
+    private final CategoryOccupancyTracker categoryTracker = new CategoryOccupancyTracker();
     private EventPersistentState persistentState;
+    private int fallbackStartSequence = 1;
 
     private EventManager() {
-        this.register(new AcidRainEvent());
-        this.register(new MoonGravityEvent());
-        this.register(new FalseWaterEvent());
-        this.register(new LavaWaterSwapEvent());
-        this.register(new ExplodingMobsEvent());
-        this.register(new FragilityEvent());
-        this.register(new DiamondRushEvent());
-        this.register(new GhostGuiEvent());
-        this.register(new ParanoiaSoundsEvent());
-        this.register(new PersonalKillerEvent());
-        this.register(new AnvilRainEvent());
-        this.register(new DenseDarknessEvent());
-        this.register(new RustRainEvent());
-        this.register(new FoodRainEvent());
-        this.register(new FireStormEvent());
-        this.register(new GhastFireStormEvent());
-        this.register(new StiffNeckEvent());
-        this.register(new SolarVerdictEvent());
-        this.register(new OrbitalStrikeEvent());
-        this.register(new CobwebNightmareEvent());
-        this.register(new DontStepOnEvent());
-        this.register(new FloorHoleEvent());
-        this.register(new CrumblingFloorEvent());
-        this.register(new WanderingBlocksEvent());
-        this.register(new FlatMobsEvent());
-        this.register(new DelayedDamageEvent());
-        this.register(new WaterDrinkerEvent());
-        this.register(new KindergartenEvent());
-        this.register(new PerfectIceEvent());
-        this.register(new LeakyPocketsEvent());
-        this.register(new StickyFingersEvent());
-        this.register(new KineticRecoilEvent());
-        this.register(new ScrambledButtonsEvent());
-        this.register(new DiscoEvent());
-        this.register(new MinersVisionEvent());
-        this.register(new MyopiaEvent());
-        this.register(new UpsideDownEvent());
-        this.register(new ColorblindnessEvent());
-        this.register(new LobotomyEvent());
-        this.register(new RubberWorldEvent());
-        this.register(new ClosedInventoryEvent());
-        this.register(new CreeperRevengeEvent());
-        this.register(new AntManEvent());
-        this.register(new ButterfingersEvent());
-        this.register(new AdhdEvent());
-        this.register(new EpilepsyEvent());
-        this.register(new BouncingHamsterEvent());
-        this.register(new UncontrolledRunEvent());
-        this.register(new OreMutationEvent());
     }
 
     public static EventManager getInstance() {
         return EventManager.INSTANCE;
     }
 
-    public void setGlobalRemainingTicks(Identifier eventId, int ticks) {
-        ActiveEventInstance instance = this.activeGlobalEvents.get(eventId);
-        if (instance != null) {
-            instance.remainingTicks = ticks;
+    private int nextStartSequence() {
+        if (this.persistentState != null) {
+            return this.persistentState.incrementStartSequence();
         }
+        return this.fallbackStartSequence++;
+    }
+
+    /**
+     * Discovers and registers all bundled events via standard Java ServiceLoader.
+     */
+    public void registerDefaultEvents() {
+        ServiceLoader<ChaosEvent> loader = ServiceLoader.load(ChaosEvent.class, EventManager.class.getClassLoader());
+        for (ChaosEvent event : loader) {
+            this.register(event);
+        }
+        EventManager.LOGGER.info("[EventManager] Loaded {} chaos events via ServiceLoader.", this.registry.size());
     }
 
     public void register(ChaosEvent event) {
         this.registry.put(event.getId(), event);
-        MerryEvents.LOGGER.info("[EventManager] Registered chaos event '{}' in category {}", event.getId(),
+        try {
+            event.registerHooks();
+        } catch (Throwable t) {
+            EventManager.LOGGER.error("[EventManager] Exception registering hooks for event '{}'", event.getId(), t);
+        }
+        EventManager.LOGGER.info("[EventManager] Registered chaos event '{}' in category {}", event.getId(),
                 event.getCategory());
     }
 
@@ -124,11 +91,11 @@ public final class EventManager {
         return this.registry.get(id);
     }
 
-    public java.util.Set<Identifier> getRegisteredEventIds() {
+    public Set<Identifier> getRegisteredEventIds() {
         return this.registry.keySet();
     }
 
-    public java.util.Set<Identifier> getActiveGlobalEventIds() {
+    public Set<Identifier> getActiveGlobalEventIds() {
         return this.activeGlobalEvents.keySet();
     }
 
@@ -138,6 +105,10 @@ public final class EventManager {
 
     public Map<UUID, Map<Identifier, ActiveEventInstance>> getActivePlayerEvents() {
         return Collections.unmodifiableMap(this.activePlayerEvents);
+    }
+
+    public Map<UUID, Map<Identifier, ActiveEventInstance>> getDormantPlayerEvents() {
+        return Collections.unmodifiableMap(this.dormantPlayerEvents);
     }
 
     public int getGlobalCategoryMask() {
@@ -161,11 +132,11 @@ public final class EventManager {
     }
 
     public boolean isCategoryOccupiedGlobally(EventCategory category) {
-        return (this.getGlobalCategoryMask() & category.getMask()) != 0;
+        return this.categoryTracker.isCategoryOccupied(null, category);
     }
 
     public boolean isCategoryOccupiedForPlayer(UUID uuid, EventCategory category) {
-        return (this.getPlayerCategoryMask(uuid) & category.getMask()) != 0;
+        return this.categoryTracker.isCategoryOccupied(uuid, category);
     }
 
     public boolean isGlobalEventActive(Identifier eventId) {
@@ -191,21 +162,32 @@ public final class EventManager {
     public void initPersistentState(MinecraftServer server, EventPersistentState state) {
         this.persistentState = state;
         ConfigManager.syncRegisteredEvents(this.registry);
+        this.categoryTracker.clearAll();
 
         this.activeGlobalEvents.clear();
-
         for (Map.Entry<Identifier, EventPersistentState.SavedEventData> entry : state.globalEvents.entrySet()) {
             ChaosEvent event = this.registry.get(entry.getKey());
             if (event != null && event.isGlobal()) {
-                ActiveEventInstance instance = new ActiveEventInstance(event, entry.getValue().remainingTicks());
+                int seq = this.nextStartSequence();
+                ActiveEventInstance instance = new ActiveEventInstance(event, entry.getValue().remainingTicks(), seq);
+                instance.context.fromNbt(entry.getValue().contextNbt());
                 this.activeGlobalEvents.put(entry.getKey(), instance);
-                instance.event.onStartServer(server, null, instance.context);
-                MerryEvents.LOGGER.info("[EventManager] Resumed global event '{}' ({} ticks remaining)", entry.getKey(),
-                        instance.remainingTicks);
+                this.categoryTracker.acquireGlobal(event.getDefinition());
+
+                try {
+                    instance.event.onResumeServer(server, null, instance.context);
+                    EventManager.LOGGER.info("[EventManager] Resumed global event '{}' ({} ticks remaining)",
+                            entry.getKey(), instance.remainingTicks);
+                } catch (Throwable t) {
+                    EventManager.LOGGER.error("[EventManager] Failed to resume global event '{}'. Discarding.",
+                            entry.getKey(), t);
+                    this.emergencyStopGlobal(server, entry.getKey(), instance);
+                }
             }
         }
 
         this.activePlayerEvents.clear();
+        this.dormantPlayerEvents.clear();
 
         for (Map.Entry<UUID, Map<Identifier, EventPersistentState.SavedEventData>> pEntry : state.playerEvents
                 .entrySet()) {
@@ -215,13 +197,16 @@ public final class EventManager {
             for (Map.Entry<Identifier, EventPersistentState.SavedEventData> eEntry : pEntry.getValue().entrySet()) {
                 ChaosEvent event = this.registry.get(eEntry.getKey());
                 if (event != null && !event.isGlobal()) {
-                    ActiveEventInstance instance = new ActiveEventInstance(event, eEntry.getValue().remainingTicks());
+                    int seq = this.nextStartSequence();
+                    ActiveEventInstance instance = new ActiveEventInstance(event, eEntry.getValue().remainingTicks(),
+                            seq);
+                    instance.context.fromNbt(eEntry.getValue().contextNbt());
                     map.put(eEntry.getKey(), instance);
                 }
             }
 
             if (!map.isEmpty()) {
-                this.activePlayerEvents.put(uuid, map);
+                this.dormantPlayerEvents.put(uuid, map);
             }
         }
 
@@ -250,122 +235,272 @@ public final class EventManager {
             director.restorePlayerCountdowns(state.playerCountdowns);
         }
 
+        EventCategory restoredCategory = null;
+        if (state.lastGlobalCategory != null) {
+            try {
+                restoredCategory = EventCategory.valueOf(state.lastGlobalCategory);
+            } catch (IllegalArgumentException ignored) {
+            }
+        }
+        director.restoreHistories(state.lastGlobalEventId, restoredCategory, state.playerHistories);
+
         state.markDirty();
     }
 
     public boolean startGlobalEvent(MinecraftServer server, Identifier eventId, int durationTicks) {
         ChaosEvent event = this.registry.get(eventId);
         if (event == null || !event.isGlobal()) {
-            MerryEvents.LOGGER.warn("[EventManager] Invalid global event target: {}", eventId);
+            EventManager.LOGGER.warn("[EventManager] Invalid global event target: {}", eventId);
             return false;
         }
 
-        if (this.isCategoryOccupiedGlobally(event.getCategory())) {
-            MerryEvents.LOGGER.warn("[EventManager] Conflict: category {} already occupied globally",
-                    event.getCategory());
+        if (!this.categoryTracker.canStartGlobal(event.getDefinition())) {
+            EventManager.LOGGER.warn("[EventManager] Conflict: categories for global event '{}' currently occupied",
+                    eventId);
             return false;
         }
 
-        ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks);
+        if (!event.canStart(server, null)) {
+            EventManager.LOGGER.warn("[EventManager] Pre-flight check rejected global event '{}'", eventId);
+            return false;
+        }
+
+        for (EventCategory cat : event.getCategories()) {
+            this.preemptConflictingPlayerEvents(server, cat);
+        }
+
+        int sequence = this.nextStartSequence();
+        ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks, sequence);
         this.activeGlobalEvents.put(eventId, instance);
-        event.onStartServer(server, null, instance.context);
+        this.categoryTracker.acquireGlobal(event.getDefinition());
+
+        try {
+            event.onStartServer(server, null, instance.context);
+        } catch (Throwable t) {
+            EventManager.LOGGER.error("[EventManager] Exception during onStartServer for global event '{}'", eventId,
+                    t);
+            this.emergencyStopGlobal(server, eventId, instance);
+            return false;
+        }
 
         if (this.persistentState != null) {
             this.persistentState.markDirty();
         }
 
-        EventSyncPayload payload = new EventSyncPayload(eventId, event.getCategory().name(), durationTicks, true, true);
-        for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-            ServerPlayNetworking.send(player, payload);
+        if (server != null) {
+            EventSyncPayload payload = new EventSyncPayload(eventId, event.getCategory().name(), durationTicks, true,
+                    true, sequence);
+            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                if (ServerPlayNetworking.canSend(player, payload.getId())) {
+                    ServerPlayNetworking.send(player, payload);
+                }
+            }
         }
 
-        MerryEvents.LOGGER.info("[EventManager] Started global event '{}' ({} ticks)", eventId, durationTicks);
+        EventManager.LOGGER.info("[EventManager] Started global event '{}' ({} ticks, seq={})", eventId, durationTicks,
+                sequence);
         return true;
+    }
+
+    private void preemptConflictingPlayerEvents(@Nullable MinecraftServer server, EventCategory category) {
+        for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> pEntry : this.activePlayerEvents.entrySet()) {
+            UUID playerUuid = pEntry.getKey();
+            List<Identifier> toStop = new ArrayList<>();
+
+            for (Map.Entry<Identifier, ActiveEventInstance> eEntry : pEntry.getValue().entrySet()) {
+                if (eEntry.getValue().event.getCategories().contains(category)) {
+                    toStop.add(eEntry.getKey());
+                }
+            }
+
+            for (int i = 0; i < toStop.size(); i++) {
+                Identifier id = toStop.get(i);
+                EventManager.LOGGER.info(
+                        "[EventManager] Preempting personal event '{}' for player {} due to incoming global category {}",
+                        id, playerUuid, category);
+                this.stopPlayerEventByUuid(server, playerUuid, id);
+            }
+        }
     }
 
     public boolean startPlayerEvent(MinecraftServer server, ServerPlayerEntity player, Identifier eventId,
             int durationTicks) {
+        return this.startPlayerEvent(server, player.getUuid(), player, eventId, durationTicks);
+    }
+
+    public boolean startPlayerEvent(@Nullable MinecraftServer server, UUID uuid, @Nullable ServerPlayerEntity player,
+            Identifier eventId, int durationTicks) {
         ChaosEvent event = this.registry.get(eventId);
         if (event == null || event.isGlobal()) {
-            MerryEvents.LOGGER.warn("[EventManager] Invalid player event target: {}", eventId);
+            EventManager.LOGGER.warn("[EventManager] Invalid player event target: {}", eventId);
             return false;
         }
 
-        UUID uuid = player.getUuid();
-        if (this.isCategoryOccupiedForPlayer(uuid, event.getCategory())) {
-            MerryEvents.LOGGER.warn("[EventManager] Conflict: category {} active for {}", event.getCategory(),
-                    player.getName().getString());
+        if (!this.categoryTracker.canStartPlayer(uuid, event.getDefinition())) {
+            String name = player != null ? player.getName().getString() : uuid.toString();
+            EventManager.LOGGER.warn("[EventManager] Conflict: categories for event '{}' active for {}", eventId, name);
             return false;
         }
 
-        ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks);
+        if (!event.canStart(server, player)) {
+            String name = player != null ? player.getName().getString() : uuid.toString();
+            EventManager.LOGGER.warn("[EventManager] Pre-flight check rejected event '{}' on {}", eventId, name);
+            return false;
+        }
+
+        int sequence = this.nextStartSequence();
+        ActiveEventInstance instance = new ActiveEventInstance(event, durationTicks, sequence);
         this.activePlayerEvents.computeIfAbsent(uuid, k -> new ConcurrentHashMap<>()).put(eventId, instance);
-        event.onStartServer(server, player, instance.context);
+        this.categoryTracker.acquirePlayer(uuid, event.getDefinition());
+
+        try {
+            event.onStartServer(server, player, instance.context);
+        } catch (Throwable t) {
+            String name = player != null ? player.getName().getString() : uuid.toString();
+            EventManager.LOGGER.error("[EventManager] Exception during onStartServer for event '{}' on {}",
+                    eventId, name, t);
+            if (player != null) {
+                this.emergencyStopPlayer(server, player, eventId, instance);
+            } else {
+                this.stopPlayerEventByUuid(server, uuid, eventId);
+            }
+            return false;
+        }
 
         if (this.persistentState != null) {
             this.persistentState.markDirty();
         }
 
-        EventSyncPayload payload = new EventSyncPayload(eventId, event.getCategory().name(), durationTicks, true,
-                false);
-        ServerPlayNetworking.send(player, payload);
+        if (server != null && player != null) {
+            EventSyncPayload payload = new EventSyncPayload(eventId, event.getCategory().name(), durationTicks, true,
+                    false, sequence);
+            if (ServerPlayNetworking.canSend(player, payload.getId())) {
+                ServerPlayNetworking.send(player, payload);
+            }
+        }
 
-        MerryEvents.LOGGER.info("[EventManager] Started event '{}' for {} ({} ticks)", eventId,
-                player.getName().getString(), durationTicks);
+        String name = player != null ? player.getName().getString() : uuid.toString();
+        EventManager.LOGGER.info("[EventManager] Started event '{}' for {} ({} ticks, seq={})", eventId, name,
+                durationTicks, sequence);
         return true;
     }
 
     public boolean stopGlobalEvent(MinecraftServer server, Identifier eventId) {
         ActiveEventInstance instance = this.activeGlobalEvents.remove(eventId);
         if (instance != null) {
-            instance.event.onStopServer(server, null, instance.context);
-            instance.context.discardTrackedEntities(server);
-            instance.context.clear();
+            this.categoryTracker.releaseGlobal(instance.event.getDefinition());
+            try {
+                instance.event.onStopServer(server, null, instance.context);
+            } catch (Throwable t) {
+                EventManager.LOGGER.error("[EventManager] Exception during onStopServer for global event '{}'", eventId,
+                        t);
+            } finally {
+                if (server != null) {
+                    instance.context.discardTrackedEntities(server);
+                }
+                instance.context.clear();
+            }
 
             if (this.persistentState != null) {
                 this.persistentState.markDirty();
             }
 
-            EventSyncPayload payload = new EventSyncPayload(eventId, instance.event.getCategory().name(), 0, false,
-                    true);
-            for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
-                ServerPlayNetworking.send(player, payload);
+            if (server != null) {
+                EventSyncPayload payload = new EventSyncPayload(eventId, instance.event.getCategory().name(), 0, false,
+                        true, instance.getStartSequence());
+                for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
+                    if (ServerPlayNetworking.canSend(player, payload.getId())) {
+                        ServerPlayNetworking.send(player, payload);
+                    }
+                }
             }
 
-            MerryEvents.LOGGER.info("[EventManager] Global event '{}' terminated", eventId);
+            EventManager.LOGGER.info("[EventManager] Global event '{}' terminated", eventId);
             return true;
         }
         return false;
     }
 
     public boolean stopPlayerEvent(MinecraftServer server, ServerPlayerEntity player, Identifier eventId) {
-        UUID uuid = player.getUuid();
-        Map<Identifier, ActiveEventInstance> events = this.activePlayerEvents.get(uuid);
+        return this.stopPlayerEventByUuid(server, player.getUuid(), eventId);
+    }
+
+    public boolean stopPlayerEventByUuid(@Nullable MinecraftServer server, UUID playerUuid, Identifier eventId) {
+        Map<Identifier, ActiveEventInstance> events = this.activePlayerEvents.get(playerUuid);
         if (events != null) {
             ActiveEventInstance instance = events.remove(eventId);
             if (instance != null) {
-                instance.event.onStopServer(server, player, instance.context);
-                instance.context.discardTrackedEntities(server);
-                instance.context.clear();
+                this.categoryTracker.releasePlayer(playerUuid, instance.event.getDefinition());
+                ServerPlayerEntity player = server != null ? server.getPlayerManager().getPlayer(playerUuid) : null;
+                try {
+                    instance.event.onStopServer(server, player, instance.context);
+                } catch (Throwable t) {
+                    EventManager.LOGGER.error("[EventManager] Exception during onStopServer for event '{}' on {}",
+                            eventId, playerUuid, t);
+                } finally {
+                    if (server != null) {
+                        instance.context.discardTrackedEntities(server);
+                    }
+                    instance.context.clear();
+                }
 
                 if (events.isEmpty()) {
-                    this.activePlayerEvents.remove(uuid);
+                    this.activePlayerEvents.remove(playerUuid);
                 }
 
                 if (this.persistentState != null) {
                     this.persistentState.markDirty();
                 }
 
-                EventSyncPayload payload = new EventSyncPayload(eventId, instance.event.getCategory().name(), 0, false,
-                        false);
-                ServerPlayNetworking.send(player, payload);
+                if (server != null && player != null) {
+                    EventSyncPayload payload = new EventSyncPayload(eventId, instance.event.getCategory().name(), 0,
+                            false, false, instance.getStartSequence());
+                    if (ServerPlayNetworking.canSend(player, payload.getId())) {
+                        ServerPlayNetworking.send(player, payload);
+                    }
+                }
 
-                MerryEvents.LOGGER.info("[EventManager] Player event '{}' terminated for {}", eventId,
-                        player.getName().getString());
+                EventManager.LOGGER.info("[EventManager] Player event '{}' terminated for {}", eventId, playerUuid);
                 return true;
             }
         }
         return false;
+    }
+
+    private void emergencyStopGlobal(MinecraftServer server, Identifier eventId, ActiveEventInstance instance) {
+        this.activeGlobalEvents.remove(eventId);
+        this.categoryTracker.releaseGlobal(instance.event.getDefinition());
+        try {
+            instance.event.onStopServer(server, null, instance.context);
+        } catch (Throwable ignored) {
+        } finally {
+            if (server != null) {
+                instance.context.discardTrackedEntities(server);
+            }
+            instance.context.clear();
+        }
+    }
+
+    private void emergencyStopPlayer(MinecraftServer server, ServerPlayerEntity player, Identifier eventId,
+            ActiveEventInstance instance) {
+        UUID uuid = player.getUuid();
+        Map<Identifier, ActiveEventInstance> events = this.activePlayerEvents.get(uuid);
+        if (events != null) {
+            events.remove(eventId);
+            if (events.isEmpty()) {
+                this.activePlayerEvents.remove(uuid);
+            }
+        }
+        this.categoryTracker.releasePlayer(uuid, instance.event.getDefinition());
+        try {
+            instance.event.onStopServer(server, player, instance.context);
+        } catch (Throwable ignored) {
+        } finally {
+            if (server != null) {
+                instance.context.discardTrackedEntities(server);
+            }
+            instance.context.clear();
+        }
     }
 
     public void onServerStopping(MinecraftServer server) {
@@ -374,47 +509,82 @@ public final class EventManager {
         }
 
         for (ActiveEventInstance instance : this.activeGlobalEvents.values()) {
-            instance.event.onStopServer(server, null, instance.context);
-            instance.context.discardTrackedEntities(server);
+            try {
+                instance.event.onStopServer(server, null, instance.context);
+            } catch (Throwable t) {
+                EventManager.LOGGER.error("[EventManager] Exception stopping global event on shutdown", t);
+            } finally {
+                instance.context.discardTrackedEntities(server);
+            }
         }
 
         for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> entry : this.activePlayerEvents.entrySet()) {
             ServerPlayerEntity player = server.getPlayerManager().getPlayer(entry.getKey());
             for (ActiveEventInstance instance : entry.getValue().values()) {
-                instance.event.onStopServer(server, player, instance.context);
-                instance.context.discardTrackedEntities(server);
+                try {
+                    instance.event.onStopServer(server, player, instance.context);
+                } catch (Throwable t) {
+                    EventManager.LOGGER.error("[EventManager] Exception stopping player event on shutdown", t);
+                } finally {
+                    instance.context.discardTrackedEntities(server);
+                }
             }
         }
 
-        MerryEvents.LOGGER
+        EventManager.LOGGER
                 .info("[EventManager] Preserved active events state into persistent storage before shutdown.");
     }
 
+    public void resetRuntimeState() {
+        this.registry.clear();
+        this.activeGlobalEvents.clear();
+        this.activePlayerEvents.clear();
+        this.dormantPlayerEvents.clear();
+        this.globalRemovalQueue.clear();
+        this.playerRemovalQueue.clear();
+        this.categoryTracker.clearAll();
+        this.persistentState = null;
+        this.fallbackStartSequence = 1;
+    }
+
     public void syncAllToPlayer(ServerPlayerEntity player) {
+        MinecraftServer server = player.getServer();
+
         for (Map.Entry<Identifier, ActiveEventInstance> entry : this.activeGlobalEvents.entrySet()) {
             ActiveEventInstance inst = entry.getValue();
-            ServerPlayNetworking.send(player, new EventSyncPayload(entry.getKey(), inst.event.getCategory().name(),
-                    inst.remainingTicks, true, true));
+            EventSyncPayload payload = new EventSyncPayload(entry.getKey(), inst.event.getCategory().name(),
+                    inst.remainingTicks, true, true, inst.getStartSequence());
+            if (ServerPlayNetworking.canSend(player, payload.getId())) {
+                ServerPlayNetworking.send(player, payload);
+            }
+            if (server != null) {
+                inst.event.onSyncToPlayer(server, player, null, inst.context);
+            }
         }
 
         Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
         if (pEvents != null) {
             for (Map.Entry<Identifier, ActiveEventInstance> entry : pEvents.entrySet()) {
                 ActiveEventInstance inst = entry.getValue();
-                ServerPlayNetworking.send(player, new EventSyncPayload(entry.getKey(), inst.event.getCategory().name(),
-                        inst.remainingTicks, true, false));
+                EventSyncPayload payload = new EventSyncPayload(entry.getKey(), inst.event.getCategory().name(),
+                        inst.remainingTicks, true, false, inst.getStartSequence());
+                if (ServerPlayNetworking.canSend(player, payload.getId())) {
+                    ServerPlayNetworking.send(player, payload);
+                }
+                if (server != null) {
+                    inst.event.onSyncToPlayer(server, player, player, inst.context);
+                }
             }
         }
 
-        MinecraftServer server = player.getServer();
         if (server != null) {
             for (Map.Entry<UUID, Map<Identifier, ActiveEventInstance>> pEntry : this.activePlayerEvents.entrySet()) {
-                if (pEntry.getValue().containsKey(DontStepOnEvent.ID)) {
-                    ServerPlayerEntity target = server.getPlayerManager().getPlayer(pEntry.getKey());
-                    if (target != null) {
-                        ServerPlayNetworking.send(player,
-                                new ForbiddenBlocksPayload(target.getGameProfile().getName(), true));
-                    }
+                if (pEntry.getKey().equals(player.getUuid())) {
+                    continue;
+                }
+                ServerPlayerEntity owner = server.getPlayerManager().getPlayer(pEntry.getKey());
+                for (ActiveEventInstance inst : pEntry.getValue().values()) {
+                    inst.event.onSyncToPlayer(server, player, owner, inst.context);
                 }
             }
         }
@@ -422,24 +592,70 @@ public final class EventManager {
 
     public void onPlayerJoin(MinecraftServer server, ServerPlayerEntity player) {
         ChaosDirector.getInstance().onPlayerJoin(player.getUuid());
+        if (this.persistentState != null) {
+            this.persistentState.markPlayerSeen(player.getUuid());
+        }
 
-        Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
-        if (pEvents != null) {
-            for (ActiveEventInstance inst : pEvents.values()) {
-                inst.event.onStartServer(server, player, inst.context);
+        Map<Identifier, ActiveEventInstance> dormant = this.dormantPlayerEvents.remove(player.getUuid());
+        if (dormant != null && !dormant.isEmpty()) {
+            for (Map.Entry<Identifier, ActiveEventInstance> entry : dormant.entrySet()) {
+                ActiveEventInstance inst = entry.getValue();
+                if (!this.categoryTracker.canStartPlayer(player.getUuid(), inst.event.getDefinition())) {
+                    EventManager.LOGGER.info(
+                            "[EventManager] Dormant event '{}' for {} discarded due to active category conflict",
+                            entry.getKey(), player.getName().getString());
+                    inst.context.clear();
+                    continue;
+                }
+
+                this.activePlayerEvents.computeIfAbsent(player.getUuid(), k -> new ConcurrentHashMap<>())
+                        .put(entry.getKey(), inst);
+                this.categoryTracker.acquirePlayer(player.getUuid(), inst.event.getDefinition());
+
+                try {
+                    inst.event.onResumeServer(server, player, inst.context);
+                    EventManager.LOGGER.info("[EventManager] Resumed dormant event '{}' for {}",
+                            inst.event.getId(), player.getName().getString());
+                } catch (Throwable t) {
+                    EventManager.LOGGER.error("[EventManager] Exception resuming event '{}' on player join",
+                            inst.event.getId(), t);
+                }
             }
         }
+
         this.syncAllToPlayer(player);
     }
 
+    public void onPlayerDisconnect(MinecraftServer server, UUID playerUuid) {
+        this.onPlayerDisconnect(server, playerUuid, null);
+    }
+
     public void onPlayerDisconnect(MinecraftServer server, ServerPlayerEntity player) {
-        Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(player.getUuid());
+        if (player != null) {
+            this.onPlayerDisconnect(server, player.getUuid(), player);
+        }
+    }
+
+    public void onPlayerDisconnect(MinecraftServer server, UUID playerUuid, @Nullable ServerPlayerEntity player) {
+        this.dormantPlayerEvents.remove(playerUuid);
+        Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.remove(playerUuid);
         if (pEvents != null) {
             for (ActiveEventInstance instance : pEvents.values()) {
-                instance.event.onStopServer(server, player, instance.context);
-                instance.context.discardTrackedEntities(server);
+                this.categoryTracker.releasePlayer(playerUuid, instance.event.getDefinition());
+                try {
+                    instance.event.onStopServer(server, player, instance.context);
+                } catch (Throwable t) {
+                    EventManager.LOGGER.error("[EventManager] Exception stopping event '{}' on player disconnect",
+                            instance.event.getId(), t);
+                } finally {
+                    if (server != null) {
+                        instance.context.discardTrackedEntities(server);
+                    }
+                    instance.context.clear();
+                }
             }
         }
+        this.categoryTracker.clearPlayer(playerUuid);
         if (this.persistentState != null) {
             this.persistentState.markDirty();
         }
@@ -450,7 +666,12 @@ public final class EventManager {
         Map<Identifier, ActiveEventInstance> pEvents = this.activePlayerEvents.get(uuid);
         if (pEvents != null) {
             for (ActiveEventInstance inst : pEvents.values()) {
-                inst.event.onPlayerRespawn(server, oldPlayer, newPlayer, inst.context);
+                try {
+                    inst.event.onPlayerRespawn(server, oldPlayer, newPlayer, inst.context);
+                } catch (Throwable t) {
+                    EventManager.LOGGER.error("[EventManager] Exception during onPlayerRespawn for event '{}'",
+                            inst.event.getId(), t);
+                }
             }
             this.syncAllToPlayer(newPlayer);
         }
@@ -462,9 +683,27 @@ public final class EventManager {
         this.globalRemovalQueue.clear();
         for (Map.Entry<Identifier, ActiveEventInstance> entry : this.activeGlobalEvents.entrySet()) {
             ActiveEventInstance instance = entry.getValue();
-            instance.event.onTickServer(server, null, instance.context, instance.remainingTicks);
+            try {
+                instance.event.onTickServer(server, null, instance.context, instance.remainingTicks);
+            } catch (Throwable t) {
+                EventManager.LOGGER.error("[EventManager] Fault in global event tick: '{}'. Emergency stop triggered.",
+                        entry.getKey(), t);
+                this.globalRemovalQueue.add(entry.getKey());
+                continue;
+            }
 
-            if (--instance.remainingTicks <= 0) {
+            DurationPolicy policy = instance.event.getDefinition().durationPolicy();
+            boolean terminate = instance.context.isStopRequested();
+
+            if (policy == DurationPolicy.INSTANT) {
+                terminate = true;
+            } else if (policy == DurationPolicy.TIMED) {
+                if (--instance.remainingTicks <= 0) {
+                    terminate = true;
+                }
+            }
+
+            if (terminate) {
                 this.globalRemovalQueue.add(entry.getKey());
             }
         }
@@ -482,9 +721,28 @@ public final class EventManager {
             this.playerRemovalQueue.clear();
             for (Map.Entry<Identifier, ActiveEventInstance> entry : pEvents.entrySet()) {
                 ActiveEventInstance instance = entry.getValue();
-                instance.event.onTickServer(server, player, instance.context, instance.remainingTicks);
+                try {
+                    instance.event.onTickServer(server, player, instance.context, instance.remainingTicks);
+                } catch (Throwable t) {
+                    EventManager.LOGGER.error(
+                            "[EventManager] Fault in player event tick: '{}' on {}. Emergency stop triggered.",
+                            entry.getKey(), player.getName().getString(), t);
+                    this.playerRemovalQueue.add(entry.getKey());
+                    continue;
+                }
 
-                if (--instance.remainingTicks <= 0) {
+                DurationPolicy policy = instance.event.getDefinition().durationPolicy();
+                boolean terminate = instance.context.isStopRequested();
+
+                if (policy == DurationPolicy.INSTANT) {
+                    terminate = true;
+                } else if (policy == DurationPolicy.TIMED) {
+                    if (--instance.remainingTicks <= 0) {
+                        terminate = true;
+                    }
+                }
+
+                if (terminate) {
                     this.playerRemovalQueue.add(entry.getKey());
                 }
             }
@@ -495,7 +753,8 @@ public final class EventManager {
         }
 
         if (server.getTicks() % 100 == 0 && this.persistentState != null
-                && (!this.activeGlobalEvents.isEmpty() || !this.activePlayerEvents.isEmpty())) {
+                && (!this.activeGlobalEvents.isEmpty() || !this.activePlayerEvents.isEmpty()
+                        || !this.dormantPlayerEvents.isEmpty())) {
             this.persistentState.markDirty();
         }
     }
@@ -503,39 +762,30 @@ public final class EventManager {
     public static final class ActiveEventInstance {
         private final ChaosEvent event;
         private final EventContext context;
+        private final int startSequence;
         int remainingTicks;
 
-        ActiveEventInstance(ChaosEvent event, int remainingTicks) {
+        public ActiveEventInstance(ChaosEvent event, int remainingTicks, int startSequence) {
             this.event = event;
             this.context = new EventContext();
             this.remainingTicks = remainingTicks;
+            this.startSequence = startSequence;
         }
 
-        /**
-         * Resolves the underlying chaos event definition.
-         *
-         * @return ChaosEvent instance
-         */
         public ChaosEvent getEvent() {
             return this.event;
         }
 
-        /**
-         * Resolves the isolated lifecycle context of this running instance.
-         *
-         * @return EventContext instance
-         */
         public EventContext getContext() {
             return this.context;
         }
 
-        /**
-         * Resolves remaining lifetime in server ticks.
-         *
-         * @return Remaining ticks count
-         */
         public int getRemainingTicks() {
             return this.remainingTicks;
+        }
+
+        public int getStartSequence() {
+            return this.startSequence;
         }
     }
 }

@@ -7,6 +7,7 @@ import com.merry.merryevents.api.EventContext;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
+import net.minecraft.block.piston.PistonBehavior;
 import net.minecraft.particle.ParticleTypes;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -55,7 +56,7 @@ public final class WanderingBlocksEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return WanderingBlocksEvent.ID;
     }
 
     @Override
@@ -75,18 +76,19 @@ public final class WanderingBlocksEvent implements ChaosEvent {
         }
 
         Random random = targetPlayer.getRandom();
-        int totalBlocks = MIN_BLOCKS + random.nextInt(MAX_BLOCKS - MIN_BLOCKS + 1);
+        int totalBlocks = WanderingBlocksEvent.MIN_BLOCKS
+                + random.nextInt(WanderingBlocksEvent.MAX_BLOCKS - WanderingBlocksEvent.MIN_BLOCKS + 1);
 
-        double srcMin = MIN_SOURCE_RADIUS + random.nextInt(3);
-        double srcMax = MAX_SOURCE_RADIUS + random.nextInt(5);
-        double dstMin = MIN_DEST_RADIUS + random.nextInt(5);
-        double dstMax = MAX_DEST_RADIUS + random.nextInt(9);
+        double srcMin = WanderingBlocksEvent.MIN_SOURCE_RADIUS + random.nextInt(3);
+        double srcMax = WanderingBlocksEvent.MAX_SOURCE_RADIUS + random.nextInt(5);
+        double dstMin = WanderingBlocksEvent.MIN_DEST_RADIUS + random.nextInt(5);
+        double dstMax = WanderingBlocksEvent.MAX_DEST_RADIUS + random.nextInt(9);
 
-        context.set(REMAINING_BLOCKS_KEY, totalBlocks);
-        context.set(SRC_MIN_RAD_KEY, srcMin);
-        context.set(SRC_MAX_RAD_KEY, srcMax);
-        context.set(DST_MIN_RAD_KEY, dstMin);
-        context.set(DST_MAX_RAD_KEY, dstMax);
+        context.set(WanderingBlocksEvent.REMAINING_BLOCKS_KEY, totalBlocks);
+        context.set(WanderingBlocksEvent.SRC_MIN_RAD_KEY, srcMin);
+        context.set(WanderingBlocksEvent.SRC_MAX_RAD_KEY, srcMax);
+        context.set(WanderingBlocksEvent.DST_MIN_RAD_KEY, dstMin);
+        context.set(WanderingBlocksEvent.DST_MAX_RAD_KEY, dstMax);
 
         MerryEvents.LOGGER.info(
                 "[WanderingBlocksEvent] Dislocation anomaly active for {} (Quota: {} blocks, Source radius: {}-{}m, Target radius: {}-{}m)",
@@ -101,7 +103,7 @@ public final class WanderingBlocksEvent implements ChaosEvent {
             return;
         }
 
-        int blocksRemaining = context.getInt(REMAINING_BLOCKS_KEY, 0);
+        int blocksRemaining = context.getInt(WanderingBlocksEvent.REMAINING_BLOCKS_KEY, 0);
         if (blocksRemaining <= 0) {
             return;
         }
@@ -119,10 +121,14 @@ public final class WanderingBlocksEvent implements ChaosEvent {
             return;
         }
 
-        double srcMin = context.getDouble(SRC_MIN_RAD_KEY, DEFAULT_SOURCE_MIN_RADIUS);
-        double srcMax = context.getDouble(SRC_MAX_RAD_KEY, DEFAULT_SOURCE_MAX_RADIUS);
-        double dstMin = context.getDouble(DST_MIN_RAD_KEY, DEFAULT_DEST_MIN_RADIUS);
-        double dstMax = context.getDouble(DST_MAX_RAD_KEY, DEFAULT_DEST_MAX_RADIUS);
+        double srcMin = context.getDouble(WanderingBlocksEvent.SRC_MIN_RAD_KEY,
+                WanderingBlocksEvent.DEFAULT_SOURCE_MIN_RADIUS);
+        double srcMax = context.getDouble(WanderingBlocksEvent.SRC_MAX_RAD_KEY,
+                WanderingBlocksEvent.DEFAULT_SOURCE_MAX_RADIUS);
+        double dstMin = context.getDouble(WanderingBlocksEvent.DST_MIN_RAD_KEY,
+                WanderingBlocksEvent.DEFAULT_DEST_MIN_RADIUS);
+        double dstMax = context.getDouble(WanderingBlocksEvent.DST_MAX_RAD_KEY,
+                WanderingBlocksEvent.DEFAULT_DEST_MAX_RADIUS);
 
         ServerWorld world = targetPlayer.getServerWorld();
         BlockPos playerPos = targetPlayer.getBlockPos();
@@ -133,22 +139,25 @@ public final class WanderingBlocksEvent implements ChaosEvent {
         for (int i = 0; i < toMoveCount && blocksRemaining > 0; i++) {
             boolean displaced = false;
 
-            for (int attempt = 0; attempt < MAX_SEARCH_ATTEMPTS; attempt++) {
+            for (int attempt = 0; attempt < WanderingBlocksEvent.MAX_SEARCH_ATTEMPTS; attempt++) {
                 double srcAngle = random.nextDouble() * Math.PI * 2.0;
                 double srcRadius = srcMin + random.nextDouble() * (srcMax - srcMin);
                 int srcX = MathHelper.floor(playerPos.getX() + Math.cos(srcAngle) * srcRadius);
                 int srcZ = MathHelper.floor(playerPos.getZ() + Math.sin(srcAngle) * srcRadius);
-                int srcY = playerPos.getY() - random.nextInt(MAX_VERTICAL_SOURCE_OFFSET);
+                int srcY = playerPos.getY() - random.nextInt(WanderingBlocksEvent.MAX_VERTICAL_SOURCE_OFFSET);
 
                 sourcePos.set(srcX, srcY, srcZ);
 
-                if (!world.isChunkLoaded(sourcePos.getX() >> CHUNK_SHIFT, sourcePos.getZ() >> CHUNK_SHIFT)) {
+                if (!world.isChunkLoaded(sourcePos.getX() >> WanderingBlocksEvent.CHUNK_SHIFT,
+                        sourcePos.getZ() >> WanderingBlocksEvent.CHUNK_SHIFT)) {
                     continue;
                 }
 
                 BlockState sourceState = world.getBlockState(sourcePos);
-                if (sourceState.isAir() || sourceState.getHardness(world, sourcePos) < MIN_BLOCK_HARDNESS
-                        || sourceState.hasBlockEntity() || !sourceState.getFluidState().isEmpty()) {
+                if (sourceState.isAir()
+                        || sourceState.getHardness(world, sourcePos) < WanderingBlocksEvent.MIN_BLOCK_HARDNESS
+                        || sourceState.hasBlockEntity() || !sourceState.getFluidState().isEmpty()
+                        || sourceState.getPistonBehavior() != PistonBehavior.NORMAL) {
                     continue;
                 }
 
@@ -157,7 +166,8 @@ public final class WanderingBlocksEvent implements ChaosEvent {
                 int dstX = MathHelper.floor(playerPos.getX() + Math.cos(dstAngle) * dstRadius);
                 int dstZ = MathHelper.floor(playerPos.getZ() + Math.sin(dstAngle) * dstRadius);
 
-                if (!world.isChunkLoaded(dstX >> CHUNK_SHIFT, dstZ >> CHUNK_SHIFT)) {
+                if (!world.isChunkLoaded(dstX >> WanderingBlocksEvent.CHUNK_SHIFT,
+                        dstZ >> WanderingBlocksEvent.CHUNK_SHIFT)) {
                     continue;
                 }
 
@@ -173,11 +183,13 @@ public final class WanderingBlocksEvent implements ChaosEvent {
                 world.setBlockState(targetPos, sourceState, Block.NOTIFY_ALL);
 
                 world.playSound(null, sourcePos.getX() + 0.5, sourcePos.getY() + 0.5, sourcePos.getZ() + 0.5,
-                        SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.BLOCKS, ENDERMAN_SOUND_VOLUME,
-                        ENDERMAN_SOURCE_SOUND_PITCH);
+                        SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.BLOCKS,
+                        WanderingBlocksEvent.ENDERMAN_SOUND_VOLUME,
+                        WanderingBlocksEvent.ENDERMAN_SOURCE_SOUND_PITCH);
                 world.playSound(null, targetPos.getX() + 0.5, targetPos.getY() + 0.5, targetPos.getZ() + 0.5,
-                        SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.BLOCKS, ENDERMAN_SOUND_VOLUME,
-                        ENDERMAN_TARGET_SOUND_PITCH);
+                        SoundEvents.ENTITY_ENDERMAN_TELEPORT, SoundCategory.BLOCKS,
+                        WanderingBlocksEvent.ENDERMAN_SOUND_VOLUME,
+                        WanderingBlocksEvent.ENDERMAN_TARGET_SOUND_PITCH);
 
                 world.spawnParticles(ParticleTypes.PORTAL, sourcePos.getX() + 0.5, sourcePos.getY() + 0.5,
                         sourcePos.getZ() + 0.5, 8, 0.25, 0.25, 0.25, 0.1);
@@ -196,7 +208,7 @@ public final class WanderingBlocksEvent implements ChaosEvent {
         }
 
         if (successfullyMoved > 0) {
-            context.set(REMAINING_BLOCKS_KEY, blocksRemaining);
+            context.set(WanderingBlocksEvent.REMAINING_BLOCKS_KEY, blocksRemaining);
         }
     }
 

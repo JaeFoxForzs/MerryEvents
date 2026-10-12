@@ -36,6 +36,15 @@ public interface ClientChaosEffect {
     }
 
     /**
+     * Re-applies rendering hooks or post-shaders upon client world recreation
+     * (dimension change).
+     *
+     * @param client Active Minecraft client instance
+     */
+    default void onResume(MinecraftClient client) {
+    }
+
+    /**
      * Evaluates whether the vanilla in-game HUD should be occluded during this
      * effect.
      *

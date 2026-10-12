@@ -8,6 +8,15 @@
     "**/.git": true,
     "**/.gradle": true,
     "**/build": true,
-    "**/.loom-cache": true
+    "**/.loom-cache": true,
+    "bin/": true,
+    "**/*.launch": true,
+    "**/*.project": true,
+    "**/*.classpath": true,
+    "**/__pycache__/": true,
+    "**/*.gz": true,
+    "run*/screenshots": true,
+    "run*/resourcepacks": true,
+    "run*/resources": true,
   }
 }

@@ -7,7 +7,6 @@ import com.merry.merryevents.api.EventContext;
 import net.minecraft.block.Block;
 import net.minecraft.block.BlockState;
 import net.minecraft.block.Blocks;
-import net.minecraft.block.entity.BlockEntity;
 import net.minecraft.item.Item;
 import net.minecraft.item.ItemStack;
 import net.minecraft.item.Items;
@@ -119,7 +118,7 @@ public final class FloorHoleEvent implements ChaosEvent {
                 BlockState state = world.getBlockState(searchPos);
                 float hardness = state.getHardness(world, searchPos);
 
-                if (!state.isAir() && hardness >= 0.0F) {
+                if (!state.isAir() && hardness >= 0.0F && !state.hasBlockEntity()) {
                     FloorHoleEvent.dropBlockSilkTouch(world, searchPos, state);
                     successfullyBroken++;
                     blocksRemaining--;
@@ -131,7 +130,7 @@ public final class FloorHoleEvent implements ChaosEvent {
             if (!found && blocksRemaining > 0) {
                 BlockPos steppingPos = targetPlayer.getSteppingPos();
                 BlockState state = world.getBlockState(steppingPos);
-                if (!state.isAir() && state.getHardness(world, steppingPos) >= 0.0F) {
+                if (!state.isAir() && state.getHardness(world, steppingPos) >= 0.0F && !state.hasBlockEntity()) {
                     FloorHoleEvent.dropBlockSilkTouch(world, steppingPos, state);
                     successfullyBroken++;
                     blocksRemaining--;
@@ -161,13 +160,12 @@ public final class FloorHoleEvent implements ChaosEvent {
      * @param state Block state being destroyed
      */
     private static void dropBlockSilkTouch(ServerWorld world, BlockPos pos, BlockState state) {
+        if (state.hasBlockEntity()) {
+            return;
+        }
         Item item = state.getBlock().asItem();
         if (item != Items.AIR) {
             ItemStack stack = new ItemStack(item);
-            BlockEntity blockEntity = world.getBlockEntity(pos);
-            if (blockEntity != null) {
-                blockEntity.setStackNbt(stack, world.getRegistryManager());
-            }
             Block.dropStack(world, pos, stack);
         }
         world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL | Block.SKIP_DROPS);

@@ -19,9 +19,19 @@ import java.util.Map;
  */
 public final class ConfigManager {
     private static final Gson GSON = new GsonBuilder().setPrettyPrinting().create();
-    private static final Path CONFIG_PATH = FabricLoader.getInstance().getConfigDir().resolve("merryevents.json");
+    private static final Path CONFIG_PATH = ConfigManager.resolveConfigPath();
 
     private static volatile MerryConfig currentConfig = new MerryConfig();
+    private static Path resolveConfigPath() {
+        try {
+            FabricLoader loader = FabricLoader.getInstance();
+            if (loader != null && loader.getConfigDir() != null) {
+                return loader.getConfigDir().resolve("merryevents.json");
+            }
+        } catch (Throwable ignored) {
+        }
+        return Path.of("config", "merryevents.json");
+    }
 
     private ConfigManager() {
     }
