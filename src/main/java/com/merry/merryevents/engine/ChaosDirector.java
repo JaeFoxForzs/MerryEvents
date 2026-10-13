@@ -376,39 +376,25 @@ public final class ChaosDirector {
     }
 
     public void refillGlobalDeck() {
-        this.globalDeck.clear();
-        MerryConfig config = ConfigManager.get();
-        List<Identifier> pool = new ArrayList<>();
-
-        for (Map.Entry<Identifier, ChaosEvent> entry : EventManager.getInstance().getRegistry().entrySet()) {
-            ChaosEvent event = entry.getValue();
-            if (!event.isGlobal() || event.getDefinition().isWip()) {
-                continue;
-            }
-            Identifier id = entry.getKey();
-            EventConfigEntry cfg = config.getEvents().get(id.toString());
-            if (cfg == null || cfg.enabled()) {
-                int weight = cfg != null ? cfg.weight() : event.getDefinition().defaultWeight();
-                for (int w = 0; w < weight; w++) {
-                    pool.add(id);
-                }
-            }
-        }
-
-        Collections.shuffle(pool);
-        this.globalDeck.addAll(pool);
+        this.refillDeck(this.globalDeck, true);
         MerryEvents.LOGGER.debug("[ChaosDirector] Global candidate pool replenished with {} tickets.",
                 this.globalDeck.size());
     }
 
     public void refillPersonalDeck() {
-        this.personalDeck.clear();
+        this.refillDeck(this.personalDeck, false);
+        MerryEvents.LOGGER.debug("[ChaosDirector] Personal candidate pool replenished with {} tickets.",
+                this.personalDeck.size());
+    }
+
+    private void refillDeck(Deque<Identifier> targetDeck, boolean isGlobalTarget) {
+        targetDeck.clear();
         MerryConfig config = ConfigManager.get();
         List<Identifier> pool = new ArrayList<>();
 
         for (Map.Entry<Identifier, ChaosEvent> entry : EventManager.getInstance().getRegistry().entrySet()) {
             ChaosEvent event = entry.getValue();
-            if (event.isGlobal() || event.getDefinition().isWip()) {
+            if (event.isGlobal() != isGlobalTarget || event.getDefinition().isWip()) {
                 continue;
             }
             Identifier id = entry.getKey();
@@ -422,9 +408,7 @@ public final class ChaosDirector {
         }
 
         Collections.shuffle(pool);
-        this.personalDeck.addAll(pool);
-        MerryEvents.LOGGER.debug("[ChaosDirector] Personal candidate pool replenished with {} tickets.",
-                this.personalDeck.size());
+        targetDeck.addAll(pool);
     }
 
     public record PlayerHistory(@Nullable Identifier lastEventId, @Nullable EventCategory lastCategory) {

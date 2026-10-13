@@ -1,5 +1,3 @@
-// File: src/main/java/com/merry/merryevents/mixin/PlayerEntityMixin.java
-
 package com.merry.merryevents.mixin;
 
 import com.llamalad7.mixinextras.injector.wrapoperation.Operation;
@@ -28,8 +26,10 @@ import org.spongepowered.asm.mixin.injection.callback.CallbackInfo;
 import org.spongepowered.asm.mixin.injection.callback.CallbackInfoReturnable;
 
 /**
- * Mixin intercepting player damage, attack, and eating routines to enforce delayed
- * damage buffering, hydration metabolism, equilibrium pacifism, and thermal interactions.
+ * Mixin intercepting player damage, attack, and eating routines to enforce
+ * delayed
+ * damage buffering, hydration metabolism, equilibrium pacifism, and thermal
+ * interactions.
  */
 @Mixin(PlayerEntity.class)
 public abstract class PlayerEntityMixin {
@@ -44,7 +44,7 @@ public abstract class PlayerEntityMixin {
      */
     @WrapOperation(method = "eatFood", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/HungerManager;eat(Lnet/minecraft/component/type/FoodComponent;)V"))
     private void merryevents$suppressFoodNourishment(HungerManager hungerManager, FoodComponent foodComponent,
-                                                     Operation<Void> original) {
+            Operation<Void> original) {
         if ((Object) this instanceof ServerPlayerEntity player) {
             if (WaterDrinkerEvent.isPlayerActive(player)) {
                 WaterDrinkerEvent.onConsumeFood(player);
@@ -57,7 +57,8 @@ public abstract class PlayerEntityMixin {
     }
 
     /**
-     * Blocks incoming damage during active Equilibrium events while strictly protecting
+     * Blocks incoming damage during active Equilibrium events while strictly
+     * protecting
      * against softlocks from void or kill commands.
      *
      * @param source Inbound damage source
@@ -66,7 +67,7 @@ public abstract class PlayerEntityMixin {
      */
     @Inject(method = "damage", at = @At("HEAD"), cancellable = true)
     private void merryevents$preventEquilibriumIncomingDamage(DamageSource source, float amount,
-                                                              CallbackInfoReturnable<Boolean> cir) {
+            CallbackInfoReturnable<Boolean> cir) {
         if ((Object) this instanceof ServerPlayerEntity player && EquilibriumEvent.isPlayerActive(player)) {
             if (!source.isOf(DamageTypes.OUT_OF_WORLD) && !source.isOf(DamageTypes.GENERIC_KILL)) {
                 cir.setReturnValue(false);
@@ -78,7 +79,8 @@ public abstract class PlayerEntityMixin {
     }
 
     /**
-     * Neutralizes outgoing attacks against living entities during active Equilibrium events.
+     * Neutralizes outgoing attacks against living entities during active
+     * Equilibrium events.
      *
      * @param target Targeted entity
      * @param ci     Callback info
@@ -107,7 +109,7 @@ public abstract class PlayerEntityMixin {
      */
     @WrapOperation(method = "applyDamage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerEntity;applyArmorToDamage(Lnet/minecraft/entity/damage/DamageSource;F)F"))
     private float merryevents$skipArmorWhenFlushing(PlayerEntity player, DamageSource source, float amount,
-                                                    Operation<Float> original) {
+            Operation<Float> original) {
         if (DelayedDamageEvent.isFlushing()) {
             return amount;
         }
@@ -127,7 +129,7 @@ public abstract class PlayerEntityMixin {
      */
     @WrapOperation(method = "applyDamage", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/player/PlayerEntity;modifyAppliedDamage(Lnet/minecraft/entity/damage/DamageSource;F)F"))
     private float merryevents$skipModifiersWhenFlushing(PlayerEntity player, DamageSource source, float amount,
-                                                        Operation<Float> original) {
+            Operation<Float> original) {
         if (DelayedDamageEvent.isFlushing()) {
             return amount;
         }
@@ -173,14 +175,15 @@ public abstract class PlayerEntityMixin {
      */
     @WrapOperation(method = "attack", at = @At(value = "INVOKE", target = "Lnet/minecraft/entity/Entity;damage(Lnet/minecraft/entity/damage/DamageSource;F)Z"))
     private boolean merryevents$handleAttackInteractions(Entity target, DamageSource source, float amount,
-                                                         Operation<Boolean> original) {
+            Operation<Boolean> original) {
         boolean damaged = original.call(target, source, amount);
         if (damaged && (Object) this instanceof ServerPlayerEntity player) {
             if (KineticRecoilEvent.isPlayerActive(player)) {
                 KineticRecoilEvent.onAttackEntity(player, target, amount);
             }
-            if (FireSkinEvent.isPlayerActive(player)) {
-                target.setOnFireFor(8.0F);
+            if (FireSkinEvent.isCombustionActive(player)) {
+                float fireSeconds = player.getServerWorld().getDimension().ultrawarm() ? 12.0F : 8.0F;
+                target.setOnFireFor(fireSeconds);
             }
         }
         return damaged;

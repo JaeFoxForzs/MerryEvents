@@ -1,5 +1,6 @@
 package com.merry.merryevents;
 
+import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.command.MerryEventsCommand;
 import com.merry.merryevents.config.ConfigManager;
 import com.merry.merryevents.engine.ChaosDirector;
@@ -7,6 +8,7 @@ import com.merry.merryevents.engine.EventManager;
 import com.merry.merryevents.engine.EventPersistentState;
 import com.merry.merryevents.event.inventory.DiamondRushEvent;
 import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
+import com.merry.merryevents.event.mobs.RandomPetEvent;
 import com.merry.merryevents.event.world.CobwebNightmareEvent;
 import com.merry.merryevents.item.ChaosMemoItem;
 import com.merry.merryevents.network.EventSyncPayload;
@@ -114,8 +116,16 @@ public class MerryEvents implements ModInitializer {
                                 .onPlayerRespawn(newPlayer.getServer(), oldPlayer, newPlayer));
 
                 ServerEntityWorldChangeEvents.AFTER_PLAYER_CHANGE_WORLD
-                                .register((player, origin, destination) -> EventManager.getInstance()
-                                                .syncAllToPlayer(player));
+                                .register((player, origin, destination) -> {
+                                        EventManager.getInstance().syncAllToPlayer(player);
+                                        EventContext petContext = EventManager.getInstance()
+                                                        .getPlayerEventContext(player.getUuid(), RandomPetEvent.ID);
+                                        if (petContext != null && player.getServer() != null) {
+                                                RandomPetEvent.onPlayerDimensionChange(
+                                                                player.getServer(), player, origin, destination,
+                                                                petContext);
+                                        }
+                                });
 
                 ServerLifecycleEvents.SERVER_STOPPING
                                 .register(server -> EventManager.getInstance().onServerStopping(server));

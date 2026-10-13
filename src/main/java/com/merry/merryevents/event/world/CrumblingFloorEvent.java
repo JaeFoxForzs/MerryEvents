@@ -4,12 +4,8 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
-import net.minecraft.block.Block;
+import com.merry.merryevents.util.BlockHarvestUtil;
 import net.minecraft.block.BlockState;
-import net.minecraft.block.Blocks;
-import net.minecraft.item.Item;
-import net.minecraft.item.ItemStack;
-import net.minecraft.item.Items;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
 import net.minecraft.server.world.ServerWorld;
@@ -18,14 +14,13 @@ import net.minecraft.sound.SoundCategory;
 import net.minecraft.util.Hand;
 import net.minecraft.util.Identifier;
 import net.minecraft.util.math.BlockPos;
-import net.minecraft.world.WorldEvents;
 import org.jetbrains.annotations.Nullable;
 
 /**
  * Player-specific deteriorating terrain event belonging to EventCategory.WORLD.
  * Actively simulates the player breaking the block directly underneath them
- * with hand swinging,
- * impact audio, progressive damage cracking, dynamic held-tool acceleration,
+ * with hand swinging, impact audio, progressive damage cracking, dynamic
+ * held-tool acceleration,
  * and Silk Touch drops.
  */
 public final class CrumblingFloorEvent implements ChaosEvent {
@@ -62,7 +57,6 @@ public final class CrumblingFloorEvent implements ChaosEvent {
             return;
         }
 
-        // Stone pickaxe tool mining speed multiplier is 4.0F, diamond pickaxe is 8.0F
         float baseMiningSpeed = 4.0F + targetPlayer.getRandom().nextFloat() * 4.0F;
         int breakerEntityId = targetPlayer.getId() + CrumblingFloorEvent.BREAKER_ID_OFFSET;
         context.set(CrumblingFloorEvent.SPEED_KEY, baseMiningSpeed);
@@ -137,7 +131,7 @@ public final class CrumblingFloorEvent implements ChaosEvent {
 
             if (progress >= 1.0F) {
                 world.setBlockBreakingInfo(breakerEntityId, currentPos, -1);
-                CrumblingFloorEvent.dropBlockSilkTouch(world, currentPos, blockState);
+                BlockHarvestUtil.dropBlockSilkTouch(world, currentPos, blockState);
                 context.set(CrumblingFloorEvent.PROGRESS_KEY, 0.0F);
                 context.set(CrumblingFloorEvent.TICK_COUNTER_KEY, 0);
             } else {
@@ -162,26 +156,5 @@ public final class CrumblingFloorEvent implements ChaosEvent {
                 }
             }
         }
-    }
-
-    /**
-     * Harvests and drops the targeted block as a complete Silk Touch item stack,
-     * serializing block entity data and preventing container scatter.
-     *
-     * @param world Server world instance
-     * @param pos   Target block coordinate
-     * @param state Block state being destroyed
-     */
-    private static void dropBlockSilkTouch(ServerWorld world, BlockPos pos, BlockState state) {
-        if (state.hasBlockEntity()) {
-            return;
-        }
-        Item item = state.getBlock().asItem();
-        if (item != Items.AIR) {
-            ItemStack stack = new ItemStack(item);
-            Block.dropStack(world, pos, stack);
-        }
-        world.setBlockState(pos, Blocks.AIR.getDefaultState(), Block.NOTIFY_ALL | Block.SKIP_DROPS);
-        world.syncWorldEvent(WorldEvents.BLOCK_BROKEN, pos, Block.getRawIdFromState(state));
     }
 }
