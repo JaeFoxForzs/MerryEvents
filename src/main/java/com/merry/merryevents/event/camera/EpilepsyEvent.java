@@ -36,7 +36,8 @@ public final class EpilepsyEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         if (targetPlayer != null) {
             targetPlayer.getServerWorld().playSound(
                     null,

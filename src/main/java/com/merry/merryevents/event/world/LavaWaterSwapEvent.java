@@ -55,7 +55,8 @@ public final class LavaWaterSwapEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         MerryEvents.LOGGER.info("[LavaWaterSwapEvent] Fluid transposition active: water and lava mechanics swapped.");
     }
 

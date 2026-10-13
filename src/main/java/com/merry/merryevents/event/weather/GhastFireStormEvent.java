@@ -63,7 +63,8 @@ public final class GhastFireStormEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         Random random = server.getOverworld().getRandom();
         int fireballQuota = GhastFireStormEvent.MIN_FIREBALLS + random.nextInt(GhastFireStormEvent.MAX_FIREBALLS - GhastFireStormEvent.MIN_FIREBALLS + 1);
         double dispersionRadius = GhastFireStormEvent.MIN_DISPERSION_RADIUS

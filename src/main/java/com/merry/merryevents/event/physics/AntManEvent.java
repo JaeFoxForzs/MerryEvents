@@ -46,7 +46,8 @@ public final class AntManEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         if (targetPlayer != null) {
             applyModifier(targetPlayer);
             targetPlayer.playSoundToPlayer(SoundEvents.BLOCK_AMETHYST_BLOCK_CHIME, SoundCategory.PLAYERS, 1.0F, 1.8F);

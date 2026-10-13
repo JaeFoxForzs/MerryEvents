@@ -36,7 +36,8 @@ public final class UpsideDownEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         if (targetPlayer != null) {
             targetPlayer.playSoundToPlayer(SoundEvents.ENTITY_BAT_TAKEOFF, SoundCategory.PLAYERS, 1.0F, 0.7F);
             MerryEvents.LOGGER.info("[UpsideDownEvent] World flipped for {}", targetPlayer.getName().getString());

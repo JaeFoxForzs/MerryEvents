@@ -82,7 +82,8 @@ public final class FoodRainEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         Random random = server.getOverworld().getRandom();
         int foodQuota = FoodRainEvent.MIN_FOOD_QUOTA + random.nextInt(FoodRainEvent.MAX_FOOD_QUOTA - FoodRainEvent.MIN_FOOD_QUOTA + 1);
         int cadenceTicks = FoodRainEvent.MIN_CADENCE_TICKS + random.nextInt(FoodRainEvent.MAX_CADENCE_TICKS - FoodRainEvent.MIN_CADENCE_TICKS + 1);

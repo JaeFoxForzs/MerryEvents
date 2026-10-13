@@ -35,7 +35,8 @@ public final class MyopiaEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         if (targetPlayer != null) {
             targetPlayer.playSoundToPlayer(SoundEvents.ENTITY_ENDERMAN_AMBIENT, SoundCategory.PLAYERS, 0.6F, 0.5F);
             MerryEvents.LOGGER.info("[MyopiaEvent] Blurry vision started for {}", targetPlayer.getName().getString());

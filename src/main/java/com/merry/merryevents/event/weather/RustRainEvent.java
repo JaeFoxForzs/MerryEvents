@@ -55,7 +55,8 @@ public final class RustRainEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         WeatherUtil.startRain(server, 6000);
         MerryEvents.LOGGER.info(
                 "[RustRainEvent] Atmospheric corrosion initiated: corrosive downpour forced across surface dimensions.");

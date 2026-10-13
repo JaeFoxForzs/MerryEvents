@@ -35,7 +35,8 @@ public final class BouncingHamsterEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         if (targetPlayer != null) {
             targetPlayer.playSoundToPlayer(SoundEvents.ENTITY_RABBIT_JUMP, SoundCategory.PLAYERS, 1.0F, 1.2F);
             MerryEvents.LOGGER.info("[BouncingHamsterEvent] Continuous jumping effect started for {}",

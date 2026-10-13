@@ -79,7 +79,8 @@ public final class SolarVerdictEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         long timeOfDay = server.getOverworld().getTimeOfDay() % SolarVerdictEvent.TICKS_PER_DAY;
         boolean isCurrentlyDay = SolarVerdictEvent.isDaytime(timeOfDay);
 

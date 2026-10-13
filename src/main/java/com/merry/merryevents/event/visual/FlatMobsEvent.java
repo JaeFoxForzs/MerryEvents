@@ -34,7 +34,8 @@ public final class FlatMobsEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         for (ServerPlayerEntity player : server.getPlayerManager().getPlayerList()) {
             player.playSoundToPlayer(SoundEvents.BLOCK_SLIME_BLOCK_PLACE, SoundCategory.AMBIENT, 1.0F, 1.5F);
         }

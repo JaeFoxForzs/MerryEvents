@@ -33,7 +33,8 @@ public final class FalseWaterEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         MerryEvents.LOGGER.info("[FalseWaterEvent] Fluid properties corrupted: water now acts as lava.");
     }
 

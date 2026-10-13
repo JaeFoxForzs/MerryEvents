@@ -60,14 +60,16 @@ public final class AnvilRainEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         Random random = server.getOverworld().getRandom();
-        int anvilQuota = MIN_ANVILS + random.nextInt(MAX_ANVILS - MIN_ANVILS + 1);
-        double dispersionRadius = MIN_DISPERSION_RADIUS
-                + random.nextDouble() * (MAX_DISPERSION_RADIUS - MIN_DISPERSION_RADIUS);
+        int anvilQuota = AnvilRainEvent.MIN_ANVILS
+                + random.nextInt(AnvilRainEvent.MAX_ANVILS - AnvilRainEvent.MIN_ANVILS + 1);
+        double dispersionRadius = AnvilRainEvent.MIN_DISPERSION_RADIUS
+                + random.nextDouble() * (AnvilRainEvent.MAX_DISPERSION_RADIUS - AnvilRainEvent.MIN_DISPERSION_RADIUS);
 
-        context.set(REMAINING_ANVILS_KEY, anvilQuota);
-        context.set(RADIUS_KEY, dispersionRadius);
+        context.set(AnvilRainEvent.REMAINING_ANVILS_KEY, anvilQuota);
+        context.set(AnvilRainEvent.RADIUS_KEY, dispersionRadius);
 
         MerryEvents.LOGGER.info("[AnvilRainEvent] Anvil storm initiated: quota={} anvils, radius={}",
                 anvilQuota, String.format("%.1f", dispersionRadius));
@@ -76,8 +78,8 @@ public final class AnvilRainEvent implements ChaosEvent {
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
             int remainingTicks) {
-        int remainingAnvils = context.getInt(REMAINING_ANVILS_KEY, 0);
-        int firingWindowTicks = remainingTicks - MAX_FALL_TICKS;
+        int remainingAnvils = context.getInt(AnvilRainEvent.REMAINING_ANVILS_KEY, 0);
+        int firingWindowTicks = remainingTicks - AnvilRainEvent.MAX_FALL_TICKS;
         if (remainingAnvils <= 0 || firingWindowTicks <= 0) {
             return;
         }
@@ -98,34 +100,36 @@ public final class AnvilRainEvent implements ChaosEvent {
         if (random.nextDouble() < expectedAnvilsThisTick - anvilsThisTick) {
             anvilsThisTick++;
         }
-        anvilsThisTick = Math.min(anvilsThisTick, MAX_ANVILS_PER_TICK);
+        anvilsThisTick = Math.min(anvilsThisTick, AnvilRainEvent.MAX_ANVILS_PER_TICK);
 
-        double radius = context.getDouble(RADIUS_KEY, MIN_DISPERSION_RADIUS);
+        double radius = context.getDouble(AnvilRainEvent.RADIUS_KEY, AnvilRainEvent.MIN_DISPERSION_RADIUS);
         int spawnedAnvils = 0;
 
         for (int i = 0; i < anvilsThisTick; i++) {
             ServerPlayerEntity player = eligiblePlayers.get(random.nextInt(eligiblePlayers.size()));
             ServerWorld world = player.getServerWorld();
             BlockPos spawnPos = SpatialTargeting.findRandomSkyPosition(
-                    world, player, radius, SPAWN_HEIGHTMAP, MIN_HEIGHT_ABOVE_PLAYER, EXTRA_HEIGHT_VARIATION);
+                    world, player, radius, AnvilRainEvent.SPAWN_HEIGHTMAP, AnvilRainEvent.MIN_HEIGHT_ABOVE_PLAYER,
+                    AnvilRainEvent.EXTRA_HEIGHT_VARIATION);
             if (spawnPos == null) {
                 continue;
             }
 
             FallingBlockEntity anvil = FallingBlockEntity.spawnFromBlock(world, spawnPos,
                     Blocks.ANVIL.getDefaultState());
-            anvil.setHurtEntities(ANVIL_DAMAGE, ANVIL_DAMAGE_CAP);
+            anvil.setHurtEntities(AnvilRainEvent.ANVIL_DAMAGE, AnvilRainEvent.ANVIL_DAMAGE_CAP);
             anvil.dropItem = false;
             anvil.setDestroyedOnLanding();
             context.trackEntity(anvil.getUuid());
             spawnedAnvils++;
 
-            world.playSound(null, spawnPos, SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.WEATHER, SPAWN_SOUND_VOLUME,
-                    SPAWN_SOUND_PITCH);
+            world.playSound(null, spawnPos, SoundEvents.ENTITY_ARROW_SHOOT, SoundCategory.WEATHER,
+                    AnvilRainEvent.SPAWN_SOUND_VOLUME,
+                    AnvilRainEvent.SPAWN_SOUND_PITCH);
         }
 
         if (spawnedAnvils > 0) {
-            context.set(REMAINING_ANVILS_KEY, remainingAnvils - spawnedAnvils);
+            context.set(AnvilRainEvent.REMAINING_ANVILS_KEY, remainingAnvils - spawnedAnvils);
         }
     }
 

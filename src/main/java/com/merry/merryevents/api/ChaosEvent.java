@@ -99,7 +99,17 @@ public interface ChaosEvent {
      *                     events
      * @param context      Isolated event execution state container
      */
-    void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context);
+    /**
+     * Executes authoritative ignition routines upon initial event start.
+     *
+     * @param server        Authoritative server instance
+     * @param targetPlayer  Targeted player for personal events, or null for global
+     *                      events
+     * @param context       Isolated event execution state container
+     * @param durationTicks Resolved event lifetime in server ticks
+     */
+    void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int durationTicks);
 
     /**
      * Restores execution state following server restarts or player reconnection.

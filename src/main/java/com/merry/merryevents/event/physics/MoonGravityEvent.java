@@ -37,7 +37,8 @@ public final class MoonGravityEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         int multiplier = 2 + server.getOverworld().getRandom().nextInt(3);
         int amplifier = switch (multiplier) {
             case 2 -> 1;

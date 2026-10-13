@@ -119,7 +119,7 @@ public class EventManagerDisconnectLifecycleTest {
 
         @Override
         public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
-                EventContext context) {
+                EventContext context, int durationTicks) {
         }
 
         @Override
@@ -158,7 +158,7 @@ public class EventManagerDisconnectLifecycleTest {
 
         @Override
         public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
-                EventContext context) {
+                EventContext context, int durationTicks) {
         }
 
         @Override

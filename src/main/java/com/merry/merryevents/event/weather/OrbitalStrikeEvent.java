@@ -62,7 +62,8 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         Random random = server.getOverworld().getRandom();
         int strikeQuota = OrbitalStrikeEvent.MIN_STRIKES + random.nextInt(OrbitalStrikeEvent.MAX_STRIKES - OrbitalStrikeEvent.MIN_STRIKES + 1);
         double dispersionRadius = OrbitalStrikeEvent.MIN_DISPERSION_RADIUS

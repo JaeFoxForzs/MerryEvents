@@ -43,7 +43,8 @@ public final class ParanoiaSoundsEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         if (targetPlayer != null) {
             MerryEvents.LOGGER.info("[ParanoiaSoundsEvent] Phantom auditory stream connected to player {}",
                     targetPlayer.getName().getString());

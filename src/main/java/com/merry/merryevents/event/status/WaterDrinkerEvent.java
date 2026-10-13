@@ -147,7 +147,8 @@ public final class WaterDrinkerEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         if (targetPlayer != null) {
             MerryEvents.LOGGER.info("[WaterDrinkerEvent] Hydration restriction active for {}",
                     targetPlayer.getName().getString());

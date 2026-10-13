@@ -284,7 +284,7 @@ public final class EventManager {
         this.categoryTracker.acquireGlobal(event.getDefinition());
 
         try {
-            event.onStartServer(server, null, instance.context);
+            event.onStartServer(server, null, instance.context, durationTicks);
         } catch (Throwable t) {
             EventManager.LOGGER.error("[EventManager] Exception during onStartServer for global event '{}'", eventId,
                     t);
@@ -363,7 +363,7 @@ public final class EventManager {
         this.categoryTracker.acquirePlayer(uuid, event.getDefinition());
 
         try {
-            event.onStartServer(server, player, instance.context);
+            event.onStartServer(server, player, instance.context, durationTicks);
         } catch (Throwable t) {
             String name = player != null ? player.getName().getString() : uuid.toString();
             EventManager.LOGGER.error("[EventManager] Exception during onStartServer for event '{}' on {}",

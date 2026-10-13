@@ -63,7 +63,8 @@ public final class FireStormEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+            EventContext context, int durationTicks) {
         Random random = server.getOverworld().getRandom();
         int fireballQuota = FireStormEvent.MIN_FIREBALLS + random.nextInt(FireStormEvent.MAX_FIREBALLS - FireStormEvent.MIN_FIREBALLS + 1);
         double dispersionRadius = FireStormEvent.MIN_DISPERSION_RADIUS

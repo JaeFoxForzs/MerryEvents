@@ -43,8 +43,9 @@ public final class AcidRainEvent implements ChaosEvent {
     }
 
     @Override
-    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context) {
-        WeatherUtil.startRain(server, 6000);
+    public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
+            int durationTicks) {
+        WeatherUtil.startRain(server, durationTicks);
         MerryEvents.LOGGER.info(
                 "[AcidRainEvent] Atmospheric corruption initiated: acid rain active across all surface dimensions.");
     }
