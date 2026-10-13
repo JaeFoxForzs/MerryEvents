@@ -269,10 +269,30 @@ tasks.register("validateAndFormatLocalization") {
 
 		Map<String, List<Map>> tokensByFile = [:]
 		Map<String, String> eventIdsByClass = [:]
+		Map<String, String> eventIdsByConstant = [:]
 		javaFiles.each { File file ->
 			String source = file.getText("UTF-8")
 			def tokens = tokenizeJava(source)
 			tokensByFile.put(file.absolutePath, tokens)
+
+			if (file.path.replace('\\', '/').endsWith('/event/EventIds.java')) {
+				for (int i = 0; i + 11 < tokens.size(); i++) {
+					if (tokens[i].value == "Identifier" &&
+							tokens[i + 1].type == "identifier" &&
+							tokens[i + 2].value == "=" &&
+							tokens[i + 3].value == "Identifier" &&
+							tokens[i + 4].value == "." &&
+							tokens[i + 5].value == "of" &&
+							tokens[i + 6].value == "(" &&
+							tokens[i + 7].value == "MerryEvents" &&
+							tokens[i + 8].value == "." &&
+							tokens[i + 9].value == "MOD_ID" &&
+							tokens[i + 10].value == "," &&
+							tokens[i + 11].type == "string") {
+						eventIdsByConstant.put(tokens[i + 1].value, tokens[i + 11].value)
+					}
+				}
+			}
 
 			for (int i = 0; i + 7 < tokens.size(); i++) {
 				if (tokens[i].value == "ID" && tokens[i + 1].value == "=" &&
@@ -288,6 +308,31 @@ tasks.register("validateAndFormatLocalization") {
 					}
 					if (classToken != null) {
 						eventIdsByClass.put(classToken, tokens[i + 6].value)
+					}
+				}
+			}
+		}
+
+		javaFiles.each { File file ->
+			def tokens = tokensByFile[file.absolutePath]
+			String className = null
+			for (int i = 0; i + 1 < tokens.size(); i++) {
+				if (tokens[i].value == "class") {
+					className = tokens[i + 1].value
+					break
+				}
+			}
+			if (className != null) {
+				for (int i = 0; i + 7 < tokens.size(); i++) {
+					if (tokens[i].value == "getId" && tokens[i + 1].value == "(" &&
+							tokens[i + 2].value == ")" && tokens[i + 3].value == "{" &&
+							tokens[i + 4].value == "return" && tokens[i + 5].value == "EventIds" &&
+							tokens[i + 6].value == "." && tokens[i + 7].type == "identifier") {
+						String eventId = eventIdsByConstant[tokens[i + 7].value]
+						if (eventId != null) {
+							eventIdsByClass.put(className, eventId)
+						}
+						break
 					}
 				}
 			}

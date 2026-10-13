@@ -36,6 +36,28 @@ class LocalizationValidationTest(unittest.TestCase):
     def write_java(self, source):
         (self.java_dir / "LocalizationFixture.java").write_text(source, encoding="utf-8")
 
+    def write_event_id_fixture(self):
+        event_java_dir = self.java_dir / "event"
+        event_java_dir.mkdir()
+        (event_java_dir / "EventIds.java").write_text(
+            "class EventIds {\n"
+            '  static final Identifier FIXTURE = Identifier.of(MerryEvents.MOD_ID, "fixture");\n'
+            "}\n",
+            encoding="utf-8",
+        )
+        (event_java_dir / "FixtureEvent.java").write_text(
+            "class FixtureEvent {\n"
+            "  Identifier getId() { return EventIds.FIXTURE; }\n"
+            "}\n",
+            encoding="utf-8",
+        )
+        service_file = (
+            self.fixture_root
+            / "src/main/resources/META-INF/services/com.merry.merryevents.api.ChaosEvent"
+        )
+        service_file.parent.mkdir(parents=True)
+        service_file.write_text("fixture.FixtureEvent\n", encoding="utf-8")
+
     def run_validator(self):
         command = [
             str(GRADLE_WRAPPER),
@@ -71,6 +93,17 @@ class LocalizationValidationTest(unittest.TestCase):
             '  Text message() { return Text.translatable("fixture.greeting"); }\n'
             '}\n'
         )
+
+        result = self.run_validator()
+
+        self.assertEqual(result.returncode, 0, result.stdout + result.stderr)
+
+    def test_accepts_event_translation_ids_from_central_registry(self):
+        self.write_locales(
+            {"event.merryevents.fixture": "Fixture event"},
+            {"event.merryevents.fixture": "Событие для теста"},
+        )
+        self.write_event_id_fixture()
 
         result = self.run_validator()
 
