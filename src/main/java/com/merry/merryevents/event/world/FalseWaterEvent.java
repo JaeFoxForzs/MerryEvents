@@ -17,13 +17,6 @@ import org.jetbrains.annotations.Nullable;
  */
 public final class FalseWaterEvent implements ChaosEvent {
     @Override
-    public com.merry.merryevents.api.EventDefinition getDefinition() {
-        return com.merry.merryevents.api.EventDefinition.withConflicts(
-                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.GLOBAL,
-                java.util.Set.of(EventIds.LAVA_WATER_SWAP), 600, 1);
-    }
-
-    @Override
     public Identifier getId() {
         return EventIds.FALSE_WATER;
     }

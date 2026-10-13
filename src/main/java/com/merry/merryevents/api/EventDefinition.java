@@ -8,7 +8,8 @@ import java.util.Set;
 
 /**
  * Immutable declaration describing static characteristics, categorization,
- * duration policy, incompatibility constraints, and scheduling weights of a chaos event.
+ * duration policy, incompatibility constraints, and scheduling weights of a
+ * chaos event.
  *
  * @param id                   Unique event namespaced identifier
  * @param categories           Set of categories this event belongs to
@@ -82,23 +83,28 @@ public record EventDefinition(
     }
 
     /**
-     * Constructs a timed event definition declaring explicit conflicts.
+     * Constructs a timed event definition declaring explicit conflicts,
+     * applying standard default duration (600 ticks) and roulette weight (1).
+     *
+     * @param id            Event identifier
+     * @param category      Primary category
+     * @param scope         Execution scope
+     * @param conflictsWith Set of mutually exclusive event identifiers
+     * @return Initialized definition instance with conflicts
      */
     public static EventDefinition withConflicts(
             Identifier id,
             EventCategory category,
             EventScope scope,
-            Set<Identifier> conflictsWith,
-            int defaultDurationTicks,
-            int defaultWeight) {
+            Set<Identifier> conflictsWith) {
         return new EventDefinition(
                 id,
                 Set.of(category),
                 scope,
                 DurationPolicy.TIMED,
                 conflictsWith,
-                defaultDurationTicks,
-                defaultWeight,
+                600,
+                1,
                 false);
     }
 }

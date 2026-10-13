@@ -25,7 +25,7 @@ public final class EquilibriumEvent implements ChaosEvent {
     public com.merry.merryevents.api.EventDefinition getDefinition() {
         return com.merry.merryevents.api.EventDefinition.withConflicts(
                 this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
-                java.util.Set.of(EventIds.DELAYED_DAMAGE), 600, 1);
+                java.util.Set.of(EventIds.DELAYED_DAMAGE));
     }
 
     @Override
@@ -44,7 +44,8 @@ public final class EquilibriumEvent implements ChaosEvent {
     }
 
     /**
-     * Evaluates whether equilibrium status is currently active for the target player.
+     * Evaluates whether equilibrium status is currently active for the target
+     * player.
      *
      * @param player Target server player entity
      * @return True if equilibrium pacifist protection is active
@@ -65,7 +66,7 @@ public final class EquilibriumEvent implements ChaosEvent {
 
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
-                             int remainingTicks) {
+            int remainingTicks) {
         if (targetPlayer != null && targetPlayer.isAlive() && remainingTicks % 8 == 0) {
             ServerWorld world = targetPlayer.getServerWorld();
             world.spawnParticles(ParticleTypes.WAX_OFF,

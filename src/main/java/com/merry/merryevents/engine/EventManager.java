@@ -92,14 +92,29 @@ public final class EventManager {
             this.conflictMatrix.put(id, ConcurrentHashMap.newKeySet());
         }
         for (ChaosEvent event : this.registry.values()) {
+            Identifier sourceId = event.getId();
             for (Identifier conflictId : event.getConflictsWith()) {
                 if (!this.registry.containsKey(conflictId)) {
                     EventManager.LOGGER.error("[EventManager] Unknown conflict '{}' declared by event '{}'",
-                            conflictId, event.getId());
+                            conflictId, sourceId);
                     continue;
                 }
-                this.conflictMatrix.get(event.getId()).add(conflictId);
-                this.conflictMatrix.get(conflictId).add(event.getId());
+                if (sourceId.equals(conflictId)) {
+                    EventManager.LOGGER.warn(
+                            "[EventManager] Event '{}' declares conflict with itself. Self-conflict is redundant.",
+                            sourceId);
+                    continue;
+                }
+
+                Set<Identifier> reverseConflicts = this.conflictMatrix.get(conflictId);
+                if (reverseConflicts != null && reverseConflicts.contains(sourceId)) {
+                    EventManager.LOGGER.warn(
+                            "[EventManager] Redundant bidirectional conflict declaration: '{}' and '{}' both declare each other. A conflict only needs to be declared on one side.",
+                            sourceId, conflictId);
+                }
+
+                this.conflictMatrix.get(sourceId).add(conflictId);
+                this.conflictMatrix.get(conflictId).add(sourceId);
             }
         }
     }

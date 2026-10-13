@@ -22,7 +22,7 @@ public final class StiffNeckEvent implements ChaosEvent {
     public com.merry.merryevents.api.EventDefinition getDefinition() {
         return com.merry.merryevents.api.EventDefinition.withConflicts(
                 this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
-                java.util.Set.of(EventIds.EPILEPSY, EventIds.ADHD), 600, 1);
+                java.util.Set.of(EventIds.EPILEPSY, EventIds.ADHD));
     }
 
     @Override

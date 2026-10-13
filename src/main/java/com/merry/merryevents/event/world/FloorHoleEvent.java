@@ -27,8 +27,9 @@ public final class FloorHoleEvent implements ChaosEvent {
     public com.merry.merryevents.api.EventDefinition getDefinition() {
         return com.merry.merryevents.api.EventDefinition.withConflicts(
                 this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
-                java.util.Set.of(EventIds.CRUMBLING_FLOOR), 600, 1);
+                java.util.Set.of(EventIds.CRUMBLING_FLOOR));
     }
+
     private static final String REMAINING_BLOCKS_KEY = "remaining_blocks";
     private static final String RADIUS_KEY = "horizontal_radius";
     private static final int MIN_BLOCKS = 64;

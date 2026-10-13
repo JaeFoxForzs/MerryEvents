@@ -13,18 +13,14 @@ import net.minecraft.util.Identifier;
 import org.jetbrains.annotations.Nullable;
 
 /**
- * Player-specific involuntary attention deviation event belonging to EventCategory.CAMERA.
- * Authoritative lifecycle driver synchronizing event state to the client engine,
- * which executes smooth per-frame gaze interpolation and continuous entity tracking.
+ * Player-specific involuntary attention deviation event belonging to
+ * EventCategory.CAMERA.
+ * Authoritative lifecycle driver synchronizing event state to the client
+ * engine,
+ * which executes smooth per-frame gaze interpolation and continuous entity
+ * tracking.
  */
 public final class AdhdEvent implements ChaosEvent {
-    @Override
-    public com.merry.merryevents.api.EventDefinition getDefinition() {
-        return com.merry.merryevents.api.EventDefinition.withConflicts(
-                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
-                java.util.Set.of(EventIds.STIFF_NECK, EventIds.EPILEPSY), 600, 1);
-    }
-
     @Override
     public Identifier getId() {
         return EventIds.ADHD;
@@ -52,7 +48,7 @@ public final class AdhdEvent implements ChaosEvent {
 
     @Override
     public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer, EventContext context,
-                             int remainingTicks) {
+            int remainingTicks) {
     }
 
     @Override

@@ -23,7 +23,7 @@ public final class LavaWaterSwapEvent implements ChaosEvent {
     public com.merry.merryevents.api.EventDefinition getDefinition() {
         return com.merry.merryevents.api.EventDefinition.withConflicts(
                 this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.GLOBAL,
-                java.util.Set.of(EventIds.FALSE_WATER), 600, 1);
+                java.util.Set.of(EventIds.FALSE_WATER));
     }
 
     /**
@@ -55,7 +55,7 @@ public final class LavaWaterSwapEvent implements ChaosEvent {
      */
     public static boolean isActive(World world) {
         if (world.isClient()) {
-            return clientActiveSupplier.getAsBoolean();
+            return LavaWaterSwapEvent.clientActiveSupplier.getAsBoolean();
         }
         return com.merry.merryevents.engine.EventManager.getInstance().isGlobalEventActive(EventIds.LAVA_WATER_SWAP);
     }

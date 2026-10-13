@@ -23,7 +23,7 @@ public final class EpilepsyEvent implements ChaosEvent {
     public com.merry.merryevents.api.EventDefinition getDefinition() {
         return com.merry.merryevents.api.EventDefinition.withConflicts(
                 this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
-                java.util.Set.of(EventIds.STIFF_NECK, EventIds.ADHD), 600, 1);
+                java.util.Set.of(EventIds.ADHD));
     }
 
     @Override
