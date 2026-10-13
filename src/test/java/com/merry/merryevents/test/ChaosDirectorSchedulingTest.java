@@ -11,7 +11,7 @@ import org.junit.jupiter.api.Test;
 
 import java.util.UUID;
 
-public class ChaosDirectorDeckBehaviorTest {
+public class ChaosDirectorSchedulingTest {
 
     private ChaosDirector director;
 

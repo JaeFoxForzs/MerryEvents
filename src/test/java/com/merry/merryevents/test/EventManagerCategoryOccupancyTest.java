@@ -3,6 +3,9 @@ package com.merry.merryevents.test;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
+import com.merry.merryevents.api.DurationPolicy;
+import com.merry.merryevents.api.EventDefinition;
+import com.merry.merryevents.api.EventScope;
 import com.merry.merryevents.engine.EventManager;
 import net.minecraft.server.MinecraftServer;
 import net.minecraft.server.network.ServerPlayerEntity;
@@ -13,6 +16,8 @@ import org.junit.jupiter.api.BeforeEach;
 import org.junit.jupiter.api.DisplayName;
 import org.junit.jupiter.api.Test;
 
+import java.util.LinkedHashSet;
+import java.util.Set;
 import java.util.UUID;
 
 public class EventManagerCategoryOccupancyTest {
@@ -81,6 +86,122 @@ public class EventManagerCategoryOccupancyTest {
         // VISION while global is running
         Assertions.assertTrue(this.manager.isCategoryOccupiedForPlayer(this.testPlayerUuid, EventCategory.VISION));
         Assertions.assertTrue(this.manager.isCategoryOccupiedForPlayer(this.otherPlayerUuid, EventCategory.VISION));
+    }
+
+    @Test
+    @DisplayName("Non-exclusive global events can share a concurrent category")
+    public void testConcurrentGlobalEventsCanShareCategory() {
+        ConfiguredDummyEvent first = this.registerConfiguredEvent(
+                Identifier.of("test", "global_physics_first"), EventCategory.PHYSICS,
+                Set.of(EventCategory.PHYSICS), true, false);
+        ConfiguredDummyEvent second = this.registerConfiguredEvent(
+                Identifier.of("test", "global_physics_second"), EventCategory.PHYSICS,
+                Set.of(EventCategory.PHYSICS), true, false);
+
+        Assertions.assertTrue(this.manager.hasCategoryCapacityForGlobalEvent(first.getDefinition()));
+        Assertions.assertTrue(this.manager.startGlobalEvent(null, first.getId(), 200));
+        Assertions.assertTrue(this.manager.hasCategoryCapacityForGlobalEvent(second.getDefinition()));
+        Assertions.assertTrue(this.manager.startGlobalEvent(null, second.getId(), 200));
+    }
+
+    @Test
+    @DisplayName("Non-exclusive personal events can share a concurrent category for one player")
+    public void testConcurrentPersonalEventsCanShareCategory() {
+        ConfiguredDummyEvent first = this.registerConfiguredEvent(
+                Identifier.of("test", "personal_physics_first"), EventCategory.PHYSICS,
+                Set.of(EventCategory.PHYSICS), false, false);
+        ConfiguredDummyEvent second = this.registerConfiguredEvent(
+                Identifier.of("test", "personal_physics_second"), EventCategory.PHYSICS,
+                Set.of(EventCategory.PHYSICS), false, false);
+
+        Assertions.assertTrue(this.manager.hasCategoryCapacityForPlayerEvent(this.testPlayerUuid,
+                first.getDefinition()));
+        Assertions.assertTrue(this.manager.startPlayerEvent(null, this.testPlayerUuid, null, first.getId(), 200));
+        Assertions.assertTrue(this.manager.hasCategoryCapacityForPlayerEvent(this.testPlayerUuid,
+                second.getDefinition()));
+        Assertions.assertTrue(this.manager.startPlayerEvent(null, this.testPlayerUuid, null, second.getId(), 200));
+    }
+
+    @Test
+    @DisplayName("Candidate category checks include every declared category")
+    public void testCandidateChecksEveryDeclaredCategory() {
+        ConfiguredDummyEvent occupyingEvent = this.registerConfiguredEvent(
+                Identifier.of("test", "personal_status_occupant"), EventCategory.STATUS,
+                Set.of(EventCategory.STATUS), false, true);
+        ConfiguredDummyEvent candidate = this.registerConfiguredEvent(
+                Identifier.of("test", "personal_multicategory_candidate"), EventCategory.PHYSICS,
+                new LinkedHashSet<>(Set.of(EventCategory.PHYSICS, EventCategory.STATUS)), false, true);
+
+        Assertions.assertTrue(this.manager.startPlayerEvent(null, this.testPlayerUuid, null,
+                occupyingEvent.getId(), 200));
+        Assertions.assertFalse(this.manager.hasCategoryCapacityForPlayerEvent(this.testPlayerUuid,
+                candidate.getDefinition()));
+    }
+
+    @Test
+    @DisplayName("Categories that disallow concurrency remain exclusive")
+    public void testCategoryPolicyStillBlocksConcurrency() {
+        ConfiguredDummyEvent first = this.registerConfiguredEvent(
+                Identifier.of("test", "personal_vision_first"), EventCategory.VISION,
+                Set.of(EventCategory.VISION), false, false);
+        ConfiguredDummyEvent second = this.registerConfiguredEvent(
+                Identifier.of("test", "personal_vision_second"), EventCategory.VISION,
+                Set.of(EventCategory.VISION), false, false);
+
+        Assertions.assertTrue(this.manager.startPlayerEvent(null, this.testPlayerUuid, null, first.getId(), 200));
+        Assertions.assertFalse(this.manager.hasCategoryCapacityForPlayerEvent(this.testPlayerUuid,
+                second.getDefinition()));
+    }
+
+    private ConfiguredDummyEvent registerConfiguredEvent(Identifier id, EventCategory primaryCategory,
+            Set<EventCategory> categories, boolean global, boolean exclusive) {
+        ConfiguredDummyEvent event = new ConfiguredDummyEvent(id, primaryCategory, categories, global, exclusive);
+        this.manager.register(event);
+        return event;
+    }
+
+    private static class ConfiguredDummyEvent implements ChaosEvent {
+        private final EventDefinition definition;
+        private final EventCategory primaryCategory;
+        private final boolean global;
+
+        ConfiguredDummyEvent(Identifier id, EventCategory primaryCategory, Set<EventCategory> categories,
+                boolean global, boolean exclusive) {
+            this.primaryCategory = primaryCategory;
+            this.global = global;
+            this.definition = new EventDefinition(id, categories,
+                    global ? EventScope.GLOBAL : EventScope.PLAYER, DurationPolicy.TIMED, exclusive, 600, 1, false);
+        }
+
+        @Override
+        public EventDefinition getDefinition() {
+            return this.definition;
+        }
+
+        @Override
+        public EventCategory getCategory() {
+            return this.primaryCategory;
+        }
+
+        @Override
+        public boolean isGlobal() {
+            return this.global;
+        }
+
+        @Override
+        public void onStartServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+                EventContext context) {
+        }
+
+        @Override
+        public void onTickServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+                EventContext context, int remainingTicks) {
+        }
+
+        @Override
+        public void onStopServer(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer,
+                EventContext context) {
+        }
     }
 
     private static class DummyEvent implements ChaosEvent {

@@ -2,8 +2,9 @@ package com.merry.merryevents.engine;
 
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
-import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.api.DurationPolicy;
+import com.merry.merryevents.api.EventDefinition;
+import com.merry.merryevents.api.EventContext;
 import com.merry.merryevents.config.ConfigManager;
 import com.merry.merryevents.network.EventSyncPayload;
 import net.fabricmc.fabric.api.networking.v1.ServerPlayNetworking;
@@ -139,6 +140,28 @@ public final class EventManager {
         return this.categoryTracker.isCategoryOccupied(uuid, category);
     }
 
+    /**
+     * Checks whether a global event can claim all of its declared categories.
+     *
+     * @param definition Event category declaration
+     * @return True if the event's category concurrency rules permit it to start
+     */
+    public boolean hasCategoryCapacityForGlobalEvent(EventDefinition definition) {
+        return this.categoryTracker.canStartGlobal(definition);
+    }
+
+    /**
+     * Checks whether a personal event can claim all of its declared categories for
+     * the specified player.
+     *
+     * @param playerUuid Target player UUID
+     * @param definition Event category declaration
+     * @return True if the event's category concurrency rules permit it to start
+     */
+    public boolean hasCategoryCapacityForPlayerEvent(UUID playerUuid, EventDefinition definition) {
+        return this.categoryTracker.canStartPlayer(playerUuid, definition);
+    }
+
     public boolean isGlobalEventActive(Identifier eventId) {
         return this.activeGlobalEvents.containsKey(eventId);
     }
@@ -217,20 +240,6 @@ public final class EventManager {
             director.initializeGlobalCountdown();
         }
 
-        if (!state.globalDeck.isEmpty()) {
-            director.getGlobalDeck().clear();
-            director.getGlobalDeck().addAll(state.globalDeck);
-        } else {
-            director.refillGlobalDeck();
-        }
-
-        if (!state.personalDeck.isEmpty()) {
-            director.getPersonalDeck().clear();
-            director.getPersonalDeck().addAll(state.personalDeck);
-        } else {
-            director.refillPersonalDeck();
-        }
-
         if (!state.playerCountdowns.isEmpty()) {
             director.restorePlayerCountdowns(state.playerCountdowns);
         }
@@ -254,7 +263,7 @@ public final class EventManager {
             return false;
         }
 
-        if (!this.categoryTracker.canStartGlobal(event.getDefinition())) {
+        if (!this.hasCategoryCapacityForGlobalEvent(event.getDefinition())) {
             EventManager.LOGGER.warn("[EventManager] Conflict: categories for global event '{}' currently occupied",
                     eventId);
             return false;
@@ -336,7 +345,7 @@ public final class EventManager {
             return false;
         }
 
-        if (!this.categoryTracker.canStartPlayer(uuid, event.getDefinition())) {
+        if (!this.hasCategoryCapacityForPlayerEvent(uuid, event.getDefinition())) {
             String name = player != null ? player.getName().getString() : uuid.toString();
             EventManager.LOGGER.warn("[EventManager] Conflict: categories for event '{}' active for {}", eventId, name);
             return false;

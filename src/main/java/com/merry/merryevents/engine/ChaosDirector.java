@@ -13,10 +13,8 @@ import net.minecraft.util.Identifier;
 import net.minecraft.util.math.random.Random;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
 import java.util.ArrayList;
 import java.util.Collections;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.List;
 import java.util.Map;
@@ -29,10 +27,10 @@ import java.util.UUID;
  * repetition penalties (0.5x / 0.25x) and isolated player history streams.
  */
 public final class ChaosDirector {
+    private static final double REPEATED_CATEGORY_WEIGHT_MULTIPLIER = 0.5;
+    private static final double REPEATED_EVENT_WEIGHT_MULTIPLIER = 0.5;
     private static final ChaosDirector INSTANCE = new ChaosDirector();
 
-    private final Deque<Identifier> globalDeck = new ArrayDeque<>();
-    private final Deque<Identifier> personalDeck = new ArrayDeque<>();
     private final Object2IntOpenHashMap<UUID> playerCountdowns = new Object2IntOpenHashMap<>();
     private final Map<UUID, PlayerHistory> playerHistories = new HashMap<>();
 
@@ -56,14 +54,6 @@ public final class ChaosDirector {
         return this.ticksUntilNextGlobalEvent;
     }
 
-    public Deque<Identifier> getGlobalDeck() {
-        return this.globalDeck;
-    }
-
-    public Deque<Identifier> getPersonalDeck() {
-        return this.personalDeck;
-    }
-
     public Object2IntOpenHashMap<UUID> getPlayerCountdowns() {
         return this.playerCountdowns;
     }
@@ -85,8 +75,6 @@ public final class ChaosDirector {
     }
 
     public void resetState() {
-        this.globalDeck.clear();
-        this.personalDeck.clear();
         this.playerCountdowns.clear();
         this.playerHistories.clear();
         this.lastGlobalEventId = null;
@@ -229,7 +217,7 @@ public final class ChaosDirector {
                 continue;
             }
 
-            if (eventManager.isCategoryOccupiedGlobally(event.getCategory())) {
+            if (!eventManager.hasCategoryCapacityForGlobalEvent(event.getDefinition())) {
                 continue;
             }
 
@@ -239,9 +227,11 @@ public final class ChaosDirector {
 
             int baseWeight = entry != null ? entry.weight() : event.getDefinition().defaultWeight();
             double categoryMultiplier = (this.lastGlobalCategory != null
-                    && event.getCategories().contains(this.lastGlobalCategory)) ? 0.5 : 1.0;
+                    && event.getCategories().contains(this.lastGlobalCategory))
+                            ? ChaosDirector.REPEATED_CATEGORY_WEIGHT_MULTIPLIER
+                            : 1.0;
             double eventMultiplier = (this.lastGlobalEventId != null && event.getId().equals(this.lastGlobalEventId))
-                    ? 0.5
+                    ? ChaosDirector.REPEATED_EVENT_WEIGHT_MULTIPLIER
                     : 1.0;
             double effectiveWeight = baseWeight * categoryMultiplier * eventMultiplier;
 
@@ -281,7 +271,6 @@ public final class ChaosDirector {
         if (started) {
             this.lastGlobalEventId = chosenEvent.getId();
             this.lastGlobalCategory = chosenEvent.getCategory();
-            this.refillGlobalDeck();
             MerryEvents.LOGGER.info("[ChaosDirector] Ignited global event '{}' via weighted selection for {} ticks",
                     chosenEvent.getId(), durationTicks);
             return true;
@@ -310,7 +299,7 @@ public final class ChaosDirector {
                 continue;
             }
 
-            if (eventManager.isCategoryOccupiedForPlayer(playerUuid, event.getCategory())) {
+            if (!eventManager.hasCategoryCapacityForPlayerEvent(playerUuid, event.getDefinition())) {
                 continue;
             }
 
@@ -320,9 +309,13 @@ public final class ChaosDirector {
 
             int baseWeight = entry != null ? entry.weight() : event.getDefinition().defaultWeight();
             double categoryMultiplier = (history != null && history.lastCategory() != null
-                    && event.getCategories().contains(history.lastCategory())) ? 0.5 : 1.0;
+                    && event.getCategories().contains(history.lastCategory()))
+                            ? ChaosDirector.REPEATED_CATEGORY_WEIGHT_MULTIPLIER
+                            : 1.0;
             double eventMultiplier = (history != null && history.lastEventId() != null
-                    && event.getId().equals(history.lastEventId())) ? 0.5 : 1.0;
+                    && event.getId().equals(history.lastEventId()))
+                            ? ChaosDirector.REPEATED_EVENT_WEIGHT_MULTIPLIER
+                            : 1.0;
             double effectiveWeight = baseWeight * categoryMultiplier * eventMultiplier;
 
             candidates.add(event);
@@ -360,7 +353,6 @@ public final class ChaosDirector {
         boolean started = eventManager.startPlayerEvent(server, targetPlayer, chosenEvent.getId(), durationTicks);
         if (started) {
             this.playerHistories.put(playerUuid, new PlayerHistory(chosenEvent.getId(), chosenEvent.getCategory()));
-            this.refillPersonalDeck();
             MerryEvents.LOGGER.info(
                     "[ChaosDirector] Ignited personal event '{}' on {} via weighted selection for {} ticks",
                     chosenEvent.getId(), targetPlayer.getName().getString(), durationTicks);
@@ -368,47 +360,6 @@ public final class ChaosDirector {
         }
 
         return false;
-    }
-
-    public void refillDecks() {
-        this.refillGlobalDeck();
-        this.refillPersonalDeck();
-    }
-
-    public void refillGlobalDeck() {
-        this.refillDeck(this.globalDeck, true);
-        MerryEvents.LOGGER.debug("[ChaosDirector] Global candidate pool replenished with {} tickets.",
-                this.globalDeck.size());
-    }
-
-    public void refillPersonalDeck() {
-        this.refillDeck(this.personalDeck, false);
-        MerryEvents.LOGGER.debug("[ChaosDirector] Personal candidate pool replenished with {} tickets.",
-                this.personalDeck.size());
-    }
-
-    private void refillDeck(Deque<Identifier> targetDeck, boolean isGlobalTarget) {
-        targetDeck.clear();
-        MerryConfig config = ConfigManager.get();
-        List<Identifier> pool = new ArrayList<>();
-
-        for (Map.Entry<Identifier, ChaosEvent> entry : EventManager.getInstance().getRegistry().entrySet()) {
-            ChaosEvent event = entry.getValue();
-            if (event.isGlobal() != isGlobalTarget || event.getDefinition().isWip()) {
-                continue;
-            }
-            Identifier id = entry.getKey();
-            EventConfigEntry cfg = config.getEvents().get(id.toString());
-            if (cfg == null || cfg.enabled()) {
-                int weight = cfg != null ? cfg.weight() : event.getDefinition().defaultWeight();
-                for (int w = 0; w < weight; w++) {
-                    pool.add(id);
-                }
-            }
-        }
-
-        Collections.shuffle(pool);
-        targetDeck.addAll(pool);
     }
 
     public record PlayerHistory(@Nullable Identifier lastEventId, @Nullable EventCategory lastCategory) {

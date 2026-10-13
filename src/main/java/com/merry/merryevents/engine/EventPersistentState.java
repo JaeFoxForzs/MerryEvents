@@ -5,14 +5,11 @@ import com.merry.merryevents.api.EventCategory;
 import net.minecraft.nbt.NbtCompound;
 import net.minecraft.nbt.NbtElement;
 import net.minecraft.nbt.NbtList;
-import net.minecraft.nbt.NbtString;
 import net.minecraft.registry.RegistryWrapper;
 import net.minecraft.util.Identifier;
 import net.minecraft.world.PersistentState;
 import org.jetbrains.annotations.Nullable;
 
-import java.util.ArrayDeque;
-import java.util.Deque;
 import java.util.HashMap;
 import java.util.Map;
 import java.util.UUID;
@@ -34,8 +31,6 @@ public final class EventPersistentState extends PersistentState {
 
     public final Map<Identifier, SavedEventData> globalEvents = new HashMap<>();
     public final Map<UUID, Map<Identifier, SavedEventData>> playerEvents = new HashMap<>();
-    public final Deque<Identifier> globalDeck = new ArrayDeque<>();
-    public final Deque<Identifier> personalDeck = new ArrayDeque<>();
     public final Map<UUID, Integer> playerCountdowns = new HashMap<>();
     public final Map<UUID, Long> playerLastSeen = new HashMap<>();
     public final Map<UUID, ChaosDirector.PlayerHistory> playerHistories = new HashMap<>();
@@ -75,7 +70,7 @@ public final class EventPersistentState extends PersistentState {
     }
 
     /**
-     * Deserializes active chaos events, director decks, history, and sequence
+     * Deserializes active chaos events, director history, and sequence
      * states from NBT storage.
      * Safely ignores malformed or missing identifiers without interrupting world
      * loading.
@@ -145,24 +140,6 @@ public final class EventPersistentState extends PersistentState {
             state.lastGlobalCategory = nbt.getString("lastGlobalCategory");
         }
 
-        NbtList globalDeckList = nbt.getList("globalDeck", NbtElement.STRING_TYPE);
-        for (int i = 0; i < globalDeckList.size(); i++) {
-            String rawId = globalDeckList.getString(i);
-            Identifier id = Identifier.tryParse(rawId);
-            if (id != null) {
-                state.globalDeck.add(id);
-            }
-        }
-
-        NbtList personalDeckList = nbt.getList("personalDeck", NbtElement.STRING_TYPE);
-        for (int i = 0; i < personalDeckList.size(); i++) {
-            String rawId = personalDeckList.getString(i);
-            Identifier id = Identifier.tryParse(rawId);
-            if (id != null) {
-                state.personalDeck.add(id);
-            }
-        }
-
         NbtList countdownsList = nbt.getList("playerCountdowns", NbtElement.COMPOUND_TYPE);
         for (int i = 0; i < countdownsList.size(); i++) {
             NbtCompound tag = countdownsList.getCompound(i);
@@ -202,8 +179,8 @@ public final class EventPersistentState extends PersistentState {
     }
 
     /**
-     * Serializes active events, context states, sequence indices, director history,
-     * and decks into NBT storage.
+     * Serializes active events, context states, sequence indices, and director
+     * history into NBT storage.
      * Prunes player entries older than 14 days before writing.
      *
      * @param nbt        Destination NbtCompound
@@ -261,18 +238,6 @@ public final class EventPersistentState extends PersistentState {
         if (director.getLastGlobalCategory() != null) {
             nbt.putString("lastGlobalCategory", director.getLastGlobalCategory().name());
         }
-
-        NbtList globalDeckList = new NbtList();
-        for (Identifier id : director.getGlobalDeck()) {
-            globalDeckList.add(NbtString.of(id.toString()));
-        }
-        nbt.put("globalDeck", globalDeckList);
-
-        NbtList personalDeckList = new NbtList();
-        for (Identifier id : director.getPersonalDeck()) {
-            personalDeckList.add(NbtString.of(id.toString()));
-        }
-        nbt.put("personalDeck", personalDeckList);
 
         long now = System.currentTimeMillis();
         NbtList countdownsList = new NbtList();

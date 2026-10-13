@@ -139,7 +139,7 @@ public final class MerryEventsCommand {
                                     source.sendMessage(Text.translatable("command.merryevents.director.status.enabled",
                                             enabledText));
                                     source.sendMessage(Text.translatable("command.merryevents.director.status.global",
-                                            globalRemainingSec, director.getGlobalDeck().size())
+                                            globalRemainingSec)
                                             .formatted(Formatting.YELLOW));
 
                                     if (source.isExecutedByPlayer()) {
@@ -150,12 +150,11 @@ public final class MerryEventsCommand {
                                                 : 0;
                                         source.sendMessage(Text
                                                 .translatable("command.merryevents.director.status.personal",
-                                                        director.getPersonalDeck().size(), personalRemainingSec)
+                                                        personalRemainingSec)
                                                 .formatted(Formatting.AQUA));
                                     } else {
                                         source.sendMessage(Text
                                                 .translatable("command.merryevents.director.status.personal_console",
-                                                        director.getPersonalDeck().size(),
                                                         director.getPlayerCountdowns().size())
                                                 .formatted(Formatting.AQUA));
                                     }
@@ -210,7 +209,6 @@ public final class MerryEventsCommand {
                         .executes(ctx -> {
                             ConfigManager.load();
                             ConfigManager.syncRegisteredEvents(EventManager.getInstance().getRegistry());
-                            ChaosDirector.getInstance().refillDecks();
                             ctx.getSource().sendMessage(Text.translatable("command.merryevents.reload.success")
                                     .formatted(Formatting.GREEN));
                             return 1;
@@ -338,8 +336,7 @@ public final class MerryEventsCommand {
         source.sendMessage(Text.translatable("command.merryevents.status.director",
                 dirStatus,
                 nextGlobalSeconds,
-                director.getGlobalDeck().size(),
-                director.getPersonalDeck().size()).formatted(Formatting.DARK_AQUA));
+                director.getPlayerCountdowns().size()).formatted(Formatting.DARK_AQUA));
 
         return 1;
     }
