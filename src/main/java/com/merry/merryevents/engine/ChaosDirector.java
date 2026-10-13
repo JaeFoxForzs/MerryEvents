@@ -202,56 +202,19 @@ public final class ChaosDirector {
     public boolean dispatchNextGlobalEvent(MinecraftServer server) {
         EventManager eventManager = EventManager.getInstance();
         MerryConfig config = ConfigManager.get();
-
-        List<ChaosEvent> candidates = new ArrayList<>();
-        List<Double> effectiveWeights = new ArrayList<>();
-        double totalWeight = 0.0;
-
-        for (ChaosEvent event : eventManager.getRegistry().values()) {
-            if (!event.isGlobal() || event.getDefinition().isWip()) {
-                continue;
-            }
-
-            EventConfigEntry entry = config.getEvents().get(event.getId().toString());
-            if (entry != null && !entry.enabled()) {
-                continue;
-            }
-
-            if (!eventManager.hasCategoryCapacityForGlobalEvent(event.getDefinition())) {
-                continue;
-            }
-
-            if (!event.canStart(server, null)) {
-                continue;
-            }
-
-            int baseWeight = entry != null ? entry.weight() : event.getDefinition().defaultWeight();
-            double categoryMultiplier = (this.lastGlobalCategory != null
-                    && event.getCategories().contains(this.lastGlobalCategory))
-                            ? ChaosDirector.REPEATED_CATEGORY_WEIGHT_MULTIPLIER
-                            : 1.0;
-            double eventMultiplier = (this.lastGlobalEventId != null && event.getId().equals(this.lastGlobalEventId))
-                    ? ChaosDirector.REPEATED_EVENT_WEIGHT_MULTIPLIER
-                    : 1.0;
-            double effectiveWeight = baseWeight * categoryMultiplier * eventMultiplier;
-
-            candidates.add(event);
-            effectiveWeights.add(effectiveWeight);
-            totalWeight += effectiveWeight;
-        }
-
-        if (candidates.isEmpty() || totalWeight <= 0.0) {
+        CandidatePool candidatePool = this.collectCandidates(server, null);
+        if (candidatePool.events().isEmpty() || candidatePool.totalWeight() <= 0.0) {
             return false;
         }
 
-        double roll = this.random.nextDouble() * totalWeight;
+        double roll = this.random.nextDouble() * candidatePool.totalWeight();
         double accumulated = 0.0;
-        ChaosEvent chosenEvent = candidates.get(candidates.size() - 1);
+        ChaosEvent chosenEvent = candidatePool.events().get(candidatePool.events().size() - 1).event();
 
-        for (int i = 0; i < candidates.size(); i++) {
-            accumulated += effectiveWeights.get(i);
+        for (WeightedEvent candidate : candidatePool.events()) {
+            accumulated += candidate.effectiveWeight();
             if (roll <= accumulated) {
-                chosenEvent = candidates.get(i);
+                chosenEvent = candidate.event();
                 break;
             }
         }
@@ -283,58 +246,19 @@ public final class ChaosDirector {
         EventManager eventManager = EventManager.getInstance();
         MerryConfig config = ConfigManager.get();
         UUID playerUuid = targetPlayer.getUuid();
-        PlayerHistory history = this.playerHistories.get(playerUuid);
-
-        List<ChaosEvent> candidates = new ArrayList<>();
-        List<Double> effectiveWeights = new ArrayList<>();
-        double totalWeight = 0.0;
-
-        for (ChaosEvent event : eventManager.getRegistry().values()) {
-            if (event.isGlobal() || event.getDefinition().isWip()) {
-                continue;
-            }
-
-            EventConfigEntry entry = config.getEvents().get(event.getId().toString());
-            if (entry != null && !entry.enabled()) {
-                continue;
-            }
-
-            if (!eventManager.hasCategoryCapacityForPlayerEvent(playerUuid, event.getDefinition())) {
-                continue;
-            }
-
-            if (!event.canStart(server, targetPlayer)) {
-                continue;
-            }
-
-            int baseWeight = entry != null ? entry.weight() : event.getDefinition().defaultWeight();
-            double categoryMultiplier = (history != null && history.lastCategory() != null
-                    && event.getCategories().contains(history.lastCategory()))
-                            ? ChaosDirector.REPEATED_CATEGORY_WEIGHT_MULTIPLIER
-                            : 1.0;
-            double eventMultiplier = (history != null && history.lastEventId() != null
-                    && event.getId().equals(history.lastEventId()))
-                            ? ChaosDirector.REPEATED_EVENT_WEIGHT_MULTIPLIER
-                            : 1.0;
-            double effectiveWeight = baseWeight * categoryMultiplier * eventMultiplier;
-
-            candidates.add(event);
-            effectiveWeights.add(effectiveWeight);
-            totalWeight += effectiveWeight;
-        }
-
-        if (candidates.isEmpty() || totalWeight <= 0.0) {
+        CandidatePool candidatePool = this.collectCandidates(server, targetPlayer);
+        if (candidatePool.events().isEmpty() || candidatePool.totalWeight() <= 0.0) {
             return false;
         }
 
-        double roll = this.random.nextDouble() * totalWeight;
+        double roll = this.random.nextDouble() * candidatePool.totalWeight();
         double accumulated = 0.0;
-        ChaosEvent chosenEvent = candidates.get(candidates.size() - 1);
+        ChaosEvent chosenEvent = candidatePool.events().get(candidatePool.events().size() - 1).event();
 
-        for (int i = 0; i < candidates.size(); i++) {
-            accumulated += effectiveWeights.get(i);
+        for (WeightedEvent candidate : candidatePool.events()) {
+            accumulated += candidate.effectiveWeight();
             if (roll <= accumulated) {
-                chosenEvent = candidates.get(i);
+                chosenEvent = candidate.event();
                 break;
             }
         }
@@ -360,6 +284,83 @@ public final class ChaosDirector {
         }
 
         return false;
+    }
+
+    public List<EventWeight> getGlobalEventWeights(MinecraftServer server) {
+        return this.createWeightReport(this.collectCandidates(server, null));
+    }
+
+    public List<EventWeight> getPersonalEventWeights(MinecraftServer server, ServerPlayerEntity player) {
+        return this.createWeightReport(this.collectCandidates(server, player));
+    }
+
+    private CandidatePool collectCandidates(MinecraftServer server, @Nullable ServerPlayerEntity targetPlayer) {
+        EventManager eventManager = EventManager.getInstance();
+        MerryConfig config = ConfigManager.get();
+        UUID playerUuid = targetPlayer != null ? targetPlayer.getUuid() : null;
+        PlayerHistory history = playerUuid != null ? this.playerHistories.get(playerUuid) : null;
+        boolean global = targetPlayer == null;
+
+        List<WeightedEvent> candidates = new ArrayList<>();
+        double totalWeight = 0.0;
+
+        for (ChaosEvent event : eventManager.getRegistry().values()) {
+            if (event.isGlobal() != global || event.getDefinition().isWip()) {
+                continue;
+            }
+
+            EventConfigEntry entry = config.getEvents().get(event.getId().toString());
+            if (entry != null && !entry.enabled()) {
+                continue;
+            }
+
+            boolean hasCategoryCapacity = global
+                    ? eventManager.hasCategoryCapacityForGlobalEvent(event.getDefinition())
+                    : eventManager.hasCategoryCapacityForPlayerEvent(playerUuid, event.getDefinition());
+            if (!hasCategoryCapacity || !event.canStart(server, targetPlayer)) {
+                continue;
+            }
+
+            int baseWeight = entry != null ? entry.weight() : event.getDefinition().defaultWeight();
+            EventCategory lastCategory = global ? this.lastGlobalCategory
+                    : history != null ? history.lastCategory() : null;
+            Identifier lastEventId = global ? this.lastGlobalEventId
+                    : history != null ? history.lastEventId() : null;
+            double categoryMultiplier = lastCategory != null && event.getCategories().contains(lastCategory)
+                    ? ChaosDirector.REPEATED_CATEGORY_WEIGHT_MULTIPLIER
+                    : 1.0;
+            double eventMultiplier = lastEventId != null && event.getId().equals(lastEventId)
+                    ? ChaosDirector.REPEATED_EVENT_WEIGHT_MULTIPLIER
+                    : 1.0;
+            double effectiveWeight = baseWeight * categoryMultiplier * eventMultiplier;
+
+            candidates.add(new WeightedEvent(event, baseWeight, effectiveWeight));
+            totalWeight += effectiveWeight;
+        }
+
+        return new CandidatePool(candidates, totalWeight);
+    }
+
+    private List<EventWeight> createWeightReport(CandidatePool candidatePool) {
+        if (candidatePool.totalWeight() <= 0.0) {
+            return List.of();
+        }
+
+        List<EventWeight> report = new ArrayList<>(candidatePool.events().size());
+        for (WeightedEvent candidate : candidatePool.events()) {
+            report.add(new EventWeight(candidate.event(), candidate.baseWeight(), candidate.effectiveWeight(),
+                    candidate.effectiveWeight() / candidatePool.totalWeight()));
+        }
+        return List.copyOf(report);
+    }
+
+    private record WeightedEvent(ChaosEvent event, int baseWeight, double effectiveWeight) {
+    }
+
+    private record CandidatePool(List<WeightedEvent> events, double totalWeight) {
+    }
+
+    public record EventWeight(ChaosEvent event, int baseWeight, double effectiveWeight, double probability) {
     }
 
     public record PlayerHistory(@Nullable Identifier lastEventId, @Nullable EventCategory lastCategory) {

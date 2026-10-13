@@ -160,6 +160,40 @@ public final class MerryEventsCommand {
                                     }
                                     return 1;
                                 }))
+                        .then(CommandManager.literal("weights")
+                                .executes(ctx -> {
+                                    ServerCommandSource source = ctx.getSource();
+                                    MerryEventsCommand.sendGlobalEventWeights(source);
+                                    if (source.isExecutedByPlayer()) {
+                                        ServerPlayerEntity player = source.getPlayer();
+                                        if (player != null) {
+                                            MerryEventsCommand.sendPersonalEventWeights(source, player);
+                                        }
+                                    }
+                                    return 1;
+                                })
+                                .then(CommandManager.literal("global")
+                                        .executes(ctx -> {
+                                            MerryEventsCommand.sendGlobalEventWeights(ctx.getSource());
+                                            return 1;
+                                        }))
+                                .then(CommandManager.literal("personal")
+                                        .executes(ctx -> {
+                                            ServerCommandSource source = ctx.getSource();
+                                            if (!source.isExecutedByPlayer() || source.getPlayer() == null) {
+                                                source.sendError(Text.translatable(
+                                                        "command.merryevents.director.weights.personal_target_required"));
+                                                return 0;
+                                            }
+                                            MerryEventsCommand.sendPersonalEventWeights(source, source.getPlayer());
+                                            return 1;
+                                        })
+                                        .then(CommandManager.argument("target", EntityArgumentType.player())
+                                                .executes(ctx -> {
+                                                    MerryEventsCommand.sendPersonalEventWeights(ctx.getSource(),
+                                                            EntityArgumentType.getPlayer(ctx, "target"));
+                                                    return 1;
+                                                }))))
                         .then(CommandManager.literal("enable")
                                 .executes(ctx -> {
                                     ConfigManager.get().setAutoDirectorEnabled(true);
@@ -339,6 +373,43 @@ public final class MerryEventsCommand {
                 director.getPlayerCountdowns().size()).formatted(Formatting.DARK_AQUA));
 
         return 1;
+    }
+
+    private static void sendGlobalEventWeights(ServerCommandSource source) {
+        List<ChaosDirector.EventWeight> weights = ChaosDirector.getInstance()
+                .getGlobalEventWeights(source.getServer());
+        source.sendMessage(Text.translatable("command.merryevents.director.weights.global_header")
+                .formatted(Formatting.YELLOW));
+        MerryEventsCommand.sendEventWeights(source, weights,
+                Text.translatable("command.merryevents.director.weights.global_empty"));
+    }
+
+    private static void sendPersonalEventWeights(ServerCommandSource source, ServerPlayerEntity player) {
+        List<ChaosDirector.EventWeight> weights = ChaosDirector.getInstance()
+                .getPersonalEventWeights(source.getServer(), player);
+        source.sendMessage(Text.translatable("command.merryevents.director.weights.personal_header",
+                player.getName().getString()).formatted(Formatting.AQUA));
+        MerryEventsCommand.sendEventWeights(source, weights,
+                Text.translatable("command.merryevents.director.weights.personal_empty",
+                        player.getName().getString()));
+    }
+
+    private static void sendEventWeights(ServerCommandSource source, List<ChaosDirector.EventWeight> weights,
+            Text emptyMessage) {
+        if (weights.isEmpty()) {
+            source.sendMessage(emptyMessage.copy().formatted(Formatting.DARK_GRAY));
+            return;
+        }
+
+        for (ChaosDirector.EventWeight weight : weights) {
+            source.sendMessage(Text.translatable("command.merryevents.director.weights.entry",
+                    weight.event().getDisplayName(),
+                    weight.event().getId().toString(),
+                    weight.baseWeight(),
+                    String.format(Locale.ROOT, "%.2f", weight.effectiveWeight()),
+                    String.format(Locale.ROOT, "%.1f", weight.probability() * 100.0))
+                    .formatted(Formatting.GRAY));
+        }
     }
 
     private static int executeStart(ServerCommandSource source, Identifier eventId, int seconds,

@@ -11,7 +11,16 @@
         "runClient"
       ],
       "windows": {
-        "command": ".\\gradlew.bat"
+        "command": "powershell.exe",
+        "args": [
+          "-NoLogo",
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          ".vscode/run-utf8-task.ps1",
+          "runClient"
+        ]
       },
       "presentation": {
         "reveal": "always",
@@ -29,7 +38,16 @@
         "runClient2"
       ],
       "windows": {
-        "command": ".\\gradlew.bat"
+        "command": "powershell.exe",
+        "args": [
+          "-NoLogo",
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          ".vscode/run-utf8-task.ps1",
+          "runClient2"
+        ]
       },
       "presentation": {
         "reveal": "always",
@@ -47,7 +65,16 @@
         "runClientSodium"
       ],
       "windows": {
-        "command": ".\\gradlew.bat"
+        "command": "powershell.exe",
+        "args": [
+          "-NoLogo",
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          ".vscode/run-utf8-task.ps1",
+          "runClientSodium"
+        ]
       },
       "presentation": {
         "reveal": "always",
@@ -65,7 +92,16 @@
         "runClientIris"
       ],
       "windows": {
-        "command": ".\\gradlew.bat"
+        "command": "powershell.exe",
+        "args": [
+          "-NoLogo",
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          ".vscode/run-utf8-task.ps1",
+          "runClientIris"
+        ]
       },
       "presentation": {
         "reveal": "always",
@@ -83,7 +119,16 @@
         "runServer"
       ],
       "windows": {
-        "command": ".\\gradlew.bat"
+        "command": "powershell.exe",
+        "args": [
+          "-NoLogo",
+          "-NoProfile",
+          "-ExecutionPolicy",
+          "Bypass",
+          "-File",
+          ".vscode/run-utf8-task.ps1",
+          "runServer"
+        ]
       },
       "presentation": {
         "reveal": "always",
