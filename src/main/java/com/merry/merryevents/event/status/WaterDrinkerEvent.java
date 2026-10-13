@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.status;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -29,7 +30,6 @@ import java.util.function.BooleanSupplier;
  * reports dry throat complaints into chat.
  */
 public final class WaterDrinkerEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("water_drinker");
 
     /**
      * Dedicated-server safe hook initialized exclusively on the client side.
@@ -38,7 +38,7 @@ public final class WaterDrinkerEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return WaterDrinkerEvent.ID;
+        return EventIds.WATER_DRINKER;
     }
 
     @Override
@@ -69,7 +69,7 @@ public final class WaterDrinkerEvent implements ChaosEvent {
      * @return True if event is currently active on the target player
      */
     public static boolean isPlayerActive(ServerPlayerEntity player) {
-        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), WaterDrinkerEvent.ID);
+        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.WATER_DRINKER);
     }
 
     /**

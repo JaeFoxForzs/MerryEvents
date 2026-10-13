@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.physics;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -20,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
  * via the native GENERIC_SCALE attribute modifier.
  */
 public final class AntManEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("ant_man");
 
     private static final Identifier SCALE_MODIFIER_ID = MerryEvents.id("ant_man_scale");
     // -0.75 reduces standard scale 1.0 down to 0.25 (player height becomes ~0.45 blocks)
@@ -32,7 +32,7 @@ public final class AntManEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return AntManEvent.ID;
+        return EventIds.ANT_MAN;
     }
 
     @Override

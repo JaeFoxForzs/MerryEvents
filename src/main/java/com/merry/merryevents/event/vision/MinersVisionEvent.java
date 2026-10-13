@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.vision;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -16,11 +17,10 @@ import org.jetbrains.annotations.Nullable;
  * Enables depth-independent bounding box rendering around high-value ore veins.
  */
 public final class MinersVisionEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("miners_vision");
 
     @Override
     public Identifier getId() {
-        return MinersVisionEvent.ID;
+        return EventIds.MINERS_VISION;
     }
 
     @Override

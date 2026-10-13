@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.inventory;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
  * manual slot changes and drops.
  */
 public final class StickyFingersEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("sticky_fingers");
 
     private static final String LOCKED_SLOT_KEY = "locked_slot";
     private static final String REMAINING_SWITCHES_KEY = "remaining_switches";
@@ -30,7 +30,7 @@ public final class StickyFingersEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return StickyFingersEvent.ID;
+        return EventIds.STICKY_FINGERS;
     }
 
     @Override
@@ -51,7 +51,7 @@ public final class StickyFingersEvent implements ChaosEvent {
      * @return True if sticky fingers restrictions are active
      */
     public static boolean isPlayerActive(ServerPlayerEntity player) {
-        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), StickyFingersEvent.ID);
+        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.STICKY_FINGERS);
     }
 
     /**
@@ -61,7 +61,7 @@ public final class StickyFingersEvent implements ChaosEvent {
      * @return Authoritative locked hotbar slot index
      */
     public static int getLockedSlot(ServerPlayerEntity player) {
-        EventContext context = EventManager.getInstance().getPlayerEventContext(player.getUuid(), StickyFingersEvent.ID);
+        EventContext context = EventManager.getInstance().getPlayerEventContext(player.getUuid(), EventIds.STICKY_FINGERS);
         if (context == null) {
             return player.getInventory().selectedSlot;
         }

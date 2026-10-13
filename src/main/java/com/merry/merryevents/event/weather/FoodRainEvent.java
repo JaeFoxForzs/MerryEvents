@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.weather;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -32,7 +33,6 @@ import java.util.List;
  * sky-exposed players.
  */
 public final class FoodRainEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("food_rain");
     private static final String INTERVAL_KEY = "cadence_ticks";
     private static final String RADIUS_KEY = "dispersion_radius";
     private static final String REMAINING_FOOD_KEY = "remaining_food";
@@ -68,7 +68,7 @@ public final class FoodRainEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return FoodRainEvent.ID;
+        return EventIds.FOOD_RAIN;
     }
 
     @Override

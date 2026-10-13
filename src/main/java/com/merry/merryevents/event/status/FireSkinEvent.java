@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.status;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -43,12 +44,11 @@ import java.util.List;
  * dimensions.
  */
 public final class FireSkinEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("fire_skin");
     private static final String WAS_DOUSED_KEY = "was_doused";
 
     @Override
     public Identifier getId() {
-        return FireSkinEvent.ID;
+        return EventIds.FIRE_SKIN;
     }
 
     @Override
@@ -69,7 +69,7 @@ public final class FireSkinEvent implements ChaosEvent {
      * @return True if fire skin event is active
      */
     public static boolean isPlayerActive(ServerPlayerEntity player) {
-        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), FireSkinEvent.ID);
+        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.FIRE_SKIN);
     }
 
     /**

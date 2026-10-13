@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -24,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
  * and Silk Touch drops.
  */
 public final class CrumblingFloorEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("crumbling_floor");
     private static final String SPEED_KEY = "crumb_speed";
     private static final String BREAKER_ID_KEY = "crumb_breaker_id";
     private static final String POS_X_KEY = "crumb_x";
@@ -38,7 +38,7 @@ public final class CrumblingFloorEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return CrumblingFloorEvent.ID;
+        return EventIds.CRUMBLING_FLOOR;
     }
 
     @Override

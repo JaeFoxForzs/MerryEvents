@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.vision;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -17,11 +18,10 @@ import org.jetbrains.annotations.Nullable;
  * distant perception.
  */
 public final class MyopiaEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("myopia");
 
     @Override
     public Identifier getId() {
-        return MyopiaEvent.ID;
+        return EventIds.MYOPIA;
     }
 
     @Override

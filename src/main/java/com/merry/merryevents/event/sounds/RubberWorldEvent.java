@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.sounds;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -16,11 +17,10 @@ import org.jetbrains.annotations.Nullable;
  * and jumps with cartoon springs, audible exclusively to the affected player.
  */
 public final class RubberWorldEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("rubber_world");
 
     @Override
     public Identifier getId() {
-        return RubberWorldEvent.ID;
+        return EventIds.RUBBER_WORLD;
     }
 
     @Override

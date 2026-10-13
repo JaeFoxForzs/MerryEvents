@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -33,12 +34,11 @@ import java.util.List;
  * player.
  */
 public final class DontStepOnEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("dont_step_on");
     private static final String BLOCKS_KEY = "forbidden_blocks";
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.DONT_STEP_ON;
     }
 
     @Override

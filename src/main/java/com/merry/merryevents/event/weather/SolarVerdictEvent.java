@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.weather;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -25,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
  * exposed entities.
  */
 public final class SolarVerdictEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("solar_verdict");
     private static final String DAY_ACTIVE_KEY = "day_active";
     private static final String NEXT_PLAYER_INDEX_KEY = "next_player_index";
     private static final long TICKS_PER_DAY = 24000L;
@@ -47,7 +47,7 @@ public final class SolarVerdictEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return SolarVerdictEvent.ID;
+        return EventIds.SOLAR_VERDICT;
     }
 
     @Override

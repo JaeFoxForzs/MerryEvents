@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.inventory;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -20,7 +21,6 @@ import org.jetbrains.annotations.Nullable;
  * player's main storage inventory grid (slots 9 through 35).
  */
 public final class ButterfingersEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("butterfingers");
 
     private static final String TIMER_KEY = "butterfingers";
     private static final int SWAP_INTERVAL_TICKS = 20 * 20; // Exact 20 seconds cadence
@@ -29,7 +29,7 @@ public final class ButterfingersEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ButterfingersEvent.ID;
+        return EventIds.BUTTERFINGERS;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.mobs;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -32,12 +33,11 @@ import java.util.UUID;
  * Spawns an aggressive persistent entity tracking the player until eliminated.
  */
 public final class PersonalKillerEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("personal_killer");
     private static final String KILLER_UUID_KEY = "stalker_uuid";
 
     @Override
     public Identifier getId() {
-        return PersonalKillerEvent.ID;
+        return EventIds.PERSONAL_KILLER;
     }
 
     @Override
@@ -123,7 +123,7 @@ public final class PersonalKillerEvent implements ChaosEvent {
         if (killerUuid == null) {
             MerryEvents.LOGGER.warn("[PersonalKillerEvent] No stalker was spawned; terminating event for {}",
                     targetPlayer.getName().getString());
-            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, PersonalKillerEvent.ID);
+            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, EventIds.PERSONAL_KILLER);
             return;
         }
 
@@ -131,7 +131,7 @@ public final class PersonalKillerEvent implements ChaosEvent {
         if (killerEntity == null || !killerEntity.isAlive()) {
             MerryEvents.LOGGER.info("[PersonalKillerEvent] Stalker slain. Terminating event for {}",
                     targetPlayer.getName().getString());
-            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, PersonalKillerEvent.ID);
+            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, EventIds.PERSONAL_KILLER);
             return;
         }
 

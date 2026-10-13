@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.ui;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -16,11 +17,10 @@ import org.jetbrains.annotations.Nullable;
  * the event duration.
  */
 public final class ClosedInventoryEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("closed_inventory");
 
     @Override
     public Identifier getId() {
-        return ClosedInventoryEvent.ID;
+        return EventIds.CLOSED_INVENTORY;
     }
 
     @Override
@@ -40,7 +40,7 @@ public final class ClosedInventoryEvent implements ChaosEvent {
      * @return True if inventory lockout is active
      */
     public static boolean isPlayerActive(ServerPlayerEntity player) {
-        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), ClosedInventoryEvent.ID);
+        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.CLOSED_INVENTORY);
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.ui;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -14,11 +15,10 @@ import org.jetbrains.annotations.Nullable;
  * Disables client-side HUD rendering.
  */
 public final class GhostGuiEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("ghost_gui");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.GHOST_GUI;
     }
 
     @Override

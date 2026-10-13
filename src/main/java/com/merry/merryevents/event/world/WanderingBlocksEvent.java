@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -29,7 +30,6 @@ import org.jetbrains.annotations.Nullable;
  * teleportation cues.
  */
 public final class WanderingBlocksEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("wandering_blocks");
     private static final String REMAINING_BLOCKS_KEY = "remaining_blocks";
     private static final String SRC_MIN_RAD_KEY = "src_min_radius";
     private static final String SRC_MAX_RAD_KEY = "src_max_radius";
@@ -56,7 +56,7 @@ public final class WanderingBlocksEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return WanderingBlocksEvent.ID;
+        return EventIds.WANDERING_BLOCKS;
     }
 
     @Override

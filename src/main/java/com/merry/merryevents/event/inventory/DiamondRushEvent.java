@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.inventory;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -21,12 +22,11 @@ import net.minecraft.util.math.BlockPos;
 import org.jetbrains.annotations.Nullable;
 
 public final class DiamondRushEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("diamond_rush");
     public static final String FIRST_DISCOVERY_KEY = "first_discovery_claimed";
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.DIAMOND_RUSH;
     }
 
     @Override
@@ -48,12 +48,12 @@ public final class DiamondRushEvent implements ChaosEvent {
      * @param state  State of broken block
      */
     public static void onBlockBreak(ServerWorld world, ServerPlayerEntity player, BlockPos pos, BlockState state) {
-        if (!EventManager.getInstance().isPlayerEventActive(player.getUuid(), ID)) {
+        if (!EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.DIAMOND_RUSH)) {
             return;
         }
 
         if (state.isOf(Blocks.DIRT) || state.isOf(Blocks.GRASS_BLOCK)) {
-            EventContext context = EventManager.getInstance().getPlayerEventContext(player.getUuid(), ID);
+            EventContext context = EventManager.getInstance().getPlayerEventContext(player.getUuid(), EventIds.DIAMOND_RUSH);
             boolean isFirst = context != null && context.setFlag(FIRST_DISCOVERY_KEY);
 
             if (isFirst || world.getRandom().nextFloat() < 0.20F) {

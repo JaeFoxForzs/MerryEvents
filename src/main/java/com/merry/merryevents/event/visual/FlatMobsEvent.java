@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.visual;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -16,11 +17,10 @@ import org.jetbrains.annotations.Nullable;
  * Compresses living entity models into flat cardboard billboard sprites facing the client camera.
  */
 public final class FlatMobsEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("flat_mobs");
 
     @Override
     public Identifier getId() {
-        return FlatMobsEvent.ID;
+        return EventIds.FLAT_MOBS;
     }
 
     @Override

@@ -1,5 +1,6 @@
 package com.merry.merryevents.mixin;
 
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.engine.EventManager;
 import com.merry.merryevents.event.weather.AnvilRainEvent;
 import net.minecraft.block.AnvilBlock;
@@ -37,7 +38,7 @@ public abstract class AnvilBlockMixin {
     @Inject(method = "onLanding", at = @At("TAIL"))
     private void merryevents$shatterAnvilAndBreakBelow(World world, BlockPos pos, BlockState fallingBlockState,
             BlockState currentStateInPos, FallingBlockEntity fallingBlockEntity, CallbackInfo ci) {
-        if (!world.isClient() && EventManager.getInstance().isGlobalEventActive(AnvilRainEvent.ID)) {
+        if (!world.isClient() && EventManager.getInstance().isGlobalEventActive(EventIds.ANVIL_RAIN)) {
             BlockPos targetPos = pos.down();
             BlockState targetState = world.getBlockState(targetPos);
 
@@ -65,7 +66,7 @@ public abstract class AnvilBlockMixin {
     @Inject(method = "onDestroyedOnLanding", at = @At("TAIL"))
     private void merryevents$breakBelowOnDestroy(World world, BlockPos pos, FallingBlockEntity fallingBlockEntity,
             CallbackInfo ci) {
-        if (!world.isClient() && EventManager.getInstance().isGlobalEventActive(AnvilRainEvent.ID)) {
+        if (!world.isClient() && EventManager.getInstance().isGlobalEventActive(EventIds.ANVIL_RAIN)) {
             BlockPos targetPos = pos;
             BlockState targetState = world.getBlockState(targetPos);
             if (targetState.isAir() || targetState.getCollisionShape(world, targetPos).isEmpty()) {

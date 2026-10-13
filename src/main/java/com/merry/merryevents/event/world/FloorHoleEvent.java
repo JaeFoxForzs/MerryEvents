@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -22,7 +23,6 @@ import org.jetbrains.annotations.Nullable;
  * container data.
  */
 public final class FloorHoleEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("floor_hole");
     private static final String REMAINING_BLOCKS_KEY = "remaining_blocks";
     private static final String RADIUS_KEY = "horizontal_radius";
     private static final int MIN_BLOCKS = 64;
@@ -32,7 +32,7 @@ public final class FloorHoleEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return FloorHoleEvent.ID;
+        return EventIds.FLOOR_HOLE;
     }
 
     @Override

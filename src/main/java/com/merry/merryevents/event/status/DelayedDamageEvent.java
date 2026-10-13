@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.status;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
  * damage into delayed batch releases with progressive aura particles.
  */
 public final class DelayedDamageEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("delayed_damage");
 
     private static final String BUFFER_RATIO_KEY = "buffer_ratio";
     private static final String DELAY_TICKS_KEY = "delay_ticks";
@@ -32,7 +32,7 @@ public final class DelayedDamageEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return DelayedDamageEvent.ID;
+        return EventIds.DELAYED_DAMAGE;
     }
 
     @Override
@@ -63,7 +63,7 @@ public final class DelayedDamageEvent implements ChaosEvent {
      * @return True if event is currently active on the target player
      */
     public static boolean isPlayerActive(ServerPlayerEntity player) {
-        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), DelayedDamageEvent.ID);
+        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.DELAYED_DAMAGE);
     }
 
     /**
@@ -75,7 +75,7 @@ public final class DelayedDamageEvent implements ChaosEvent {
      */
     public static void bufferDamage(ServerPlayerEntity player, float effectiveDamage) {
         EventContext context = EventManager.getInstance().getPlayerEventContext(player.getUuid(),
-                DelayedDamageEvent.ID);
+                EventIds.DELAYED_DAMAGE);
         if (context == null) {
             return;
         }

@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -18,7 +19,6 @@ import java.util.function.BooleanSupplier;
  * rendering shaders.
  */
 public final class LavaWaterSwapEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("lava_water_swap");
 
     /**
      * Dedicated-server safe hook initialized exclusively on the client side.
@@ -27,7 +27,7 @@ public final class LavaWaterSwapEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.LAVA_WATER_SWAP;
     }
 
     @Override
@@ -51,7 +51,7 @@ public final class LavaWaterSwapEvent implements ChaosEvent {
         if (world.isClient()) {
             return clientActiveSupplier.getAsBoolean();
         }
-        return com.merry.merryevents.engine.EventManager.getInstance().isGlobalEventActive(ID);
+        return com.merry.merryevents.engine.EventManager.getInstance().isGlobalEventActive(EventIds.LAVA_WATER_SWAP);
     }
 
     @Override

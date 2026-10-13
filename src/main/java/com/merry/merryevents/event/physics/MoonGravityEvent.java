@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.physics;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -16,14 +17,13 @@ import org.jetbrains.annotations.Nullable;
  * Applies Jump Boost paired with Slow Falling to simulate lunar kinematics.
  */
 public final class MoonGravityEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("moon_gravity");
 
     private static final String AMPLIFIER_KEY = "jump_amplifier";
     private static final String MULTIPLIER_KEY = "jump_multiplier";
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.MOON_GRAVITY;
     }
 
     @Override

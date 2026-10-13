@@ -1,8 +1,7 @@
 package com.merry.merryevents.client.weather;
 
 import com.merry.merryevents.client.ClientEventManager;
-import com.merry.merryevents.event.weather.AcidRainEvent;
-import com.merry.merryevents.event.weather.RustRainEvent;
+import com.merry.merryevents.event.EventIds;
 
 /**
  * Client coordinator resolving dynamic RGB color tints for precipitation
@@ -30,8 +29,8 @@ public final class RainColorManager {
      * @return True if precipitation should be tinted
      */
     public static boolean hasActiveRainTint() {
-        return ClientEventManager.isEventActive(AcidRainEvent.ID)
-                || ClientEventManager.isEventActive(RustRainEvent.ID);
+        return ClientEventManager.isEventActive(EventIds.ACID_RAIN)
+                || ClientEventManager.isEventActive(EventIds.RUST_RAIN);
     }
 
     /**
@@ -40,10 +39,10 @@ public final class RainColorManager {
      * @return Normalized red component between 0.0 and 1.0
      */
     public static float getTintRed() {
-        if (ClientEventManager.isEventActive(AcidRainEvent.ID)) {
+        if (ClientEventManager.isEventActive(EventIds.ACID_RAIN)) {
             return RainColorManager.ACID_R;
         }
-        if (ClientEventManager.isEventActive(RustRainEvent.ID)) {
+        if (ClientEventManager.isEventActive(EventIds.RUST_RAIN)) {
             return RainColorManager.RUST_R;
         }
         return 1.0F;
@@ -55,10 +54,10 @@ public final class RainColorManager {
      * @return Normalized green component between 0.0 and 1.0
      */
     public static float getTintGreen() {
-        if (ClientEventManager.isEventActive(AcidRainEvent.ID)) {
+        if (ClientEventManager.isEventActive(EventIds.ACID_RAIN)) {
             return RainColorManager.ACID_G;
         }
-        if (ClientEventManager.isEventActive(RustRainEvent.ID)) {
+        if (ClientEventManager.isEventActive(EventIds.RUST_RAIN)) {
             return RainColorManager.RUST_G;
         }
         return 1.0F;
@@ -70,10 +69,10 @@ public final class RainColorManager {
      * @return Normalized blue component between 0.0 and 1.0
      */
     public static float getTintBlue() {
-        if (ClientEventManager.isEventActive(AcidRainEvent.ID)) {
+        if (ClientEventManager.isEventActive(EventIds.ACID_RAIN)) {
             return RainColorManager.ACID_B;
         }
-        if (ClientEventManager.isEventActive(RustRainEvent.ID)) {
+        if (ClientEventManager.isEventActive(EventIds.RUST_RAIN)) {
             return RainColorManager.RUST_B;
         }
         return 1.0F;

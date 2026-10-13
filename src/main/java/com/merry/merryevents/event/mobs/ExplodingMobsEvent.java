@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.mobs;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -19,11 +20,10 @@ import net.minecraft.world.World;
 import org.jetbrains.annotations.Nullable;
 
 public final class ExplodingMobsEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("exploding_mobs");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.EXPLODING_MOBS;
     }
 
     @Override
@@ -43,7 +43,7 @@ public final class ExplodingMobsEvent implements ChaosEvent {
      * @param damageSource Lethal damage source
      */
     public static void onEntityDeath(LivingEntity livingEntity, DamageSource damageSource) {
-        if (livingEntity.getWorld().isClient() || !EventManager.getInstance().isGlobalEventActive(ID)) {
+        if (livingEntity.getWorld().isClient() || !EventManager.getInstance().isGlobalEventActive(EventIds.EXPLODING_MOBS)) {
             return;
         }
 

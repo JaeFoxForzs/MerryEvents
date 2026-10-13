@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.mobs;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -42,7 +43,6 @@ import java.util.UUID;
  * buffs.
  */
 public final class RandomPetEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("random_pet");
     private static final String PET_UUID_KEY = "companion_pet_uuid";
     private static final String PET_IS_WOLF_KEY = "companion_is_wolf";
     private static final String PET_BUFFS_KEY = "companion_buffs";
@@ -66,7 +66,7 @@ public final class RandomPetEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return RandomPetEvent.ID;
+        return EventIds.RANDOM_PET;
     }
 
     @Override
@@ -120,7 +120,7 @@ public final class RandomPetEvent implements ChaosEvent {
         }
 
         if (!targetPlayer.isAlive()) {
-            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, RandomPetEvent.ID);
+            EventManager.getInstance().stopPlayerEvent(server, targetPlayer, EventIds.RANDOM_PET);
             return;
         }
 
@@ -134,7 +134,7 @@ public final class RandomPetEvent implements ChaosEvent {
             if (!pet.isAlive()) {
                 MerryEvents.LOGGER.info("[RandomPetEvent] Companion pet perished. Terminating event for {}",
                         targetPlayer.getName().getString());
-                EventManager.getInstance().stopPlayerEvent(server, targetPlayer, RandomPetEvent.ID);
+                EventManager.getInstance().stopPlayerEvent(server, targetPlayer, EventIds.RANDOM_PET);
                 return;
             }
 

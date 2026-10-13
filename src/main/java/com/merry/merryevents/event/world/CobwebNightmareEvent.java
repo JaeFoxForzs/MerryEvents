@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -24,11 +25,10 @@ import org.jetbrains.annotations.Nullable;
  * blocks with cobwebs to severely restrict mobility.
  */
 public final class CobwebNightmareEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("cobweb_nightmare");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.COBWEB_NIGHTMARE;
     }
 
     @Override
@@ -52,7 +52,7 @@ public final class CobwebNightmareEvent implements ChaosEvent {
      * @param state  State of the block just prior to destruction
      */
     public static void onBlockBreak(ServerWorld world, ServerPlayerEntity player, BlockPos pos, BlockState state) {
-        if (state.isOf(Blocks.COBWEB) || !EventManager.getInstance().isGlobalEventActive(ID)) {
+        if (state.isOf(Blocks.COBWEB) || !EventManager.getInstance().isGlobalEventActive(EventIds.COBWEB_NIGHTMARE)) {
             return;
         }
 

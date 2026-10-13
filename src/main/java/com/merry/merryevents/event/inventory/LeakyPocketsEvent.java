@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.inventory;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -25,7 +26,6 @@ import org.jetbrains.annotations.Nullable;
  * while strictly preserving equipped armor pieces.
  */
 public final class LeakyPocketsEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("leaky_pockets");
 
     private static final String REMAINING_QUOTA_KEY = "remaining_quota";
     private static final int MIN_QUOTA = 16;
@@ -42,7 +42,7 @@ public final class LeakyPocketsEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return LeakyPocketsEvent.ID;
+        return EventIds.LEAKY_POCKETS;
     }
 
     @Override

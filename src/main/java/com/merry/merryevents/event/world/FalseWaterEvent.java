@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -15,11 +16,10 @@ import org.jetbrains.annotations.Nullable;
  * Causes water contact to ignite and burn submerged players.
  */
 public final class FalseWaterEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("false_water");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.FALSE_WATER;
     }
 
     @Override

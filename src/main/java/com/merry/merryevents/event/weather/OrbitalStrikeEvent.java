@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.weather;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -33,7 +34,6 @@ import java.util.List;
  * around players.
  */
 public final class OrbitalStrikeEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("orbital_strike");
     private static final String STRIKES_KEY = "pending_strikes";
     private static final String REMAINING_STRIKES_KEY = "remaining_strikes";
     private static final String RADIUS_KEY = "dispersion_radius";
@@ -48,7 +48,7 @@ public final class OrbitalStrikeEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return OrbitalStrikeEvent.ID;
+        return EventIds.ORBITAL_STRIKE;
     }
 
     @Override

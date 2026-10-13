@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.physics;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
  * omnidirectional velocity vectors, and randomized cooldown intervals.
  */
 public final class CatapultEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("catapult");
 
     private static final String TIMER_KEY = "catapult_timer";
 
@@ -35,7 +35,7 @@ public final class CatapultEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return CatapultEvent.ID;
+        return EventIds.CATAPULT;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.vision;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -18,11 +19,10 @@ import org.jetbrains.annotations.Nullable;
  * movement vectors.
  */
 public final class UpsideDownEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("upside_down");
 
     @Override
     public Identifier getId() {
-        return UpsideDownEvent.ID;
+        return EventIds.UPSIDE_DOWN;
     }
 
     @Override

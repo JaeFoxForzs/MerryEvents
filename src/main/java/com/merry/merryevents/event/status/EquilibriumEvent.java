@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.status;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -20,11 +21,10 @@ import org.jetbrains.annotations.Nullable;
  * while neutralizing all outgoing attacks against living entities.
  */
 public final class EquilibriumEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("equilibrium");
 
     @Override
     public Identifier getId() {
-        return EquilibriumEvent.ID;
+        return EventIds.EQUILIBRIUM;
     }
 
     @Override
@@ -44,7 +44,7 @@ public final class EquilibriumEvent implements ChaosEvent {
      * @return True if equilibrium pacifist protection is active
      */
     public static boolean isPlayerActive(ServerPlayerEntity player) {
-        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EquilibriumEvent.ID);
+        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.EQUILIBRIUM);
     }
 
     @Override

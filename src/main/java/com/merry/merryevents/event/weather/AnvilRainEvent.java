@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.weather;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -26,7 +27,6 @@ import java.util.List;
  * Precipitates a randomized quota of falling anvils with randomized dispersion.
  */
 public final class AnvilRainEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("anvil_rain");
     private static final String REMAINING_ANVILS_KEY = "remaining_anvils";
     private static final String RADIUS_KEY = "dispersion_radius";
 
@@ -46,7 +46,7 @@ public final class AnvilRainEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.ANVIL_RAIN;
     }
 
     @Override

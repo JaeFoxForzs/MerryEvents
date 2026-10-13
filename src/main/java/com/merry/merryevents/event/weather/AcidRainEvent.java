@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.weather;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
  * localized player zones.
  */
 public final class AcidRainEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("acid_rain");
     private static final String PLAYER_INDEX_KEY = "acid_rain_player_idx";
     private static final double SEARCH_RADIUS = 64.0;
     private static final int MAX_TARGETS_PER_TICK = 128;
@@ -29,7 +29,7 @@ public final class AcidRainEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return AcidRainEvent.ID;
+        return EventIds.ACID_RAIN;
     }
 
     @Override

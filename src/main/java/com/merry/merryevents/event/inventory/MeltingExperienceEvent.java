@@ -3,6 +3,7 @@
 package com.merry.merryevents.event.inventory;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -27,8 +28,6 @@ import java.util.List;
  * Periodically consumes one experience level in exchange for potent positive combat status effects.
  */
 public final class MeltingExperienceEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("melting_experience");
-
     private static final String TIMER_KEY = "melting_timer";
     private static final int MIN_INTERVAL_TICKS = 10 * 20; // 10 seconds
     private static final int MAX_INTERVAL_TICKS = 20 * 20; // 20 seconds
@@ -43,7 +42,7 @@ public final class MeltingExperienceEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return MeltingExperienceEvent.ID;
+        return EventIds.MELTING_EXPERIENCE;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.world;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -26,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
  * alternative variants with zero server tick lag.
  */
 public final class OreMutationEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("ore_mutation");
 
     private static final String WAVE_STEP_KEY = "wave_step";
     private static final String TARGET_RADIUS_KEY = "target_radius";
@@ -67,7 +67,7 @@ public final class OreMutationEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return OreMutationEvent.ID;
+        return EventIds.ORE_MUTATION;
     }
 
     @Override

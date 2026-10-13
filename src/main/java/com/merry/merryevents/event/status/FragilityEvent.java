@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.status;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -17,7 +18,6 @@ import org.jetbrains.annotations.Nullable;
  * Enforces a temporary attribute modifier reducing maximum health to 3 hearts.
  */
 public final class FragilityEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("fragility");
     private static final Identifier MODIFIER_ID = MerryEvents.id("fragility_health_penalty");
     private static final EntityAttributeModifier PENALTY_MODIFIER = new EntityAttributeModifier(
             MODIFIER_ID,
@@ -26,7 +26,7 @@ public final class FragilityEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.FRAGILITY;
     }
 
     @Override

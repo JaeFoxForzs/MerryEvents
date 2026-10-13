@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.sounds;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -25,11 +26,10 @@ import java.util.Optional;
  * target player.
  */
 public final class ParanoiaSoundsEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("paranoia_sounds");
 
     @Override
     public Identifier getId() {
-        return ID;
+        return EventIds.PARANOIA_SOUNDS;
     }
 
     @Override

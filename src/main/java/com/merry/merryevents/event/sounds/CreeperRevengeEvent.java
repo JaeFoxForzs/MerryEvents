@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.sounds;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -21,7 +22,6 @@ import org.jetbrains.annotations.Nullable;
  * view vector at randomized cadence intervals.
  */
 public final class CreeperRevengeEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("creeper_revenge");
 
     private static final String NEXT_TRIGGER_TICK_KEY = "next_fuse_tick";
     private static final int MIN_INTERVAL_SECONDS = 15;
@@ -30,7 +30,7 @@ public final class CreeperRevengeEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return CreeperRevengeEvent.ID;
+        return EventIds.CREEPER_REVENGE;
     }
 
     @Override

@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.mobs;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -26,7 +27,6 @@ import org.jetbrains.annotations.Nullable;
  * the target player with comic puff effects before concluding immediately.
  */
 public final class ZooEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("zoo");
 
     private static final EntityType<?>[] ANIMAL_TYPES = {
             EntityType.COW,
@@ -59,7 +59,7 @@ public final class ZooEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return ZooEvent.ID;
+        return EventIds.ZOO;
     }
 
     @Override

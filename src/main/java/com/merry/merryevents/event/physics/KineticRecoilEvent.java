@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.physics;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -24,7 +25,6 @@ import org.jetbrains.annotations.Nullable;
  * dealt damage.
  */
 public final class KineticRecoilEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("kinetic_recoil");
 
     private static final double MAX_IMPULSE_STRENGTH = 3.2;
     private static final double MIN_IMPULSE_STRENGTH = 0.6;
@@ -32,7 +32,7 @@ public final class KineticRecoilEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return KineticRecoilEvent.ID;
+        return EventIds.KINETIC_RECOIL;
     }
 
     @Override
@@ -53,7 +53,7 @@ public final class KineticRecoilEvent implements ChaosEvent {
      * @return True if kinetic recoil event is active
      */
     public static boolean isPlayerActive(ServerPlayerEntity player) {
-        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), KineticRecoilEvent.ID);
+        return EventManager.getInstance().isPlayerEventActive(player.getUuid(), EventIds.KINETIC_RECOIL);
     }
 
     /**

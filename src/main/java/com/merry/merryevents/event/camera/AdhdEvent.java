@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.camera;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -17,11 +18,10 @@ import org.jetbrains.annotations.Nullable;
  * which executes smooth per-frame gaze interpolation and continuous entity tracking.
  */
 public final class AdhdEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("adhd");
 
     @Override
     public Identifier getId() {
-        return AdhdEvent.ID;
+        return EventIds.ADHD;
     }
 
     @Override

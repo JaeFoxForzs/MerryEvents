@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.mobs;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -25,7 +26,6 @@ import java.util.function.BooleanSupplier;
  * volumes.
  */
 public final class KindergartenEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("kindergarten");
     private static final String PLAYER_INDEX_KEY = "kindergarten_player_idx";
     private static final double SEARCH_RADIUS = 64.0;
     private static final int MAX_TARGETS_PER_TICK = 128;
@@ -50,7 +50,7 @@ public final class KindergartenEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return KindergartenEvent.ID;
+        return EventIds.KINDERGARTEN;
     }
 
     @Override
@@ -83,7 +83,7 @@ public final class KindergartenEvent implements ChaosEvent {
         if (entity.getWorld().isClient()) {
             return KindergartenEvent.isClientActive();
         }
-        return com.merry.merryevents.engine.EventManager.getInstance().isGlobalEventActive(KindergartenEvent.ID);
+        return com.merry.merryevents.engine.EventManager.getInstance().isGlobalEventActive(EventIds.KINDERGARTEN);
     }
 
     @Override

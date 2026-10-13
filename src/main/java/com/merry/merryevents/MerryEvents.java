@@ -6,6 +6,7 @@ import com.merry.merryevents.config.ConfigManager;
 import com.merry.merryevents.engine.ChaosDirector;
 import com.merry.merryevents.engine.EventManager;
 import com.merry.merryevents.engine.EventPersistentState;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.event.inventory.DiamondRushEvent;
 import com.merry.merryevents.event.mobs.ExplodingMobsEvent;
 import com.merry.merryevents.event.mobs.RandomPetEvent;
@@ -50,7 +51,6 @@ public class MerryEvents implements ModInitializer {
         public static final String MOD_ID = "merryevents";
         public static final Logger LOGGER = LoggerFactory.getLogger(MerryEvents.MOD_ID);
 
-        public static final Identifier LOBOTOMY_SOUND_ID = MerryEvents.id("lobotomy");
         public static SoundEvent LOBOTOMY_SOUND;
         public static ComponentType<List<Identifier>> FORBIDDEN_BLOCKS_COMPONENT;
         public static ComponentType<String> MEMO_OWNER_COMPONENT;
@@ -62,8 +62,8 @@ public class MerryEvents implements ModInitializer {
 
                 MerryEvents.LOBOTOMY_SOUND = Registry.register(
                                 Registries.SOUND_EVENT,
-                                MerryEvents.LOBOTOMY_SOUND_ID,
-                                SoundEvent.of(MerryEvents.LOBOTOMY_SOUND_ID));
+                                EventIds.LOBOTOMY,
+                                SoundEvent.of(EventIds.LOBOTOMY));
 
                 MerryEvents.FORBIDDEN_BLOCKS_COMPONENT = Registry.register(
                                 Registries.DATA_COMPONENT_TYPE,
@@ -119,7 +119,7 @@ public class MerryEvents implements ModInitializer {
                                 .register((player, origin, destination) -> {
                                         EventManager.getInstance().syncAllToPlayer(player);
                                         EventContext petContext = EventManager.getInstance()
-                                                        .getPlayerEventContext(player.getUuid(), RandomPetEvent.ID);
+                                                        .getPlayerEventContext(player.getUuid(), EventIds.RANDOM_PET);
                                         if (petContext != null && player.getServer() != null) {
                                                 RandomPetEvent.onPlayerDimensionChange(
                                                                 player.getServer(), player, origin, destination,

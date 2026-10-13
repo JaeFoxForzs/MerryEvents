@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.physics;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -20,7 +21,6 @@ import java.util.function.BooleanSupplier;
  * slipperiness.
  */
 public final class PerfectIceEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("perfect_ice");
     public static final float BLUE_ICE_SLIPPERINESS = 0.989F;
 
     /**
@@ -30,7 +30,7 @@ public final class PerfectIceEvent implements ChaosEvent {
 
     @Override
     public Identifier getId() {
-        return PerfectIceEvent.ID;
+        return EventIds.PERFECT_ICE;
     }
 
     @Override
@@ -54,7 +54,7 @@ public final class PerfectIceEvent implements ChaosEvent {
         if (world != null && world.isClient()) {
             return PerfectIceEvent.clientActiveSupplier.getAsBoolean();
         }
-        return com.merry.merryevents.engine.EventManager.getInstance().isGlobalEventActive(PerfectIceEvent.ID);
+        return com.merry.merryevents.engine.EventManager.getInstance().isGlobalEventActive(EventIds.PERFECT_ICE);
     }
 
     @Override

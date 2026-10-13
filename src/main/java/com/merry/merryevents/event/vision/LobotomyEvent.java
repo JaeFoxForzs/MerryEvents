@@ -1,6 +1,7 @@
 package com.merry.merryevents.event.vision;
 
 import com.merry.merryevents.MerryEvents;
+import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.api.ChaosEvent;
 import com.merry.merryevents.api.EventCategory;
 import com.merry.merryevents.api.EventContext;
@@ -14,11 +15,10 @@ import org.jetbrains.annotations.Nullable;
  * Periodically triggers visual frame freezes accompanied by auditory cues and downscaled pixelation.
  */
 public final class LobotomyEvent implements ChaosEvent {
-    public static final Identifier ID = MerryEvents.id("lobotomy");
 
     @Override
     public Identifier getId() {
-        return LobotomyEvent.ID;
+        return EventIds.LOBOTOMY;
     }
 
     @Override
