@@ -21,6 +21,12 @@ import org.jetbrains.annotations.Nullable;
  * while neutralizing all outgoing attacks against living entities.
  */
 public final class EquilibriumEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.DELAYED_DAMAGE), 600, 1);
+    }
 
     @Override
     public Identifier getId() {

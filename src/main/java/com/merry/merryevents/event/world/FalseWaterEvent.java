@@ -16,6 +16,12 @@ import org.jetbrains.annotations.Nullable;
  * Causes water contact to ignite and burn submerged players.
  */
 public final class FalseWaterEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.GLOBAL,
+                java.util.Set.of(EventIds.LAVA_WATER_SWAP), 600, 1);
+    }
 
     @Override
     public Identifier getId() {

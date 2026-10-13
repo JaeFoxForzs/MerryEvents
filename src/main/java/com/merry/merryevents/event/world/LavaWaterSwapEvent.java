@@ -19,6 +19,12 @@ import java.util.function.BooleanSupplier;
  * rendering shaders.
  */
 public final class LavaWaterSwapEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.GLOBAL,
+                java.util.Set.of(EventIds.FALSE_WATER), 600, 1);
+    }
 
     /**
      * Dedicated-server safe hook initialized exclusively on the client side.

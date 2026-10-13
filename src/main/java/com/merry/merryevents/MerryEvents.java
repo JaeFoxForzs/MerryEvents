@@ -88,6 +88,7 @@ public class MerryEvents implements ModInitializer {
 
                 ConfigManager.load();
                 EventManager.getInstance().registerDefaultEvents();
+                EventManager.getInstance().buildConflictMatrix();
 
                 PayloadTypeRegistry.playS2C().register(EventSyncPayload.ID, EventSyncPayload.CODEC);
                 PayloadTypeRegistry.playS2C().register(OrbitalStrikeSpawnPayload.ID, OrbitalStrikeSpawnPayload.CODEC);

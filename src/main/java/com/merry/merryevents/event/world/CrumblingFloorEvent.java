@@ -25,6 +25,12 @@ import org.jetbrains.annotations.Nullable;
  * and Silk Touch drops.
  */
 public final class CrumblingFloorEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.FLOOR_HOLE), 600, 1);
+    }
     private static final String SPEED_KEY = "crumb_speed";
     private static final String BREAKER_ID_KEY = "crumb_breaker_id";
     private static final String POS_X_KEY = "crumb_x";

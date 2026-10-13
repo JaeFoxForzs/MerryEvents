@@ -29,6 +29,11 @@ public interface ChaosEvent {
                 1);
     }
 
+    /** Resolves event identifiers that are mutually exclusive with this event. */
+    default Set<Identifier> getConflictsWith() {
+        return this.getDefinition().conflictsWith();
+    }
+
     /**
      * Resolves the unique namespaced identifier of the chaos event.
      *

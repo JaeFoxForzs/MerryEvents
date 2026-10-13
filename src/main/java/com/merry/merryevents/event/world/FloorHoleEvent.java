@@ -23,6 +23,12 @@ import org.jetbrains.annotations.Nullable;
  * container data.
  */
 public final class FloorHoleEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.CRUMBLING_FLOOR), 600, 1);
+    }
     private static final String REMAINING_BLOCKS_KEY = "remaining_blocks";
     private static final String RADIUS_KEY = "horizontal_radius";
     private static final int MIN_BLOCKS = 64;

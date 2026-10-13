@@ -439,7 +439,7 @@ public final class MerryEventsCommand {
                 return 1;
             } else {
                 source.sendError(Text.translatable("command.merryevents.start.error.category_global",
-                        event.getCategory().getDisplayName()));
+                        event.getDisplayName()));
                 return 0;
             }
         } else {
@@ -466,7 +466,7 @@ public final class MerryEventsCommand {
                 return 1;
             } else {
                 source.sendError(Text.translatable("command.merryevents.start.error.category_player",
-                        event.getCategory().getDisplayName(), target.getName().getString()));
+                        event.getDisplayName(), target.getName().getString()));
                 return 0;
             }
         }

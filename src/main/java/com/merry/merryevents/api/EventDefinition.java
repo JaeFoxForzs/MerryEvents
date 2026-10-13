@@ -3,18 +3,18 @@ package com.merry.merryevents.api;
 import net.minecraft.util.Identifier;
 
 import java.util.Collections;
+import java.util.HashSet;
 import java.util.Set;
 
 /**
  * Immutable declaration describing static characteristics, categorization,
- * duration policy, and scheduling weights of a chaos event.
+ * duration policy, incompatibility constraints, and scheduling weights of a chaos event.
  *
  * @param id                   Unique event namespaced identifier
- * @param categories           Set of conflict categories this event occupies
+ * @param categories           Set of categories this event belongs to
  * @param scope                Execution scope (GLOBAL or PLAYER)
  * @param durationPolicy       Lifetime termination model
- * @param exclusiveInGroup     True if this event locks its categories
- *                             exclusively
+ * @param conflictsWith        Event identifiers incompatible with this event
  * @param defaultDurationTicks Default lifetime in server ticks
  * @param defaultWeight        Default selection ticket weight in roulette wheel
  * @param isWip                True to exclude from automated scheduler ignition
@@ -24,7 +24,7 @@ public record EventDefinition(
         Set<EventCategory> categories,
         EventScope scope,
         DurationPolicy durationPolicy,
-        boolean exclusiveInGroup,
+        Set<Identifier> conflictsWith,
         int defaultDurationTicks,
         int defaultWeight,
         boolean isWip) {
@@ -36,13 +36,16 @@ public record EventDefinition(
         if (categories == null || categories.isEmpty()) {
             throw new IllegalArgumentException("Event must belong to at least one category");
         }
-        categories = Collections.unmodifiableSet(categories);
+        categories = Collections.unmodifiableSet(new HashSet<>(categories));
         if (scope == null) {
             scope = EventScope.PLAYER;
         }
         if (durationPolicy == null) {
             durationPolicy = DurationPolicy.TIMED;
         }
+        conflictsWith = conflictsWith == null
+                ? Set.of()
+                : Collections.unmodifiableSet(new HashSet<>(conflictsWith));
         if (defaultDurationTicks <= 0 && durationPolicy == DurationPolicy.TIMED) {
             defaultDurationTicks = 600; // 30 seconds nominal fallback
         }
@@ -72,7 +75,28 @@ public record EventDefinition(
                 Set.of(category),
                 scope,
                 DurationPolicy.TIMED,
-                true,
+                Set.of(),
+                defaultDurationTicks,
+                defaultWeight,
+                false);
+    }
+
+    /**
+     * Constructs a timed event definition declaring explicit conflicts.
+     */
+    public static EventDefinition withConflicts(
+            Identifier id,
+            EventCategory category,
+            EventScope scope,
+            Set<Identifier> conflictsWith,
+            int defaultDurationTicks,
+            int defaultWeight) {
+        return new EventDefinition(
+                id,
+                Set.of(category),
+                scope,
+                DurationPolicy.TIMED,
+                conflictsWith,
                 defaultDurationTicks,
                 defaultWeight,
                 false);

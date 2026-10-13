@@ -18,6 +18,12 @@ import org.jetbrains.annotations.Nullable;
  * which executes smooth per-frame gaze interpolation and continuous entity tracking.
  */
 public final class AdhdEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.STIFF_NECK, EventIds.EPILEPSY), 600, 1);
+    }
 
     @Override
     public Identifier getId() {

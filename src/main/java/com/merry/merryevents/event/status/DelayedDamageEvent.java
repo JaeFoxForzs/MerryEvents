@@ -22,6 +22,12 @@ import org.jetbrains.annotations.Nullable;
  * damage into delayed batch releases with progressive aura particles.
  */
 public final class DelayedDamageEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.EQUILIBRIUM), 600, 1);
+    }
 
     private static final String BUFFER_RATIO_KEY = "buffer_ratio";
     private static final String DELAY_TICKS_KEY = "delay_ticks";

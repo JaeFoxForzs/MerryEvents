@@ -52,8 +52,8 @@ public class EventManagerDisconnectLifecycleTest {
         Assertions.assertTrue(
                 this.eventManager.isPlayerEventActive(playerUuid, EventManagerDisconnectLifecycleTest.DUMMY_CAMERA_ID),
                 "Personal event must be active for player");
-        Assertions.assertTrue(this.eventManager.isCategoryOccupiedForPlayer(playerUuid, EventCategory.CAMERA),
-                "Category CAMERA must be locked for the specific player");
+        Assertions.assertTrue(this.eventManager.getActivePlayerEvents().containsKey(playerUuid),
+                "The active player map must include the player");
 
         // 2. Simulate player disconnect via UUID overload
         this.eventManager.onPlayerDisconnect(null, playerUuid);
@@ -62,10 +62,8 @@ public class EventManagerDisconnectLifecycleTest {
         Assertions.assertFalse(
                 this.eventManager.isPlayerEventActive(playerUuid, EventManagerDisconnectLifecycleTest.DUMMY_CAMERA_ID),
                 "Personal event must be removed from player upon disconnect");
-        Assertions.assertFalse(this.eventManager.isCategoryOccupiedGlobally(EventCategory.CAMERA),
-                "Category CAMERA must be unlocked globally after player disconnect");
-        Assertions.assertFalse(this.eventManager.isCategoryOccupiedForPlayer(playerUuid, EventCategory.CAMERA),
-                "Category CAMERA must be unlocked for player profile");
+        Assertions.assertFalse(this.eventManager.getActivePlayerEvents().containsKey(playerUuid),
+                "Disconnect must remove the player's active event map");
         Assertions.assertTrue(this.personalEvent.stopped,
                 "onStopServer must be invoked during player disconnect cleanup");
     }
@@ -86,12 +84,8 @@ public class EventManagerDisconnectLifecycleTest {
                 this.eventManager.isPlayerEventActive(offlinePlayer,
                         EventManagerDisconnectLifecycleTest.DUMMY_CAMERA_ID),
                 "Dormant event must not be marked as active in operational map");
-        // Dormant event does NOT lock category globally
-        Assertions.assertFalse(this.eventManager.isCategoryOccupiedGlobally(EventCategory.CAMERA),
-                "Dormant event must not lock category globally on server");
-        // Dormant event does NOT lock category for the offline player profile
-        Assertions.assertFalse(this.eventManager.isCategoryOccupiedForPlayer(offlinePlayer, EventCategory.CAMERA),
-                "Dormant event must not lock category until player awakens it by joining");
+        Assertions.assertFalse(this.eventManager.getActivePlayerEvents().containsKey(offlinePlayer),
+                "Dormant events must not be active until the player rejoins");
     }
 
     private static class DummyCameraEvent implements ChaosEvent {

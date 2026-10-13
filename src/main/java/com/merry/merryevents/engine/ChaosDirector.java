@@ -153,6 +153,7 @@ public final class ChaosDirector {
             return;
         }
 
+        EventManager eventManager = EventManager.getInstance();
         for (int i = 0; i < playerCount; i++) {
             ServerPlayerEntity player = players.get(i);
             UUID uuid = player.getUuid();
@@ -161,6 +162,13 @@ public final class ChaosDirector {
             if (remaining <= 0) {
                 if (remaining == -1) {
                     this.initializePlayerCountdown(uuid);
+                    continue;
+                }
+
+                Map<Identifier, EventManager.ActiveEventInstance> activeEvents = eventManager.getActivePlayerEvents()
+                        .get(uuid);
+                if (activeEvents != null && activeEvents.size() >= EventManager.MAX_CONCURRENT_PLAYER_EVENTS) {
+                    this.applyFastRetryPlayer(uuid);
                     continue;
                 }
 
@@ -314,10 +322,10 @@ public final class ChaosDirector {
                 continue;
             }
 
-            boolean hasCategoryCapacity = global
-                    ? eventManager.hasCategoryCapacityForGlobalEvent(event.getDefinition())
-                    : eventManager.hasCategoryCapacityForPlayerEvent(playerUuid, event.getDefinition());
-            if (!hasCategoryCapacity || !event.canStart(server, targetPlayer)) {
+            boolean canStart = global
+                    ? eventManager.canStartGlobal(event)
+                    : eventManager.canStartPlayer(playerUuid, event);
+            if (!canStart || !event.canStart(server, targetPlayer)) {
                 continue;
             }
 

@@ -19,6 +19,12 @@ import org.jetbrains.annotations.Nullable;
  * the target player.
  */
 public final class EpilepsyEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.STIFF_NECK, EventIds.ADHD), 600, 1);
+    }
 
     @Override
     public Identifier getId() {

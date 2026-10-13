@@ -19,6 +19,12 @@ import org.jetbrains.annotations.Nullable;
  * movement vectors.
  */
 public final class UpsideDownEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.COLORBLINDNESS, EventIds.MYOPIA), 600, 1);
+    }
 
     @Override
     public Identifier getId() {

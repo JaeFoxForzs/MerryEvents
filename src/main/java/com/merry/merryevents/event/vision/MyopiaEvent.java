@@ -18,6 +18,12 @@ import org.jetbrains.annotations.Nullable;
  * distant perception.
  */
 public final class MyopiaEvent implements ChaosEvent {
+    @Override
+    public com.merry.merryevents.api.EventDefinition getDefinition() {
+        return com.merry.merryevents.api.EventDefinition.withConflicts(
+                this.getId(), this.getCategory(), com.merry.merryevents.api.EventScope.PLAYER,
+                java.util.Set.of(EventIds.COLORBLINDNESS, EventIds.UPSIDE_DOWN), 600, 1);
+    }
 
     @Override
     public Identifier getId() {
