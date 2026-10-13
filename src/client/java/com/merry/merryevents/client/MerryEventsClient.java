@@ -4,6 +4,7 @@ import com.merry.merryevents.MerryEvents;
 import com.merry.merryevents.client.api.ClientChaosEffect;
 import com.merry.merryevents.client.effect.*;
 import com.merry.merryevents.client.render.OrbitalBeamRenderer;
+import com.merry.merryevents.event.inventory.MeltingExperienceEvent;
 import com.merry.merryevents.event.mobs.RandomPetEvent;
 import com.merry.merryevents.event.mobs.ZooEvent;
 import com.merry.merryevents.event.mobs.KindergartenEvent;
@@ -79,6 +80,7 @@ public class MerryEventsClient implements ClientModInitializer {
         ClientEventManager.registerEffect(KindergartenEvent.ID, SERVER_STATE_EFFECT);
         ClientEventManager.registerEffect(PerfectIceEvent.ID, SERVER_STATE_EFFECT);
         ClientEventManager.registerEffect(LavaWaterSwapEvent.ID, SERVER_STATE_EFFECT);
+        ClientEventManager.registerEffect(MeltingExperienceEvent.ID, SERVER_STATE_EFFECT);
 
         // 4. Auditory & physics constraints
         ClientEventManager.registerEffect(MerryEvents.id("rubber_world"), new RubberWorldClientEffect());

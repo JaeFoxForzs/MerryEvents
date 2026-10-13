@@ -52,3 +52,4 @@ com.merry.merryevents.event.mobs.RandomPetEvent
 com.merry.merryevents.event.status.EquilibriumEvent
 com.merry.merryevents.event.status.FireSkinEvent
 com.merry.merryevents.event.mobs.ZooEvent
+com.merry.merryevents.event.inventory.MeltingExperienceEvent

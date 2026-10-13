@@ -165,6 +165,7 @@ public final class ConfigManager {
             case "equilibrium" -> EventConfigEntry.ofDefault(60, 180);
             case "fire_skin" -> EventConfigEntry.ofDefault(60, 180);
             case "zoo" -> EventConfigEntry.ofDefault(1, 3);
+            case "melting_experience" -> EventConfigEntry.ofDefault(120, 300);
             default -> EventConfigEntry.ofDefault(30, 90);
         };
     }
