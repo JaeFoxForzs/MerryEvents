@@ -2,7 +2,6 @@ package com.merry.merryevents.mixin;
 
 import com.merry.merryevents.event.EventIds;
 import com.merry.merryevents.engine.EventManager;
-import com.merry.merryevents.event.weather.AnvilRainEvent;
 import net.minecraft.block.AnvilBlock;
 import net.minecraft.block.BlockState;
 import net.minecraft.entity.FallingBlockEntity;
